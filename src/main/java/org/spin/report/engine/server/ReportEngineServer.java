@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License                *
  * along with this program. If not, see <https://www.gnu.org/licenses/>.            *
  ************************************************************************************/
-package org.spin.template.server;
+package org.spin.report.engine.server;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.compiere.util.Env;
+import org.spin.report.engine.controller.ReportService;
+import org.spin.report.engine.setup.SetupLoader;
 import org.spin.service.grpc.authentication.AuthorizationServerInterceptor;
 import org.spin.service.grpc.context.ServiceContextProvider;
-import org.spin.template.controller.TemplateService;
-import org.spin.template.setup.SetupLoader;
 
 import io.grpc.Server;
 import io.grpc.netty.GrpcSslContexts;
@@ -33,8 +33,8 @@ import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.grpc.ServerBuilder;
 
-public class TemplateServer {
-	private static final Logger logger = Logger.getLogger(TemplateServer.class.getName());
+public class ReportEngineServer {
+	private static final Logger logger = Logger.getLogger(ReportEngineServer.class.getName());
 
 	private Server server;
 
@@ -95,7 +95,7 @@ public class TemplateServer {
 		AuthorizationServerInterceptor interceptor = getInterceptor();
 		serverBuilder.intercept(interceptor);
 
-		serverBuilder.addService(new TemplateService());
+		serverBuilder.addService(new ReportService());
 		this.server = serverBuilder.build().start();
 		logger.info("Server started, listening on " + SetupLoader.getInstance().getServer().getPort());
 		Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -103,7 +103,7 @@ public class TemplateServer {
 			public void run() {
 				// Use stderr here since the logger may have been reset by its JVM shutdown hook.
 				logger.info("*** shutting down gRPC Server since JVM is shutting down");
-				TemplateServer.this.stop();
+				ReportEngineServer.this.stop();
 				logger.info("*** server shut down");
 			}
 		});
@@ -139,7 +139,7 @@ public class TemplateServer {
 		SetupLoader.loadSetup(setupFileName);
 		//	Validate load
 		SetupLoader.getInstance().validateLoad();
-		final TemplateServer server = new TemplateServer();
+		final ReportEngineServer server = new ReportEngineServer();
 		server.start();
 		server.blockUntilShutdown();
 	}

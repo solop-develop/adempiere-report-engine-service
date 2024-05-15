@@ -38,7 +38,7 @@ static_resources:
               proto_descriptor: "/data/descriptor.dsc"
               services:
                 # package.service
-                - template_service.TemplateService
+                - report_engine.ReportService
               print_options:
                 add_whitespace: true
                 always_print_primitive_fields: true

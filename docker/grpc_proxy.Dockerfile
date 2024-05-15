@@ -9,7 +9,7 @@ ENV \
 	SERVER_PORT="5555" \
 	BACKEND_HOST="localhost" \
 	BACKEND_PORT="50059" \
-	SERVICES_ENABLED="template_service.TemplateService;"
+	SERVICES_ENABLED="report_engine.ReportService;"
 
 #Expose Ports
 # EXPOSE 9901 # admin port
@@ -23,7 +23,7 @@ WORKDIR /etc/envoy/
 COPY docker/envoy_template.yaml /etc/envoy/envoy_template.yaml
 
 # Proto gRPC descriptor
-COPY docker/adempiere-grpc-template-service.dsc /data/descriptor.dsc
+COPY docker/adempiere-report-engine-service.dsc /data/descriptor.dsc
 COPY docker/start_grpc_proxy.sh /etc/envoy/start.sh
 
 

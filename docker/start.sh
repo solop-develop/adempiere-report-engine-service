@@ -13,7 +13,7 @@ sed -i "s|adempiere_database_value|$DB_NAME|g" env.yaml
 sed -i "s|adempiere_user_value|$DB_USER|g" env.yaml
 sed -i "s|adempiere_pass_value|$DB_PASSWORD|g" env.yaml
 sed -i "s|PostgreSQL|$DB_TYPE|g" env.yaml
-sed -i "s|$DEFAULT_JAVA_OPTIONS|$GRPC_JAVA_OPTIONS|g" bin/adempiere-grpc-template-service-server
+sed -i "s|$DEFAULT_JAVA_OPTIONS|$GRPC_JAVA_OPTIONS|g" bin/adempiere-report-engine-service-server
 
 # Run app
-bin/adempiere-grpc-template-service-server env.yaml
+bin/adempiere-report-engine-service-server env.yaml
