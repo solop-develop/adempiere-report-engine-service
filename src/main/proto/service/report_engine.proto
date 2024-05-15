@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+
+option java_multiple_files = true;
+option java_package = "org.spin.backend.grpc.report_engine";
+option java_outer_classname = "ReportEngineService";
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+
+// Base URL
+// /report-engine/
+
+package report_engine;
+
+// The greeting service definition.
+service ReportEngine {
+	//	Generate Report
+	rpc RunReport(RunReportRequest) returns (RunReportResponse) {
+		option (google.api.http) = {
+			get: "/report-engine/run-report/{id}"
+		};
+	}
+}
+
+// Get Report Output Request
+message RunReportRequest {
+	int32 id = 1;
+	string filters = 2;
+	string sort_by = 3;
+	int32 page_size = 4;
+	string page_token = 5;
+	int32 print_format_id = 6;
+	int32 report_view_id = 7;
+	bool is_summary = 8;
+}
+
+message RunReportResponse {
+	int32 id = 1;
+	string name = 2;
+	string description = 3;
+	int32 print_format_id = 4;
+	int32 report_view_id = 5;
+	int64 record_count = 6;
+	repeated ReportColumn columns = 7;
+	repeated ReportRow rows = 8;
+	string next_page_token = 9;
+}
+
+message ReportColumn {
+	google.protobuf.Struct values = 1;
+}
+
+message ReportRow {
+	google.protobuf.Struct values = 1;
+}
