@@ -1,0 +1,21 @@
+{
+	// Use IntelliSense para saber los atributos posibles.
+	// Mantenga el puntero para ver las descripciones de los existentes atributos.
+	// Para más información, visite: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "java",
+			"name": "ADmempiere gRPC Template",
+			"request": "launch",
+			"mainClass": "org.spin.template.server.TemplateServer",
+			"projectName": "adempiere-grpc-template-service",
+			"env": {
+				"ADEMPIERE_APPS_TYPE": "wildfly",
+				"JWT_SECRET_KEY": "2C51599F5B1248F945B93E05EFC43B3A15D8EB0707C0F02FD97028786C40976F",
+				"JWT_EXPIRATION_TIME": 86400000
+			},
+			"args": "'resources/env.yaml'"
+		}
+	]
+}
