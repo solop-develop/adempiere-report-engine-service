@@ -101,13 +101,15 @@ public class ReportBuilder {
 		}
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
-		System.out.println(format);
+		System.out.println(format.getQuery());
 		return ReportInfo.newInstance();
 	}
 	
 	public static void main(String[] args) {
 		//	50132
 		//	Stocktake Line
+		org.compiere.Adempiere.startup(true);
+		Env.setContext(Env.getCtx(), "#AD_Client_ID", 11);
 		ReportBuilder.newInstance(50132).run(50, null);
 	}
 }

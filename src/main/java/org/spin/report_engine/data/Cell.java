@@ -25,6 +25,7 @@ public class Cell {
 	private String color;
 	private String style;
 	private Object value;
+	private String displayValue;
 	
 	private Cell() {
 		
@@ -58,6 +59,15 @@ public class Cell {
 	
 	public Cell withValue(Object value) {
 		this.value = value;
+		return this;
+	}
+
+	public String getDisplayValue() {
+		return displayValue;
+	}
+
+	public Cell withDisplayValue(String displayValue) {
+		this.displayValue = displayValue;
 		return this;
 	}
 
