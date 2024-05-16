@@ -15,7 +15,7 @@
 package org.spin.report_engine.mapper;
 
 import org.spin.report_engine.data.Cell;
-import org.spin.report_engine.format.PrintFormatLine;
+import org.spin.report_engine.format.PrintFormatItem;
 
 /**
  * Default just return the same value of cell
@@ -29,7 +29,7 @@ public class Default implements IColumnMapper {
 	 * @param value
 	 * @return
 	 */
-	public Cell processValue(PrintFormatLine printFormatLine, Object value) {
+	public Cell processValue(PrintFormatItem printFormatLine, Object value) {
 		return Cell.newInstance().withValue(value);
 	}
 }

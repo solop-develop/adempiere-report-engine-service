@@ -88,4 +88,10 @@ public class ReportInfo {
 		this.isSummary = isSummary;
 		return this;
 	}
+
+	@Override
+	public String toString() {
+		return "ReportInfo [name=" + name + ", columns=" + columns + ", data=" + data + ", printFormatId="
+				+ printFormatId + ", reportViewId=" + reportViewId + ", isSummary=" + isSummary + "]";
+	}
 }

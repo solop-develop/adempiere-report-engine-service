@@ -71,4 +71,9 @@ public class ColumnInfo {
 		this.title = title;
 		return this;
 	}
+
+	@Override
+	public String toString() {
+		return "ColumnInfo [color=" + color + ", style=" + style + ", code=" + code + ", title=" + title + "]";
+	}
 }

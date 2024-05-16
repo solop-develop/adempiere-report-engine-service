@@ -15,7 +15,7 @@
 package org.spin.report_engine.mapper;
 
 import org.spin.report_engine.data.Cell;
-import org.spin.report_engine.format.PrintFormatLine;
+import org.spin.report_engine.format.PrintFormatItem;
 
 /**
  * This interface represent a contract of column mapper, you can implement your own mapper based on this format
@@ -29,5 +29,5 @@ public interface IColumnMapper {
 	 * @param value
 	 * @return
 	 */
-	public Cell processValue(PrintFormatLine printFormatLine, Object value);
+	public Cell processValue(PrintFormatItem printFormatLine, Object value);
 }

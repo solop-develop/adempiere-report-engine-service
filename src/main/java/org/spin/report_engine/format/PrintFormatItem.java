@@ -14,10 +14,43 @@
  ************************************************************************************/
 package org.spin.report_engine.format;
 
+import org.adempiere.core.domains.models.I_AD_PrintFormatItem;
+import org.compiere.print.MPrintFormatItem;
+
 /**
  * Print Format Line Representation
  * @author Yamel Senih, ysenih@erpya.com, ERPCyA http://www.erpya.com
  */
-public class PrintFormatLine {
+public class PrintFormatItem {
 	
+	private String name;
+	private String printText;
+	private int sequence;
+	
+	private PrintFormatItem(MPrintFormatItem printFormatItem) {
+		name = printFormatItem.getName();
+		printText = printFormatItem.get_Translation(I_AD_PrintFormatItem.COLUMNNAME_PrintName);
+		sequence = printFormatItem.getAD_PrintFormat_ID();
+	}
+	
+	public static PrintFormatItem newInstance(MPrintFormatItem printFormatItem) {
+		return new PrintFormatItem(printFormatItem);
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getPrintText() {
+		return printText;
+	}
+
+	public int getSequence() {
+		return sequence;
+	}
+
+	@Override
+	public String toString() {
+		return "PrintFormatItem [name=" + name + ", printText=" + printText + ", sequence=" + sequence + "]";
+	}
 }

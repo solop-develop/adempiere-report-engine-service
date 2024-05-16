@@ -58,4 +58,10 @@ public class ReportView {
 	public String getWhereClause() {
 		return whereClause;
 	}
+
+	@Override
+	public String toString() {
+		return "ReportView [reportViewId=" + reportViewId + ", name=" + name + ", title=" + title + ", whereClause="
+				+ whereClause + "]";
+	}
 }

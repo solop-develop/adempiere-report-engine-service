@@ -60,4 +60,9 @@ public class Cell {
 		this.value = value;
 		return this;
 	}
+
+	@Override
+	public String toString() {
+		return "Cell [color=" + color + ", style=" + style + ", value=" + value + "]";
+	}
 }

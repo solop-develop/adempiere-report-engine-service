@@ -101,6 +101,13 @@ public class ReportBuilder {
 		}
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
+		System.out.println(format);
 		return ReportInfo.newInstance();
+	}
+	
+	public static void main(String[] args) {
+		//	50132
+		//	Stocktake Line
+		ReportBuilder.newInstance(50132).run(50, null);
 	}
 }

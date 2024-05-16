@@ -42,4 +42,8 @@ public class Row {
 		return data;
 	}
 
+	@Override
+	public String toString() {
+		return "Row [data=" + data + "]";
+	}
 }
