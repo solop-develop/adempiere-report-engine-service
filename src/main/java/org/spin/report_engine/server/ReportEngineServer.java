@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License                *
  * along with this program. If not, see <https://www.gnu.org/licenses/>.            *
  ************************************************************************************/
-package org.spin.report.engine.server;
+package org.spin.report_engine.server;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.compiere.util.Env;
-import org.spin.report.engine.controller.ReportService;
-import org.spin.report.engine.setup.SetupLoader;
+import org.spin.report_engine.controller.ReportService;
+import org.spin.report_engine.setup.SetupLoader;
 import org.spin.service.grpc.authentication.AuthorizationServerInterceptor;
 import org.spin.service.grpc.context.ServiceContextProvider;
 

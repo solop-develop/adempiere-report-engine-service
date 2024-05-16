@@ -157,7 +157,7 @@ dependencies {
 
 	//	ADempiere Core
 	implementation "${baseGroupId}:base:${baseVersion}"
-	implementation "${baseGroupId}:adempiere-grpc-utils:1.3.4"
+	implementation "${baseGroupId}:adempiere-grpc-utils:1.3.8"
 
 	//	Others
     compileOnly 'org.apache.tomcat:annotations-api:6.0.53'

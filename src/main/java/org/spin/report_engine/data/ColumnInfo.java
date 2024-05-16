@@ -12,20 +12,63 @@
  * You should have received a copy of the GNU General Public License                *
  * along with this program. If not, see <https://www.gnu.org/licenses/>.            *
  ************************************************************************************/
-package org.spin.report.engine.service;
+package org.spin.report_engine.data;
 
-import org.spin.backend.grpc.report_engine.RunReportRequest;
-import org.spin.backend.grpc.report_engine.RunReportResponse;
-
-public class Service {
+/**
+ * Cell Information can be used to represent the data and some attributes like:
+ * <li>Color: A color definition
+ * <li>Style: Represent the style for it
+ * <li>Code: Represent the unique code or ID for column
+ * <li>Title: Represent the column title
+ * @author Yamel Senih, ysenih@erpya.com, ERPCyA http://www.erpya.com
+ */
+public class ColumnInfo {
+	private String color;
+	private String style;
+	private String code;
+	private Object title;
+	
+	private ColumnInfo() {
 		
-	/**
-	 * Create Entity
-	 * @param context
-	 * @param request
-	 * @return
-	 */
-	public static RunReportResponse.Builder runReport(RunReportRequest request) {
-		return RunReportResponse.newBuilder();
+	}
+	
+	public static ColumnInfo newInstance() {
+		return new ColumnInfo();
+	}
+	
+	public String getColor() {
+		return color;
+	}
+	
+	public ColumnInfo withColor(String color) {
+		this.color = color;
+		return this;
+	}
+	
+	public String getStyle() {
+		return style;
+	}
+	
+	public ColumnInfo withStyle(String style) {
+		this.style = style;
+		return this;
+	}
+	
+	public String getCode() {
+		return code;
+	}
+	
+	public ColumnInfo withCode(String code) {
+		this.code = code;
+		return this;
+	}
+	
+	public Object getTitle() {
+		return title;
+	}
+	
+	public ColumnInfo withTitle(Object title) {
+		this.title = title;
+		return this;
 	}
 }

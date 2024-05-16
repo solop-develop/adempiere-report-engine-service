@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License                 *
  * along with this program. If not, see <https://www.gnu.org/licenses/>.             *
  ************************************************************************************/
-package org.spin.report.engine.setup;
+package org.spin.report_engine.setup;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +25,7 @@ import org.compiere.db.CConnection;
 import org.compiere.util.CLogMgt;
 import org.compiere.util.DB;
 import org.compiere.util.Ini;
-import org.spin.report.engine.setup.SetupLoader;
+import org.spin.report_engine.setup.SetupLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -119,7 +119,7 @@ public class SetupLoader {
 	
 	/**
 	 * @return
-	 * @see org.spin.report.engine.setup.SetupWrapper#getDatabase()
+	 * @see org.spin.report_engine.setup.SetupWrapper#getDatabase()
 	 */
 	public final Database getDatabase() {
 		return setup.getDatabase();
@@ -127,7 +127,7 @@ public class SetupLoader {
 	
 	/**
 	 * @return
-	 * @see org.spin.report.engine.setup.SetupWrapper#getServer()
+	 * @see org.spin.report_engine.setup.SetupWrapper#getServer()
 	 */
 	public final Server getServer() {
 		return setup.getServer();

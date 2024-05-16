@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License                 *
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.            *
  ************************************************************************************/
-package org.spin.report.engine.setup;
+package org.spin.report_engine.setup;
 
 import java.util.List;
 import java.util.logging.Level;

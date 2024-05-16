@@ -12,34 +12,34 @@
  * You should have received a copy of the GNU General Public License                *
  * along with this program. If not, see <https://www.gnu.org/licenses/>.            *
  ************************************************************************************/
-package org.spin.report.engine.controller;
+package org.spin.report_engine.data;
 
-import org.compiere.util.CLogger;
-import org.spin.backend.grpc.report_engine.ReportEngineGrpc.ReportEngineImplBase;
-import org.spin.backend.grpc.report_engine.RunReportRequest;
-import org.spin.backend.grpc.report_engine.RunReportResponse;
-import org.spin.report.engine.service.Service;
+import java.util.HashMap;
+import java.util.Map;
 
-import io.grpc.Status;
-import io.grpc.stub.StreamObserver;
-
-public class ReportService extends ReportEngineImplBase {
+/**
+ * Row information or representation for Row
+ * @author Yamel Senih, ysenih@erpya.com, ERPCyA http://www.erpya.com
+ */
+public class Row {
+	/**	Data for Row	*/
+	private Map<String, Cell> data;
 	
-	/**	Logger			*/
-	private CLogger log = CLogger.getCLogger(ReportService.class);
-	
-	@Override
-	public void runReport(RunReportRequest request, StreamObserver<RunReportResponse> responseObserver) {
-		try {
-			RunReportResponse.Builder reportBuilder = Service.runReport(request);
-			responseObserver.onNext(reportBuilder.build());
-			responseObserver.onCompleted();
-		} catch (Exception e) {
-			log.severe(e.getLocalizedMessage());
-			responseObserver.onError(Status.INTERNAL
-					.withDescription(e.getLocalizedMessage())
-					.withCause(e)
-					.asRuntimeException());
-		}
+	private Row() {
+		data = new HashMap<>();
 	}
+	
+	public static Row newInstance() {
+		return new Row();
+	}
+	
+	public Row withCell(String columnCode, Cell cell) {
+		data.put(columnCode, cell);
+		return this;
+	}
+	
+	public Map<String, Cell> getData() {
+		return data;
+	}
+
 }
