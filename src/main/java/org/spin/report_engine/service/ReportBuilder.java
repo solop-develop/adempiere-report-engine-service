@@ -25,6 +25,7 @@ import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.format.PrintFormat;
+import org.spin.report_engine.format.QueryDefinition;
 import org.spin.service.grpc.util.query.Filter;
 
 /**
@@ -96,17 +97,19 @@ public class ReportBuilder {
 		return this;
 	}
 	
-	public ReportInfo run(int pageSize, String nextPageToken) {
+	public ReportInfo run(int limit, int offset) {
 		if(getPrintFormatId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
 		}
+		withParameter("M_Product_ID", 147);
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
-		
-		DB.runResultSet(null, "", null, resulset -> {
-			
+		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withLimit(limit, offset).buildQuery();
+		DB.runResultSet(null, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
+			while (resulset.next()) {
+				System.out.println(resulset.getObject("Line"));
+			}
 		});
-		System.out.println(format.getQuery());
 		return ReportInfo.newInstance();
 	}
 	
@@ -117,6 +120,6 @@ public class ReportBuilder {
 		Env.setContext(Env.getCtx(), "#AD_Client_ID", 11);
 		Env.setContext(Env.getCtx(), Env.LANGUAGE, "es_MX");
 		Env.setContext(Env.getCtx(), "#AD_Role_ID", 102);
-		ReportBuilder.newInstance(50132).run(50, null);
+		ReportBuilder.newInstance(50132).run(50, 0);
 	}
 }

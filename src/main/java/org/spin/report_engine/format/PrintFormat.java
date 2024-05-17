@@ -129,12 +129,15 @@ public class PrintFormat {
 					query.append(", ");
 				}
 				if(item.isVirtualColumn()) {
-					columnName = item.getColumnSql();
+					columnName = "(" + item.getColumnSql() + ")";
+					query.append(columnName);
+					query.append(" AS ").append(item.getColumnName());
+					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(item.getColumnName()));
 				} else {
 					columnName = getQueryColumnName(item.getColumnName());
+					query.append(columnName);
+					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(columnName));
 				}
-				query.append("(").append(columnName).append(")");
-				query.append(" AS ").append(item.getColumnName());
 				//	Process Display Value
 				if(item.getReferenceId() == DisplayType.TableDir
 						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceId() == 0)) {
@@ -148,6 +151,7 @@ public class PrintFormat {
 					}
 					query.append("(").append(columnName).append(")");
 					query.append(" AS ").append(getDisplayColumnName(item));
+					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
 				} else if(item.getReferenceId() == DisplayType.Table
 						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceValueId() != 0)) {
 					addTableAlias();
@@ -166,6 +170,7 @@ public class PrintFormat {
 					columnName = displayColumnValue.toString();
 					query.append("(").append(displayColumnValue).append(")");
 					query.append(" AS ").append(getDisplayColumnName(item));
+					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
 					//	Add JOIN
 					if(item.isMandatory()) {
 						tableReferences.append(" INNER JOIN ");
@@ -203,6 +208,7 @@ public class PrintFormat {
 					columnName = displayColumnValue.toString();
 					query.append("(").append(displayColumnValue).append(")");
 					query.append(" AS ").append(getDisplayColumnName(item));
+					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
 					//	Add JOIN
 					if(item.isMandatory()) {
 						tableReferences.append(" INNER JOIN ");
@@ -242,6 +248,7 @@ public class PrintFormat {
 						columnName = displayColumnValue.toString();
 						query.append("(").append(displayColumnValue).append(")");
 						query.append(" AS ").append(getDisplayColumnName(item));
+						columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
 						//	Add JOIN
 						if(item.isMandatory()) {
 							tableReferences.append(" INNER JOIN ");
@@ -264,7 +271,6 @@ public class PrintFormat {
 						}
 					}
 				}
-				columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
 			}
 		});
 		if(query.length() > 0) {
@@ -277,7 +283,7 @@ public class PrintFormat {
 		//	Return definition
 		return QueryDefinition.newInstance()
 				.withQuery(query.toString())
-				.withOrderBy(orderBy.toString())
+//				.withOrderBy(orderBy.toString())
 				.withColumns(columns);
 	}
 	
