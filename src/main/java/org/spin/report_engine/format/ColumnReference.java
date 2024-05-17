@@ -18,6 +18,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.compiere.util.DB;
+import org.compiere.util.DisplayType;
+import org.compiere.util.Env;
+import org.compiere.util.Language;
 
 /**
  * A stub class for reference of column to table
@@ -83,6 +86,57 @@ public class ColumnReference {
 	public ColumnReference withIsTranslated(boolean isTranslated) {
 		this.isTranslated = isTranslated;
 		return this;
+	}
+	
+	/**
+	 * Get reference from language
+	 * @param language
+	 * @return
+	 */
+	public static ColumnReference getColumnReferenceList(Language language) {
+		ColumnReference columnReference = ColumnReference.newInstance()
+				.withDisplayColumn("Name")
+				.withKeyColumn("Value")
+				.withIsValueDisplayed(false)
+				.withTableName("AD_Ref_List");
+		if(!Env.isBaseLanguage(language, "AD_Ref_List")) {
+			columnReference.withIsTranslated(true);
+		}
+		return columnReference;
+	}
+	
+	/**
+	 * Get Column Reference Special
+	 * @param referenceId
+	 * @return
+	 */
+	public static ColumnReference getColumnReferenceSpecial(int referenceId) {
+		if (referenceId == DisplayType.Location) {
+			return ColumnReference.newInstance()
+					.withDisplayColumn("City||'.'")
+					.withKeyColumn("C_Location_ID")
+					.withIsValueDisplayed(false)
+					.withTableName("C_Location");
+		} else if (referenceId == DisplayType.Account) {
+			return ColumnReference.newInstance()
+					.withDisplayColumn("Combination")
+					.withKeyColumn("C_ValidCombination_ID")
+					.withIsValueDisplayed(false)
+					.withTableName("C_ValidCombination");
+		} else if (referenceId == DisplayType.Locator) {
+			return ColumnReference.newInstance()
+					.withDisplayColumn("Value")
+					.withKeyColumn("M_Locator_ID")
+					.withIsValueDisplayed(false)
+					.withTableName("M_Locator");
+		} else if (referenceId == DisplayType.PAttribute) {
+			return ColumnReference.newInstance()
+					.withDisplayColumn("Description")
+					.withKeyColumn("M_AttributeSetInstance_ID")
+					.withIsValueDisplayed(false)
+					.withTableName("M_AttributeSetInstance");
+		}
+		return null;
 	}
 
 	/**

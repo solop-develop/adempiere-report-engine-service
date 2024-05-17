@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.print.MPrintFormat;
+import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.format.PrintFormat;
@@ -36,16 +37,16 @@ public class ReportBuilder {
 	private int printFormatId;
 	private int reportViewId;
 	private boolean isSummary;
-	private List<Filter> filters;
+	private List<Filter> conditions;
 	
 	
 	private ReportBuilder(int printFormatId) {
 		this.printFormatId = printFormatId;
-		filters = new ArrayList<Filter>();
+		conditions = new ArrayList<Filter>();
 	}
 	
 	public ReportBuilder withFilters(List<Filter> filters) {
-		this.filters = filters;
+		this.conditions = filters;
 		return this;
 	}
 	
@@ -55,7 +56,7 @@ public class ReportBuilder {
 		condition.put(Filter.VALUES, value);
 		Filter filter = new Filter(condition);
 		filter.setColumnName(key);
-		filters.add(filter);
+		conditions.add(filter);
 		return this;
 	}
 	
@@ -101,6 +102,10 @@ public class ReportBuilder {
 		}
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
+		
+		DB.runResultSet(null, "", null, resulset -> {
+			
+		});
 		System.out.println(format.getQuery());
 		return ReportInfo.newInstance();
 	}
@@ -110,6 +115,8 @@ public class ReportBuilder {
 		//	Stocktake Line
 		org.compiere.Adempiere.startup(true);
 		Env.setContext(Env.getCtx(), "#AD_Client_ID", 11);
+		Env.setContext(Env.getCtx(), Env.LANGUAGE, "es_MX");
+		Env.setContext(Env.getCtx(), "#AD_Role_ID", 102);
 		ReportBuilder.newInstance(50132).run(50, null);
 	}
 }

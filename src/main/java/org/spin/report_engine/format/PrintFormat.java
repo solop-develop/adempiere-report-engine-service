@@ -29,6 +29,7 @@ import org.compiere.print.MPrintFormatItem;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Language;
+import org.compiere.util.Util;
 
 /**
  * Print Format Representation
@@ -111,32 +112,28 @@ public class PrintFormat {
 		return items;
 	}
 	
-	private String getQueryColumnName(String columnName) {
-		return getTableName() + "." + columnName;
-	}
-	
-	private String getQueryReferenceColumnName(String columnName) {
-		return getTableAlias() + "." + columnName;
-	}
-	
-	public String getQuery() {
+	public QueryDefinition getQuery() {
 		clearTableAlias();
 		StringBuffer query = new StringBuffer();
+		StringBuffer orderBy = new StringBuffer();
 		StringBuffer tableReferences = new StringBuffer();
 		Language language = Language.getLoginLanguage();
+		List<PrintFormatColumn> columns = new ArrayList<PrintFormatColumn>();
 		getItems().stream()
 		.filter(item -> item.isActive() && item.isPrinted())
 		.sorted(Comparator.comparing(PrintFormatItem::getSequence))
 		.forEach(item -> {
 			if(item.getColumnId() > 0) {
+				String columnName = null;
 				if(query.length() > 0) {
 					query.append(", ");
 				}
 				if(item.isVirtualColumn()) {
-					query.append(item.getColumnSql());
+					columnName = item.getColumnSql();
 				} else {
-					query.append("(").append(getQueryColumnName(item.getColumnName())).append(")");
+					columnName = getQueryColumnName(item.getColumnName());
 				}
+				query.append("(").append(columnName).append(")");
 				query.append(" AS ").append(item.getColumnName());
 				//	Process Display Value
 				if(item.getReferenceId() == DisplayType.TableDir
@@ -145,12 +142,11 @@ public class PrintFormat {
 						query.append(", ");
 					}
 					if(item.isVirtualColumn()) {
-						String sqlDirect = MLookupFactory.getLookup_TableDirEmbed(language, item.getColumnName(), getTableName(), "(" + item.getColumnSql() + ")");
-						query.append("(").append(sqlDirect).append(")");
+						columnName = MLookupFactory.getLookup_TableDirEmbed(language, item.getColumnName(), getTableName(), "(" + item.getColumnSql() + ")");
 					} else {
-						String sqlDirect = MLookupFactory.getLookup_TableDirEmbed(language, item.getColumnName(), getTableName());
-						query.append("(").append(sqlDirect).append(")");
+						columnName = MLookupFactory.getLookup_TableDirEmbed(language, item.getColumnName(), getTableName());
 					}
+					query.append("(").append(columnName).append(")");
 					query.append(" AS ").append(getDisplayColumnName(item));
 				} else if(item.getReferenceId() == DisplayType.Table
 						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceValueId() != 0)) {
@@ -167,6 +163,7 @@ public class PrintFormat {
 					if(query.length() > 0) {
 						query.append(", ");
 					}
+					columnName = displayColumnValue.toString();
 					query.append("(").append(displayColumnValue).append(")");
 					query.append(" AS ").append(getDisplayColumnName(item));
 					//	Add JOIN
@@ -176,8 +173,98 @@ public class PrintFormat {
 						tableReferences.append(" LEFT OUTER JOIN ");
 					}
 					tableReferences.append(columnReference.getTableName()).append(" ").append(getTableAlias()).append(" ON (")
-					.append(getQueryColumnName(item.getColumnName())).append("=").append(getTableAlias()).append(".").append(columnReference.getKeyColumn()).append(")");
+					.append(getQueryReferenceColumnName(columnReference.getKeyColumn())).append("=").append(getQueryColumnName(item.getColumnName())).append(")");
+					if(columnReference.isIsTranslated()) {
+						tableReferences.append(" LEFT OUTER JOIN ")
+						.append(columnReference.getTableName()).append("_Trl").append(" ").append(getTableAliasTrl()).append(" ON (")
+						.append(getQueryReferenceColumnNameTrl(columnReference.getKeyColumn())).append(" = ").append(getQueryColumnName(item.getColumnName()))
+						//	Reference ID
+						.append(getLanguageCriteria(language)).append(")");
+					}
+				} else if(item.getReferenceId() == DisplayType.List 
+						|| (item.getReferenceId() == DisplayType.Button && item.getReferenceValueId() != 0)) {
+					addTableAlias();
+					ColumnReference columnReference = ColumnReference.getColumnReferenceList(language);
+					StringBuffer displayColumnValue = new StringBuffer();
+					if(columnReference.isIsValueDisplayed()) {
+						displayColumnValue.append(getQueryReferenceColumnName("Value"));
+					}
+					if(displayColumnValue.length() > 0) {
+						displayColumnValue.append("|| '_' ||");
+					}
+					if(columnReference.isIsTranslated()) {
+						displayColumnValue.append("COALESCE(").append(getQueryReferenceColumnNameTrl(columnReference.getDisplayColumn())).append(", ").append(getQueryReferenceColumnName(columnReference.getDisplayColumn())).append(")");
+					} else {
+						displayColumnValue.append(getQueryReferenceColumnName(columnReference.getDisplayColumn()));
+					}
+					if(query.length() > 0) {
+						query.append(", ");
+					}
+					columnName = displayColumnValue.toString();
+					query.append("(").append(displayColumnValue).append(")");
+					query.append(" AS ").append(getDisplayColumnName(item));
+					//	Add JOIN
+					if(item.isMandatory()) {
+						tableReferences.append(" INNER JOIN ");
+					} else {
+						tableReferences.append(" LEFT OUTER JOIN ");
+					}
+					tableReferences.append(columnReference.getTableName()).append(" ").append(getTableAlias()).append(" ON (")
+					.append(getQueryColumnName(item.getColumnName())).append(" = ").append(getTableAlias()).append(".").append(columnReference.getKeyColumn())
+					//	Reference ID
+					.append(" AND ").append(getTableAlias()).append(".").append("AD_Reference_ID").append(" = ").append(item.getReferenceValueId()).append(")");
+					if(columnReference.isIsTranslated()) {
+						tableReferences.append(" LEFT OUTER JOIN ")
+						.append(columnReference.getTableName()).append("_Trl").append(" ").append(getTableAliasTrl()).append(" ON (")
+						.append(getQueryReferenceColumnNameTrl("AD_Ref_List_ID")).append(" = ").append(getQueryReferenceColumnName("AD_Ref_List_ID"))
+						//	Reference ID
+						.append(getLanguageCriteria(language)).append(")");
+					}
+				} else if (item.getReferenceId() == DisplayType.Location
+						|| item.getReferenceId() == DisplayType.Account
+						|| item.getReferenceId() == DisplayType.Locator
+						|| item.getReferenceId() == DisplayType.PAttribute
+					) {
+					ColumnReference columnReference = ColumnReference.getColumnReferenceSpecial(item.getReferenceId());
+					if(columnReference != null) {
+						addTableAlias();
+						StringBuffer displayColumnValue = new StringBuffer();
+						if(columnReference.isIsValueDisplayed()) {
+							displayColumnValue.append(getQueryReferenceColumnName("Value"));
+						}
+						if(displayColumnValue.length() > 0) {
+							displayColumnValue.append("|| '_' ||");
+						}
+						displayColumnValue.append(getQueryReferenceColumnName(columnReference.getDisplayColumn()));
+						if(query.length() > 0) {
+							query.append(", ");
+						}
+						columnName = displayColumnValue.toString();
+						query.append("(").append(displayColumnValue).append(")");
+						query.append(" AS ").append(getDisplayColumnName(item));
+						//	Add JOIN
+						if(item.isMandatory()) {
+							tableReferences.append(" INNER JOIN ");
+						} else {
+							tableReferences.append(" LEFT OUTER JOIN ");
+						}
+						tableReferences.append(columnReference.getTableName()).append(" ").append(getTableAlias()).append(" ON (")
+						.append(getQueryReferenceColumnName(columnReference.getKeyColumn())).append("=").append(getQueryColumnName(item.getColumnName())).append(")");
+					}
 				}
+				//	For Order By
+				if(item.isOrderBy()) {
+					if(!Util.isEmpty(columnName)) {
+						if(orderBy.length() > 0) {
+							orderBy.append(", ");
+						}
+						orderBy.append(columnName);
+						if(item.isDesc()) {
+							orderBy.append(" DESC");
+						}
+					}
+				}
+				columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
 			}
 		});
 		if(query.length() > 0) {
@@ -187,11 +274,38 @@ public class PrintFormat {
 				query.append(tableReferences);
 			}
 		}
-		return query.toString();
+		//	Return definition
+		return QueryDefinition.newInstance()
+				.withQuery(query.toString())
+				.withOrderBy(orderBy.toString())
+				.withColumns(columns);
+	}
+	
+	private String getQueryColumnName(String columnName) {
+		return getTableName() + "." + columnName;
+	}
+	
+	private String getQueryReferenceColumnName(String columnName) {
+		return getTableAlias() + "." + columnName;
+	}
+	
+	private String getQueryReferenceColumnNameTrl(String columnName) {
+		return getTableAliasTrl() + "." + columnName;
+	}
+	
+	private String getLanguageCriteria(Language language) {
+		if(!Env.isBaseLanguage(language, "AD_Ref_List")) {
+			return " AND " + getTableAliasTrl() + ".AD_Language = '" + language.getAD_Language() + "'";
+		}
+		return "";
 	}
 	
 	private String getTableAlias() {
 		return "t" + aliasNumber;
+	}
+	
+	private String getTableAliasTrl() {
+		return "tt" + aliasNumber;
 	}
 	
 	private void addTableAlias() {
