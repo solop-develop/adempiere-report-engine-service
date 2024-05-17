@@ -14,6 +14,8 @@
  ************************************************************************************/
 package org.spin.report_engine.data;
 
+import org.spin.report_engine.format.PrintFormatItem;
+
 /**
  * Cell Information can be used to represent the data and some attributes like:
  * <li>Color: A color definition
@@ -28,12 +30,12 @@ public class ColumnInfo {
 	private String code;
 	private Object title;
 	
-	private ColumnInfo() {
-		
+	private ColumnInfo(PrintFormatItem item) {
+		this.title = item.getPrintText();
 	}
 	
-	public static ColumnInfo newInstance() {
-		return new ColumnInfo();
+	public static ColumnInfo newInstance(PrintFormatItem item) {
+		return new ColumnInfo(item);
 	}
 	
 	public String getColor() {

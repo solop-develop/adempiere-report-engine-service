@@ -125,6 +125,7 @@ public class PrintFormat {
 		.forEach(item -> {
 			if(item.getColumnId() > 0) {
 				String columnName = null;
+				String alias = null;
 				if(query.length() > 0) {
 					query.append(", ");
 				}
@@ -132,10 +133,12 @@ public class PrintFormat {
 					columnName = "(" + item.getColumnSql() + ")";
 					query.append(columnName);
 					query.append(" AS ").append(item.getColumnName());
+					alias = item.getColumnName();
 					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(item.getColumnName()));
 				} else {
 					columnName = getQueryColumnName(item.getColumnName());
 					query.append(columnName);
+					alias = columnName;
 					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(columnName));
 				}
 				//	Process Display Value
@@ -150,8 +153,9 @@ public class PrintFormat {
 						columnName = MLookupFactory.getLookup_TableDirEmbed(language, item.getColumnName(), getTableName());
 					}
 					query.append("(").append(columnName).append(")");
-					query.append(" AS ").append(getDisplayColumnName(item));
-					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
+					alias = getDisplayColumnName(item);
+					query.append(" AS ").append(alias);
+					columns.add(PrintFormatColumn.newInstance(item).withDisplayValue(true).withColumnNameAlias(getDisplayColumnName(item)));
 				} else if(item.getReferenceId() == DisplayType.Table
 						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceValueId() != 0)) {
 					addTableAlias();
@@ -169,8 +173,9 @@ public class PrintFormat {
 					}
 					columnName = displayColumnValue.toString();
 					query.append("(").append(displayColumnValue).append(")");
-					query.append(" AS ").append(getDisplayColumnName(item));
-					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
+					alias = getDisplayColumnName(item);
+					query.append(" AS ").append(alias);
+					columns.add(PrintFormatColumn.newInstance(item).withDisplayValue(true).withColumnNameAlias(getDisplayColumnName(item)));
 					//	Add JOIN
 					if(item.isMandatory()) {
 						tableReferences.append(" INNER JOIN ");
@@ -207,8 +212,9 @@ public class PrintFormat {
 					}
 					columnName = displayColumnValue.toString();
 					query.append("(").append(displayColumnValue).append(")");
-					query.append(" AS ").append(getDisplayColumnName(item));
-					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
+					alias = getDisplayColumnName(item);
+					query.append(" AS ").append(alias);
+					columns.add(PrintFormatColumn.newInstance(item).withDisplayValue(true).withColumnNameAlias(getDisplayColumnName(item)));
 					//	Add JOIN
 					if(item.isMandatory()) {
 						tableReferences.append(" INNER JOIN ");
@@ -247,8 +253,9 @@ public class PrintFormat {
 						}
 						columnName = displayColumnValue.toString();
 						query.append("(").append(displayColumnValue).append(")");
-						query.append(" AS ").append(getDisplayColumnName(item));
-						columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(getDisplayColumnName(item)));
+						alias = getDisplayColumnName(item);
+						query.append(" AS ").append(alias);
+						columns.add(PrintFormatColumn.newInstance(item).withDisplayValue(true).withColumnNameAlias(getDisplayColumnName(item)));
 						//	Add JOIN
 						if(item.isMandatory()) {
 							tableReferences.append(" INNER JOIN ");
@@ -261,11 +268,11 @@ public class PrintFormat {
 				}
 				//	For Order By
 				if(item.isOrderBy()) {
-					if(!Util.isEmpty(columnName)) {
+					if(!Util.isEmpty(alias)) {
 						if(orderBy.length() > 0) {
 							orderBy.append(", ");
 						}
-						orderBy.append(columnName);
+						orderBy.append(alias);
 						if(item.isDesc()) {
 							orderBy.append(" DESC");
 						}
@@ -283,7 +290,7 @@ public class PrintFormat {
 		//	Return definition
 		return QueryDefinition.newInstance()
 				.withQuery(query.toString())
-//				.withOrderBy(orderBy.toString())
+				.withOrderBy(orderBy.toString())
 				.withColumns(columns);
 	}
 	

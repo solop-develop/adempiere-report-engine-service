@@ -73,6 +73,6 @@ public class Cell {
 
 	@Override
 	public String toString() {
-		return "Cell [color=" + color + ", style=" + style + ", value=" + value + "]";
+		return "Cell [value=" + value + ", displayValue=" + displayValue + "]";
 	}
 }

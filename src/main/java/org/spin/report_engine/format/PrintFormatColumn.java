@@ -34,6 +34,7 @@ public class PrintFormatColumn {
 	private boolean isMandatory;
 	private boolean isVirtualColumn;
 	private String columnSql;
+	private boolean isDisplayValue;
 	
 	private PrintFormatColumn(PrintFormatItem printFormatItem) {
 		printFormatItemId = printFormatItem.getPrintFormatItemId();
@@ -101,12 +102,21 @@ public class PrintFormatColumn {
 		return this;
 	}
 
+	public boolean isDisplayValue() {
+		return isDisplayValue;
+	}
+
+	public PrintFormatColumn withDisplayValue(boolean isDisplayValue) {
+		this.isDisplayValue = isDisplayValue;
+		return this;
+	}
+
 	@Override
 	public String toString() {
 		return "PrintFormatColumn [printFormatItemId=" + printFormatItemId + ", columnName=" + columnName
 				+ ", columnNameAlias=" + columnNameAlias + ", columnId=" + columnId + ", referenceId=" + referenceId
 				+ ", referenceValueId=" + referenceValueId + ", isKey=" + isKey + ", isParent=" + isParent
 				+ ", isMandatory=" + isMandatory + ", isVirtualColumn=" + isVirtualColumn + ", columnSql=" + columnSql
-				+ "]";
+				+ ", isDisplayValue=" + isDisplayValue + "]";
 	}
 }

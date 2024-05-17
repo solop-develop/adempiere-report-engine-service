@@ -25,14 +25,14 @@ import java.util.List;
 public class ReportInfo {
 	private String name;
 	private List<ColumnInfo> columns;
-	private List<Row> data;
+	private List<Row> rows;
 	private int printFormatId;
 	private int reportViewId;
 	private boolean isSummary;
 	
 	private ReportInfo() {
 		columns = new ArrayList<>();
-		data = new ArrayList<>();
+		rows = new ArrayList<>();
 	}
 	
 	public static ReportInfo newInstance() {
@@ -57,11 +57,20 @@ public class ReportInfo {
 		return this;
 	}
 	
-	public ReportInfo addRow(Row row) {
-		data.add(row);
+	public ReportInfo addColumn(ColumnInfo column) {
+		columns.add(column);
 		return this;
 	}
 	
+	public ReportInfo addRow(Row row) {
+		rows.add(row);
+		return this;
+	}
+	
+	public List<Row> getRows() {
+		return rows;
+	}
+
 	public int getPrintFormatId() {
 		return printFormatId;
 	}
@@ -91,7 +100,7 @@ public class ReportInfo {
 
 	@Override
 	public String toString() {
-		return "ReportInfo [name=" + name + ", columns=" + columns + ", data=" + data + ", printFormatId="
+		return "ReportInfo [name=" + name + ", columns=" + columns + ", data=" + rows + ", printFormatId="
 				+ printFormatId + ", reportViewId=" + reportViewId + ", isSummary=" + isSummary + "]";
 	}
 }

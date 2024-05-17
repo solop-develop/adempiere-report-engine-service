@@ -23,7 +23,10 @@ import org.adempiere.exceptions.AdempiereException;
 import org.compiere.print.MPrintFormat;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
+import org.spin.report_engine.data.Cell;
+import org.spin.report_engine.data.ColumnInfo;
 import org.spin.report_engine.data.ReportInfo;
+import org.spin.report_engine.data.Row;
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.QueryDefinition;
 import org.spin.service.grpc.util.query.Filter;
@@ -105,12 +108,33 @@ public class ReportBuilder {
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
 		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withLimit(limit, offset).buildQuery();
+		ReportInfo reportInfo = ReportInfo.newInstance();
 		DB.runResultSet(null, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
 			while (resulset.next()) {
-				System.out.println(resulset.getObject("Line"));
+				Row row = Row.newInstance();
+				format.getItems().forEach(item -> {
+					reportInfo.addColumn(ColumnInfo.newInstance(item));
+					Cell cell = Cell.newInstance();
+					queryDefinition.getColumns()
+					.stream()
+					.filter(column -> column.getColumnName().equals(item.getColumnName()))
+					.forEach(column -> {
+						try {
+							if(column.isDisplayValue()) {
+								cell.withValue(resulset.getObject(column.getColumnNameAlias()));
+							} else {
+								cell.withDisplayValue(resulset.getString(column.getColumnName()));
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					});
+					row.withCell(item.getColumnName(), cell);
+				});
+				reportInfo.addRow(row);
 			}
 		});
-		return ReportInfo.newInstance();
+		return reportInfo;
 	}
 	
 	public static void main(String[] args) {
@@ -120,6 +144,6 @@ public class ReportBuilder {
 		Env.setContext(Env.getCtx(), "#AD_Client_ID", 11);
 		Env.setContext(Env.getCtx(), Env.LANGUAGE, "es_MX");
 		Env.setContext(Env.getCtx(), "#AD_Role_ID", 102);
-		ReportBuilder.newInstance(50132).run(50, 0);
+		ReportBuilder.newInstance(1000000).run(50, 0);
 	}
 }
