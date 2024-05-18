@@ -23,7 +23,7 @@ import java.util.Map;
  */
 public class Row {
 	/**	Data for Row	*/
-	private Map<String, Cell> data;
+	private Map<Integer, Cell> data;
 	
 	private Row() {
 		data = new HashMap<>();
@@ -33,12 +33,17 @@ public class Row {
 		return new Row();
 	}
 	
-	public Row withCell(String columnCode, Cell cell) {
-		data.put(columnCode, cell);
+	public Row withCell(int printFormatItemId, Cell cell) {
+		data.put(printFormatItemId, cell);
 		return this;
 	}
 	
-	public Map<String, Cell> getData() {
+	public Row withCells(Map<Integer, Cell> cells) {
+		data = cells;
+		return this;
+	}
+	
+	public Map<Integer, Cell> getData() {
 		return data;
 	}
 

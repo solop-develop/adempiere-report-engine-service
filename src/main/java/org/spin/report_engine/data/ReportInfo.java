@@ -17,26 +17,33 @@ package org.spin.report_engine.data;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.spin.report_engine.format.PrintFormat;
+import org.spin.report_engine.format.PrintFormatItem;
+
 
 /**
- * CAll Report information is here, name, columns and other
+ * Call Report information is here, name, columns and other
  * @author Yamel Senih, ysenih@erpya.com, ERPCyA http://www.erpya.com
  */
 public class ReportInfo {
 	private String name;
+	private String description;
 	private List<ColumnInfo> columns;
 	private List<Row> rows;
+	private Row temporaryRow;
 	private int printFormatId;
 	private int reportViewId;
 	private boolean isSummary;
 	
-	private ReportInfo() {
+	private ReportInfo(PrintFormat printFormat) {
+		name = printFormat.getName();
+		description = printFormat.getDescription();
 		columns = new ArrayList<>();
 		rows = new ArrayList<>();
 	}
 	
-	public static ReportInfo newInstance() {
-		return new ReportInfo();
+	public static ReportInfo newInstance(PrintFormat printFormat) {
+		return new ReportInfo(printFormat);
 	}
 	
 	public String getName() {
@@ -48,6 +55,15 @@ public class ReportInfo {
 		return this;
 	}
 	
+	public String getDescription() {
+		return description;
+	}
+
+	public ReportInfo withDescription(String description) {
+		this.description = description;
+		return this;
+	}
+
 	public List<ColumnInfo> getColumns() {
 		return columns;
 	}
@@ -64,6 +80,22 @@ public class ReportInfo {
 	
 	public ReportInfo addRow(Row row) {
 		rows.add(row);
+		return this;
+	}
+	
+	public ReportInfo addRow() {
+		if(temporaryRow != null) {
+			addRow(Row.newInstance().withCells(temporaryRow.getData()));
+		}
+		temporaryRow = Row.newInstance();
+		return this;
+	}
+	
+	public ReportInfo addCell(PrintFormatItem printFormatItem, Cell cell) {
+		if(temporaryRow == null) {
+			temporaryRow = Row.newInstance();
+		}
+		temporaryRow.withCell(printFormatItem.getPrintFormatItemId(), cell);
 		return this;
 	}
 	
