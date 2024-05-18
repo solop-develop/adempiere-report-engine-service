@@ -14,6 +14,10 @@
  ************************************************************************************/
 package org.spin.report_engine.data;
 
+import java.math.BigDecimal;
+
+import org.compiere.util.Env;
+
 /**
  * Cell Information can be used to represent the data and some attributes like:
  * <li>Color: A color definintion
@@ -56,6 +60,34 @@ public class Cell {
 	public Object getValue() {
 		return value;
 	}
+	
+	/**
+	 * 	Get Function Value
+	 * 	@return length or numeric value
+	 */
+	public BigDecimal getFunctionValue() {
+		if (value == null)
+			return Env.ZERO;
+
+		//	Numbers - return number value
+		if (value instanceof BigDecimal)
+			return (BigDecimal)value;
+		if (value instanceof Number)
+			return BigDecimal.valueOf(((Number)value).doubleValue());
+
+		//	Boolean - return 1 for true 0 for false
+		if (value instanceof Boolean)
+		{
+			if (((Boolean)value).booleanValue())
+				return Env.ONE;
+			else
+				return Env.ZERO;
+		}
+
+		//	Return Length
+		String s = value.toString();
+		return new BigDecimal(s.length());
+	}	//	getFunctionValue
 	
 	public Cell withValue(Object value) {
 		this.value = value;

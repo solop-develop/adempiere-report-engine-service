@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.print.MPrintFormat;
@@ -26,6 +27,7 @@ import org.compiere.util.Env;
 import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.data.ColumnInfo;
 import org.spin.report_engine.data.ReportInfo;
+import org.spin.report_engine.data.SummaryFunction;
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.QueryDefinition;
 import org.spin.service.grpc.util.query.Filter;
@@ -112,27 +114,39 @@ public class ReportBuilder {
 			while (resulset.next()) {
 				format.getItems().forEach(item -> {
 					reportInfo.addColumn(ColumnInfo.newInstance(item));
-					Cell cell = Cell.newInstance();
+					Map<String, Cell> cells = new HashMap<String, Cell>();
 					queryDefinition.getColumns()
 					.stream()
 					.filter(column -> column.getColumnName().equals(item.getColumnName()))
 					.forEach(column -> {
+						Cell cell = Optional.ofNullable(cells.get(column.getColumnName())).orElse(Cell.newInstance());
 						try {
 							if(column.isDisplayValue()) {
-								cell.withValue(resulset.getObject(column.getColumnNameAlias()));
+								cell.withDisplayValue(resulset.getString(column.getColumnNameAlias()));
 							} else {
-								cell.withDisplayValue(resulset.getString(column.getColumnName()));
+								cell.withValue(resulset.getObject(column.getColumnName()));
 							}
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
+						cells.put(item.getColumnName(), cell);
 					});
-					reportInfo.addCell(item, cell);
+					reportInfo.addCell(item, cells.get(item.getColumnName()));
 				});
 				reportInfo.addRow();
 			}
 		});
-		System.out.println(reportInfo);
+		reportInfo.getSummaryHandler().getGroupedItems().forEach(item -> {
+			Map<String, Map<Integer, SummaryFunction>> group = reportInfo.getSummaryHandler().getSummary().get(item.getPrintFormatItemId());
+			group.keySet().stream().sorted().forEach(key -> {
+				Map<Integer, SummaryFunction> columns = group.get(key);
+				System.out.println();
+				System.out.println(key + " =======================================");
+				columns.keySet().forEach(column -> {
+					System.out.print("Sum (" + column + "): " + columns.get(column).getValue(SummaryFunction.F_SUM) + " - ");
+				});
+			});
+		});
 		return reportInfo;
 	}
 	

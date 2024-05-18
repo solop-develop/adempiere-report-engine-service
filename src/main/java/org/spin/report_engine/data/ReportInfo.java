@@ -34,12 +34,14 @@ public class ReportInfo {
 	private int printFormatId;
 	private int reportViewId;
 	private boolean isSummary;
+	private SummaryHandler summaryHandler;
 	
 	private ReportInfo(PrintFormat printFormat) {
 		name = printFormat.getName();
 		description = printFormat.getDescription();
 		columns = new ArrayList<>();
 		rows = new ArrayList<>();
+		summaryHandler = SummaryHandler.newInstance(printFormat.getItems());
 	}
 	
 	public static ReportInfo newInstance(PrintFormat printFormat) {
@@ -86,6 +88,7 @@ public class ReportInfo {
 	public ReportInfo addRow() {
 		if(temporaryRow != null) {
 			addRow(Row.newInstance().withCells(temporaryRow.getData()));
+			summaryHandler.addRow(Row.newInstance().withCells(temporaryRow.getData()));
 		}
 		temporaryRow = Row.newInstance();
 		return this;
@@ -127,6 +130,15 @@ public class ReportInfo {
 
 	public ReportInfo withSummary(boolean isSummary) {
 		this.isSummary = isSummary;
+		return this;
+	}
+
+	public SummaryHandler getSummaryHandler() {
+		return summaryHandler;
+	}
+
+	public ReportInfo withSummaryHandler(SummaryHandler summaryHandler) {
+		this.summaryHandler = summaryHandler;
 		return this;
 	}
 

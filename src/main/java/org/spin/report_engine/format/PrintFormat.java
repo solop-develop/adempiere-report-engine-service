@@ -143,7 +143,7 @@ public class PrintFormat {
 				}
 				//	Process Display Value
 				if(item.getReferenceId() == DisplayType.TableDir
-						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceId() == 0)) {
+						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceValueId() == 0)) {
 					if(query.length() > 0) {
 						query.append(", ");
 					}

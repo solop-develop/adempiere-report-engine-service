@@ -46,6 +46,10 @@ public class Row {
 	public Map<Integer, Cell> getData() {
 		return data;
 	}
+	
+	public Cell getCell(int printFormatItemId) {
+		return data.get(printFormatItemId);
+	}
 
 	@Override
 	public String toString() {

@@ -17,7 +17,7 @@ package org.spin.report_engine.data;
 import org.spin.report_engine.format.PrintFormatItem;
 
 /**
- * Cell Information can be used to represent the data and some attributes like:
+ * This class have all need for manage row summary and groups
  * <li>Color: A color definition
  * <li>Style: Represent the style for it
  * <li>Code: Represent the unique code or ID for column
