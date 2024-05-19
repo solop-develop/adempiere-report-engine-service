@@ -15,7 +15,11 @@
 package org.spin.report_engine.data;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import org.spin.report_engine.format.PrintFormatItem;
 
 /**
  * Row information or representation for Row
@@ -24,6 +28,7 @@ import java.util.Map;
 public class Row {
 	/**	Data for Row	*/
 	private Map<Integer, Cell> data;
+	private int level;
 	
 	private Row() {
 		data = new HashMap<>();
@@ -48,11 +53,36 @@ public class Row {
 	}
 	
 	public Cell getCell(int printFormatItemId) {
-		return data.get(printFormatItemId);
+		return Optional.ofNullable(data.get(printFormatItemId)).orElse(Cell.newInstance());
+	}
+
+	public int getLevel() {
+		return level;
+	}
+	
+	public String getSortingValue(List<PrintFormatItem> groupColumns) {
+		StringBuffer value = new StringBuffer();
+		groupColumns.forEach(printFormatItem -> {
+			if(value.length() > 0) {
+				value.append("|");
+			}
+			value.append(Optional.ofNullable(getCell(printFormatItem.getPrintFormatItemId()).getDisplayValue()).orElse(""));
+		});
+		value.append(getLevel());
+		return value.toString();
+	}
+
+	public Row withLevel(int level) {
+		this.level = level;
+		return this;
+	}
+
+	public void setData(Map<Integer, Cell> data) {
+		this.data = data;
 	}
 
 	@Override
 	public String toString() {
-		return "Row [data=" + data + "]";
+		return "Row [data=" + data + ", level=" + level + "]";
 	}
 }

@@ -17,6 +17,7 @@ package org.spin.report_engine.format;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.adempiere.core.domains.models.I_AD_PrintFormatItem;
 import org.adempiere.core.domains.models.I_AD_ReportView;
@@ -68,6 +69,7 @@ public class PrintFormat {
 		items = new ArrayList<PrintFormatItem>();
 		new Query(Env.getCtx(), I_AD_PrintFormatItem.Table_Name, I_AD_PrintFormatItem.COLUMNNAME_AD_PrintFormat_ID + " = ?", null)
 		.setParameters(printFormatId)
+		.setOrderBy(I_AD_PrintFormatItem.COLUMNNAME_SeqNo)
 		.getIDsAsList()
 		.forEach(printFormatItemId -> items.add(PrintFormatItem.newInstance(new MPrintFormatItem(Env.getCtx(), printFormatItemId, null))));
 	}
@@ -110,6 +112,14 @@ public class PrintFormat {
 
 	public List<PrintFormatItem> getItems() {
 		return items;
+	}
+	
+	public List<PrintFormatItem> getGroupItems() {
+		return items.stream().filter(item -> item.isGroupBy()).collect(Collectors.toList());
+	}
+	
+	public List<PrintFormatItem> getSortingItems() {
+		return items.stream().filter(item -> item.isGroupBy() || item.isOrderBy()).sorted(Comparator.comparing(PrintFormatItem::getSortSequence)).collect(Collectors.toList());
 	}
 	
 	public QueryDefinition getQuery() {

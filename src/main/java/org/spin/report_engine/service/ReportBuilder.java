@@ -27,7 +27,6 @@ import org.compiere.util.Env;
 import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.data.ColumnInfo;
 import org.spin.report_engine.data.ReportInfo;
-import org.spin.report_engine.data.SummaryFunction;
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.QueryDefinition;
 import org.spin.service.grpc.util.query.Filter;
@@ -136,16 +135,13 @@ public class ReportBuilder {
 				reportInfo.addRow();
 			}
 		});
-		reportInfo.getSummaryHandler().getGroupedItems().forEach(item -> {
-			Map<String, Map<Integer, SummaryFunction>> group = reportInfo.getSummaryHandler().getSummary().get(item.getPrintFormatItemId());
-			group.keySet().stream().sorted().forEach(key -> {
-				Map<Integer, SummaryFunction> columns = group.get(key);
-				System.out.println();
-				System.out.println(key + " =======================================");
-				columns.keySet().forEach(column -> {
-					System.out.print("Sum (" + column + "): " + columns.get(column).getValue(SummaryFunction.F_SUM) + " - ");
-				});
+		reportInfo.completeInfo();
+		reportInfo.getRows().forEach(row -> {
+			System.out.println("******************************************************************");
+			format.getItems().forEach(column -> {
+				System.out.print(":" + row.getCell(column.getPrintFormatItemId()).getDisplayValue());
 			});
+			System.out.println();
 		});
 		return reportInfo;
 	}

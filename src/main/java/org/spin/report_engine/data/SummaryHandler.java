@@ -14,6 +14,7 @@
  ************************************************************************************/
 package org.spin.report_engine.data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +98,32 @@ public class SummaryHandler {
 
 	public Map<Integer, Map<String, Map<Integer, SummaryFunction>>> getSummary() {
 		return summary;
+	}
+	
+	public List<Row> getAsRows() {
+		List<Row> rows = new ArrayList<Row>();
+		groupedItems.forEach(groupItem -> {
+			Map<String, Map<Integer, SummaryFunction>> groupTotals = Optional.ofNullable(summary.get(groupItem.getPrintFormatItemId())).orElse(new HashMap<String, Map<Integer,SummaryFunction>>());
+			groupTotals.keySet().forEach(groupValue -> {
+				int level = groupItem.getSequence();
+				if(groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_SUM))
+						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MEAN))
+						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_COUNT))
+						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MIN))
+						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MAX))
+						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_VARIANCE))
+						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_DEVIATION))) {
+					level = 0;
+				}
+				Map<Integer, SummaryFunction> summaryValue = groupTotals.get(groupValue);
+				Row row = Row.newInstance().withLevel(level).withCell(groupItem.getPrintFormatItemId(), Cell.newInstance().withValue(groupValue));
+				summarizedItems.forEach(sumItem -> {
+					row.withCell(sumItem.getPrintFormatItemId(), Cell.newInstance().withValue(summaryValue.get(sumItem.getPrintFormatItemId()).getValue(SummaryFunction.F_SUM)));
+				});
+				rows.add(row);
+			});
+		});
+		return rows;
 	}
 
 	@Override

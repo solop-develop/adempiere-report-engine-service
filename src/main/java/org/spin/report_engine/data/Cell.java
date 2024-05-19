@@ -17,6 +17,7 @@ package org.spin.report_engine.data;
 import java.math.BigDecimal;
 
 import org.compiere.util.Env;
+import org.compiere.util.Util;
 
 /**
  * Cell Information can be used to represent the data and some attributes like:
@@ -95,6 +96,9 @@ public class Cell {
 	}
 
 	public String getDisplayValue() {
+		if(Util.isEmpty(displayValue) && value != null) {
+			return String.valueOf(value);
+		}
 		return displayValue;
 	}
 

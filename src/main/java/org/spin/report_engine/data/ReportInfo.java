@@ -15,7 +15,10 @@
 package org.spin.report_engine.data;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.PrintFormatItem;
@@ -35,6 +38,8 @@ public class ReportInfo {
 	private int reportViewId;
 	private boolean isSummary;
 	private SummaryHandler summaryHandler;
+	private List<PrintFormatItem> sortingItems;
+	private int level;
 	
 	private ReportInfo(PrintFormat printFormat) {
 		name = printFormat.getName();
@@ -42,12 +47,23 @@ public class ReportInfo {
 		columns = new ArrayList<>();
 		rows = new ArrayList<>();
 		summaryHandler = SummaryHandler.newInstance(printFormat.getItems());
+		level = printFormat.getGroupItems().size() + 1;
+		sortingItems = printFormat.getSortingItems();
 	}
 	
 	public static ReportInfo newInstance(PrintFormat printFormat) {
 		return new ReportInfo(printFormat);
 	}
 	
+	public int getLevel() {
+		return level;
+	}
+
+	public ReportInfo withLevel(int minimumLevel) {
+		this.level = minimumLevel;
+		return this;
+	}
+
 	public String getName() {
 		return name;
 	}
@@ -87,16 +103,16 @@ public class ReportInfo {
 	
 	public ReportInfo addRow() {
 		if(temporaryRow != null) {
-			addRow(Row.newInstance().withCells(temporaryRow.getData()));
-			summaryHandler.addRow(Row.newInstance().withCells(temporaryRow.getData()));
+			addRow(Row.newInstance().withLevel(getLevel()).withCells(temporaryRow.getData()));
+			summaryHandler.addRow(Row.newInstance().withLevel(getLevel()).withCells(temporaryRow.getData()));
 		}
-		temporaryRow = Row.newInstance();
+		temporaryRow = Row.newInstance().withLevel(getLevel());
 		return this;
 	}
 	
 	public ReportInfo addCell(PrintFormatItem printFormatItem, Cell cell) {
 		if(temporaryRow == null) {
-			temporaryRow = Row.newInstance();
+			temporaryRow = Row.newInstance().withLevel(getLevel());
 		}
 		temporaryRow.withCell(printFormatItem.getPrintFormatItemId(), cell);
 		return this;
@@ -106,6 +122,15 @@ public class ReportInfo {
 		return rows;
 	}
 
+	public ReportInfo completeInfo() {
+		List<Row> summaryAsRows = summaryHandler.getAsRows();
+		List<Row> completeRows = Stream.concat(getRows().stream(), summaryAsRows.stream())
+				.sorted(Comparator.comparing(row -> row.getSortingValue(sortingItems)))
+                .collect(Collectors.toList());
+		rows = completeRows;
+		return this;
+	}
+	
 	public int getPrintFormatId() {
 		return printFormatId;
 	}
