@@ -31,6 +31,8 @@ public class Cell {
 	private String style;
 	private Object value;
 	private String displayValue;
+	/**	Function	*/
+	private SummaryFunction function;
 	
 	private Cell() {
 		
@@ -105,6 +107,60 @@ public class Cell {
 	public Cell withDisplayValue(String displayValue) {
 		this.displayValue = displayValue;
 		return this;
+	}
+	
+	public Cell withFunction(SummaryFunction function) {
+		this.function = function;
+		return this;
+	}
+	
+	public BigDecimal getSum() {
+		if(function == null) {
+			return Env.ZERO;
+		}
+		return function.getValue(SummaryFunction.F_SUM);
+	}
+	
+	public BigDecimal getMean() {
+		if(function == null) {
+			return Env.ZERO;
+		}
+		return function.getValue(SummaryFunction.F_MEAN);
+	}
+	
+	public BigDecimal getCount() {
+		if(function == null) {
+			return Env.ZERO;
+		}
+		return function.getValue(SummaryFunction.F_COUNT);
+	}
+	
+	public BigDecimal getMinimum() {
+		if(function == null) {
+			return Env.ZERO;
+		}
+		return function.getValue(SummaryFunction.F_MIN);
+	}
+	
+	public BigDecimal getMaximum() {
+		if(function == null) {
+			return Env.ZERO;
+		}
+		return function.getValue(SummaryFunction.F_MAX);
+	}
+	
+	public BigDecimal getVariance() {
+		if(function == null) {
+			return Env.ZERO;
+		}
+		return function.getValue(SummaryFunction.F_VARIANCE);
+	}
+	
+	public BigDecimal getDeviation() {
+		if(function == null) {
+			return Env.ZERO;
+		}
+		return function.getValue(SummaryFunction.F_DEVIATION);
 	}
 
 	@Override

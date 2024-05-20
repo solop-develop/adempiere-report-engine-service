@@ -30,7 +30,7 @@ public class Row {
 	private Map<Integer, Cell> data;
 	private int level;
 	
-	private Row() {
+	public Row() {
 		data = new HashMap<>();
 	}
 	

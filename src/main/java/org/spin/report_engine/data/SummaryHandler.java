@@ -31,6 +31,7 @@ public class SummaryHandler {
 	private List<PrintFormatItem> groupedItems;
 	private List<PrintFormatItem> summarizedItems;
 	private Map<Integer, Map<String, Map<Integer, SummaryFunction>>> summary;
+	private Map<Integer, Map<String, Map<Integer, SummaryFunction>>> completeSummary;
 	
 	private SummaryHandler(List<PrintFormatItem> printFormatItems) {
 		groupedItems = printFormatItems.stream().filter(item -> item.isGroupBy()).collect(Collectors.toList());
@@ -41,20 +42,22 @@ public class SummaryHandler {
 			return printItem.isAveraged() || printItem.isCounted() || printItem.isMaxCalc() || printItem.isMinCalc() || printItem.isSummarized() || printItem.isVarianceCalc();
 		}).collect(Collectors.toList());
 		summary = new HashMap<Integer, Map<String, Map<Integer, SummaryFunction>>>();
+		completeSummary = new HashMap<Integer, Map<String, Map<Integer, SummaryFunction>>>();
 	}
 	
 	public SummaryHandler addRow(Row row) {
 		groupedItems.forEach(groupItem -> {
 			Map<String, Map<Integer, SummaryFunction>> groupTotals = Optional.ofNullable(summary.get(groupItem.getPrintFormatItemId())).orElse(new HashMap<String, Map<Integer,SummaryFunction>>());
+			Map<String, Map<Integer, SummaryFunction>> totals = Optional.ofNullable(completeSummary.get(groupItem.getPrintFormatItemId())).orElse(new HashMap<String, Map<Integer,SummaryFunction>>());
 			String groupKey = row.getCell(groupItem.getPrintFormatItemId()).getDisplayValue();
 			Map<Integer, SummaryFunction> columnTotals = Optional.ofNullable(groupTotals.get(groupKey)).orElse(new HashMap<Integer, SummaryFunction>());
-			Map<Integer, SummaryFunction> sumTotals = Optional.ofNullable(groupTotals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_SUM))).orElse(new HashMap<Integer, SummaryFunction>());
-			Map<Integer, SummaryFunction> averageTotals = Optional.ofNullable(groupTotals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MEAN))).orElse(new HashMap<Integer, SummaryFunction>());
-			Map<Integer, SummaryFunction> countTotals = Optional.ofNullable(groupTotals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_COUNT))).orElse(new HashMap<Integer, SummaryFunction>());
-			Map<Integer, SummaryFunction> minimumTotals = Optional.ofNullable(groupTotals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MIN))).orElse(new HashMap<Integer, SummaryFunction>());
-			Map<Integer, SummaryFunction> maximumTotals = Optional.ofNullable(groupTotals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MAX))).orElse(new HashMap<Integer, SummaryFunction>());
-			Map<Integer, SummaryFunction> varianceTotals = Optional.ofNullable(groupTotals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_VARIANCE))).orElse(new HashMap<Integer, SummaryFunction>());
-			Map<Integer, SummaryFunction> deviationTotals = Optional.ofNullable(groupTotals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_DEVIATION))).orElse(new HashMap<Integer, SummaryFunction>());
+			Map<Integer, SummaryFunction> sumTotals = Optional.ofNullable(totals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_SUM))).orElse(new HashMap<Integer, SummaryFunction>());
+			Map<Integer, SummaryFunction> averageTotals = Optional.ofNullable(totals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MEAN))).orElse(new HashMap<Integer, SummaryFunction>());
+			Map<Integer, SummaryFunction> countTotals = Optional.ofNullable(totals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_COUNT))).orElse(new HashMap<Integer, SummaryFunction>());
+			Map<Integer, SummaryFunction> minimumTotals = Optional.ofNullable(totals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MIN))).orElse(new HashMap<Integer, SummaryFunction>());
+			Map<Integer, SummaryFunction> maximumTotals = Optional.ofNullable(totals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MAX))).orElse(new HashMap<Integer, SummaryFunction>());
+			Map<Integer, SummaryFunction> varianceTotals = Optional.ofNullable(totals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_VARIANCE))).orElse(new HashMap<Integer, SummaryFunction>());
+			Map<Integer, SummaryFunction> deviationTotals = Optional.ofNullable(totals.get(SummaryFunction.getFunctionSymbol(SummaryFunction.F_DEVIATION))).orElse(new HashMap<Integer, SummaryFunction>());
 			summarizedItems.forEach(sumItem -> {
 				addValue(sumItem.getPrintFormatItemId(), columnTotals, row.getCell(sumItem.getPrintFormatItemId()));
 				addValue(sumItem.getPrintFormatItemId(), sumTotals, row.getCell(sumItem.getPrintFormatItemId()));
@@ -66,14 +69,15 @@ public class SummaryHandler {
 				addValue(sumItem.getPrintFormatItemId(), deviationTotals, row.getCell(sumItem.getPrintFormatItemId()));
 			});
 			groupTotals.put(groupKey, columnTotals);
-			groupTotals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_SUM), sumTotals);
-			groupTotals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MEAN), averageTotals);
-			groupTotals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_COUNT), countTotals);
-			groupTotals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MIN), minimumTotals);
-			groupTotals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MAX), maximumTotals);
-			groupTotals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_VARIANCE), varianceTotals);
-			groupTotals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_DEVIATION), deviationTotals);
+			totals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_SUM), sumTotals);
+			totals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MEAN), averageTotals);
+			totals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_COUNT), countTotals);
+			totals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MIN), minimumTotals);
+			totals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MAX), maximumTotals);
+			totals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_VARIANCE), varianceTotals);
+			totals.put(SummaryFunction.getFunctionSymbol(SummaryFunction.F_DEVIATION), deviationTotals);
 			summary.put(groupItem.getPrintFormatItemId(), groupTotals);
+			completeSummary.put(groupItem.getPrintFormatItemId(), totals);
 		});
 		return this;
 	}
@@ -105,18 +109,8 @@ public class SummaryHandler {
 		groupedItems.forEach(groupItem -> {
 			Map<String, Map<Integer, SummaryFunction>> groupTotals = Optional.ofNullable(summary.get(groupItem.getPrintFormatItemId())).orElse(new HashMap<String, Map<Integer,SummaryFunction>>());
 			groupTotals.keySet().forEach(groupValue -> {
-				int level = groupItem.getSequence();
-				if(groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_SUM))
-						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MEAN))
-						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_COUNT))
-						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MIN))
-						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_MAX))
-						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_VARIANCE))
-						|| groupValue.equals(SummaryFunction.getFunctionSymbol(SummaryFunction.F_DEVIATION))) {
-					level = 0;
-				}
 				Map<Integer, SummaryFunction> summaryValue = groupTotals.get(groupValue);
-				Row row = Row.newInstance().withLevel(level).withCell(groupItem.getPrintFormatItemId(), Cell.newInstance().withValue(groupValue));
+				Row row = Row.newInstance().withLevel(groupItem.getSequence()).withCell(groupItem.getPrintFormatItemId(), Cell.newInstance().withValue(groupValue));
 				summarizedItems.forEach(sumItem -> {
 					row.withCell(sumItem.getPrintFormatItemId(), Cell.newInstance().withValue(summaryValue.get(sumItem.getPrintFormatItemId()).getValue(SummaryFunction.F_SUM)));
 				});
@@ -125,10 +119,27 @@ public class SummaryHandler {
 		});
 		return rows;
 	}
+	
+	public List<Row> getTotalsAsRows() {
+		List<Row> rows = new ArrayList<Row>();
+		groupedItems.forEach(groupItem -> {
+			Map<String, Map<Integer, SummaryFunction>> groupTotals = Optional.ofNullable(completeSummary.get(groupItem.getPrintFormatItemId())).orElse(new HashMap<String, Map<Integer,SummaryFunction>>());
+			groupTotals.keySet().forEach(groupValue -> {
+				Map<Integer, SummaryFunction> summaryValue = groupTotals.get(groupValue);
+				Row summaryRow = Row.newInstance().withLevel(0).withCell(groupItem.getPrintFormatItemId(), Cell.newInstance().withValue(groupValue));
+				summarizedItems.forEach(sumItem -> {
+					SummaryFunction function = summaryValue.get(sumItem.getPrintFormatItemId());
+					summaryRow.withCell(sumItem.getPrintFormatItemId(), Cell.newInstance().withValue(function.getValue(SummaryFunction.F_SUM)).withFunction(function));
+				});
+				rows.add(summaryRow);
+			});
+		});
+		return rows;
+	}
 
 	@Override
 	public String toString() {
 		return "SummaryHandler [groupedItems=" + groupedItems + ", summarizedItems=" + summarizedItems + ", summary="
-				+ summary + "]";
+				+ summary + ", completeSummary=" + completeSummary + "]";
 	}
 }

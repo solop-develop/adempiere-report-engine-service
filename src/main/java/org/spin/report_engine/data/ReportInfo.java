@@ -33,6 +33,7 @@ public class ReportInfo {
 	private String description;
 	private List<ColumnInfo> columns;
 	private List<Row> rows;
+	private List<Row> summaryRows;
 	private Row temporaryRow;
 	private int printFormatId;
 	private int reportViewId;
@@ -45,7 +46,8 @@ public class ReportInfo {
 		name = printFormat.getName();
 		description = printFormat.getDescription();
 		columns = new ArrayList<>();
-		rows = new ArrayList<>();
+		rows = new ArrayList<Row>();
+		summaryRows = new ArrayList<Row>();
 		summaryHandler = SummaryHandler.newInstance(printFormat.getItems());
 		level = printFormat.getGroupItems().size() + 1;
 		sortingItems = printFormat.getSortingItems();
@@ -121,8 +123,13 @@ public class ReportInfo {
 	public List<Row> getRows() {
 		return rows;
 	}
+	
+	public List<Row> getSummaryRows() {
+		return summaryRows;
+	}
 
 	public ReportInfo completeInfo() {
+		summaryRows = summaryHandler.getTotalsAsRows();
 		List<Row> summaryAsRows = summaryHandler.getAsRows();
 		List<Row> completeRows = Stream.concat(getRows().stream(), summaryAsRows.stream())
 				.sorted(Comparator.comparing(row -> row.getSortingValue(sortingItems)))
