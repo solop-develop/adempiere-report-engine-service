@@ -129,6 +129,17 @@ public class PrintFormat {
 		StringBuffer tableReferences = new StringBuffer();
 		Language language = Language.getLoginLanguage();
 		List<PrintFormatColumn> columns = new ArrayList<PrintFormatColumn>();
+		//	Add all columns
+		getItems().stream().filter(item -> item.getColumnId() > 0).forEach(item -> {
+			String columnName = null;
+			if(item.isVirtualColumn()) {
+				columnName = "(" + item.getColumnSql() + ")";
+				columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(item.getColumnName()));
+			} else {
+				columnName = getQueryColumnName(item.getColumnName());
+				columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(columnName));
+			}
+		});
 		getItems().stream()
 		.filter(item -> item.isActive() && item.isPrinted())
 		.sorted(Comparator.comparing(PrintFormatItem::getSequence))
@@ -144,12 +155,10 @@ public class PrintFormat {
 					query.append(columnName);
 					query.append(" AS ").append(item.getColumnName());
 					alias = item.getColumnName();
-					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(item.getColumnName()));
 				} else {
 					columnName = getQueryColumnName(item.getColumnName());
 					query.append(columnName);
 					alias = columnName;
-					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(columnName));
 				}
 				//	Process Display Value
 				if(item.getReferenceId() == DisplayType.TableDir

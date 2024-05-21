@@ -129,7 +129,9 @@ public class ReportInfo {
 	}
 
 	public ReportInfo completeInfo() {
-		summaryRows = summaryHandler.getTotalsAsRows();
+		summaryRows = summaryHandler.getTotalsAsRows()
+				.stream().sorted(Comparator.comparing(row -> row.getSortingValue(sortingItems)))
+                .collect(Collectors.toList());;
 		List<Row> summaryAsRows = summaryHandler.getAsRows();
 		List<Row> completeRows = Stream.concat(getRows().stream(), summaryAsRows.stream())
 				.sorted(Comparator.comparing(row -> row.getSortingValue(sortingItems)))

@@ -104,7 +104,9 @@ public class ReportBuilder {
 		if(getPrintFormatId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
 		}
-		withParameter("M_Product_ID", 147);
+		withParameter("IsSOTrx", true);
+		withParameter("DocStatus", "CO");
+		withParameter("AD_User_ID", 1000263);
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
 		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withLimit(limit, offset).buildQuery();
@@ -150,9 +152,9 @@ public class ReportBuilder {
 		//	50132
 		//	Stocktake Line
 		org.compiere.Adempiere.startup(true);
-		Env.setContext(Env.getCtx(), "#AD_Client_ID", 11);
-		Env.setContext(Env.getCtx(), Env.LANGUAGE, "es_MX");
+		Env.setContext(Env.getCtx(), "#AD_Client_ID", 1000000);
+		Env.setContext(Env.getCtx(), Env.LANGUAGE, "es_VE");
 		Env.setContext(Env.getCtx(), "#AD_Role_ID", 102);
-		ReportBuilder.newInstance(1000000).run(50, 0);
+		ReportBuilder.newInstance(1000971).run(50, 0);
 	}
 }
