@@ -130,6 +130,7 @@ public class PrintFormat {
 		Language language = Language.getLoginLanguage();
 		List<PrintFormatColumn> columns = new ArrayList<PrintFormatColumn>();
 		//	Add all columns
+		//	TODO: Add all from columns instead, now is from print format but is nice to have it from columns of table
 		getItems().stream().filter(item -> item.getColumnId() > 0).forEach(item -> {
 			String columnName = null;
 			if(item.isVirtualColumn()) {
