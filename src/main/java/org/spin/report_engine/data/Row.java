@@ -14,12 +14,11 @@
  ************************************************************************************/
 package org.spin.report_engine.data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import org.spin.report_engine.format.PrintFormatItem;
 
 /**
  * Row information or representation for Row
@@ -29,11 +28,22 @@ public class Row {
 	/**	Data for Row	*/
 	private Map<Integer, Cell> data;
 	private int level;
+	private List<Row> children;
 	
 	public Row() {
 		data = new HashMap<>();
+		children = new ArrayList<Row>();
 	}
 	
+	public List<Row> getChildren() {
+		return children;
+	}
+	
+	public Row addChildren(Row child) {
+		children.add(child);
+		return this;
+	}
+
 	public static Row newInstance() {
 		return new Row();
 	}
@@ -55,21 +65,13 @@ public class Row {
 	public Cell getCell(int printFormatItemId) {
 		return Optional.ofNullable(data.get(printFormatItemId)).orElse(Cell.newInstance());
 	}
+	
+	public String getCompareValue(int itemId) {
+		return Optional.ofNullable(getCell(itemId).getDisplayValue()).orElse("");
+	}
 
 	public int getLevel() {
 		return level;
-	}
-	
-	public String getSortingValue(List<PrintFormatItem> groupColumns) {
-		StringBuffer value = new StringBuffer();
-		groupColumns.forEach(printFormatItem -> {
-			if(value.length() > 0) {
-				value.append("|");
-			}
-			value.append(Optional.ofNullable(getCell(printFormatItem.getPrintFormatItemId()).getDisplayValue()).orElse(""));
-		});
-		value.append(getLevel());
-		return value.toString();
 	}
 
 	public Row withLevel(int level) {
@@ -84,5 +86,15 @@ public class Row {
 	@Override
 	public String toString() {
 		return "Row [data=" + data + ", level=" + level + "]";
+	}
+	
+	@Override
+	public int hashCode() {
+	    return toString().hashCode();
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+	    return toString().equals(((Row)o).toString());
 	}
 }

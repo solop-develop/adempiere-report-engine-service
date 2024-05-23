@@ -106,7 +106,7 @@ public class ReportBuilder {
 		}
 		withParameter("IsSOTrx", true);
 		withParameter("DocStatus", "CO");
-		withParameter("AD_User_ID", 1000263);
+		withParameter("SalesRep_ID", 1000263);
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
 		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withLimit(limit, offset).buildQuery();
@@ -140,6 +140,7 @@ public class ReportBuilder {
 		reportInfo.completeInfo();
 		reportInfo.getRows().forEach(row -> {
 			System.out.println("******************************************************************");
+			System.out.print(String.format("%1$" + 5 + "s", row.getLevel()).replace(" ", "0"));
 			format.getItems().forEach(column -> {
 				System.out.print(":" + row.getCell(column.getPrintFormatItemId()).getDisplayValue());
 			});

@@ -130,15 +130,15 @@ public class QueryDefinition {
 		getConditions().stream()
 			.filter(condition -> !Util.isEmpty(condition.getColumnName(), true))
 			.forEach(condition -> {
-				if (whereClause.length() > 0) {
-					whereClause.append(" AND ");
-				}
 				Optional<PrintFormatColumn> maybeColumn = getColumns()
 						.stream()
 						.filter(column -> column.getColumnName().equals(condition.getColumnName()))
 						.sorted(Comparator.comparing(PrintFormatColumn::getColumnNameAlias))
 						.findFirst();
 				if(maybeColumn.isPresent()) {
+					if (whereClause.length() > 0) {
+						whereClause.append(" AND ");
+					}
 					PrintFormatColumn column = maybeColumn.get();
 					condition.setColumnName(column.getColumnNameAlias());
 					String restriction = getRestrictionByOperator(condition, column.getReferenceId());

@@ -98,8 +98,11 @@ public class Cell {
 	}
 
 	public String getDisplayValue() {
-		if(Util.isEmpty(displayValue) && value != null) {
-			return String.valueOf(value);
+		if(Util.isEmpty(displayValue)) {
+			if(value != null) {
+				return String.valueOf(value);
+			}
+			return "";
 		}
 		return displayValue;
 	}

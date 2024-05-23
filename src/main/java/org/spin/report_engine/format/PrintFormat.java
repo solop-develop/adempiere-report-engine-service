@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.adempiere.core.domains.models.I_AD_PrintFormatItem;
 import org.adempiere.core.domains.models.I_AD_ReportView;
@@ -47,6 +48,7 @@ public class PrintFormat {
 	private boolean isSummary;
 	private List<ReportView> reportViews;
 	private List<PrintFormatItem> items;
+	private List<PrintFormatColumn> columnsDefinition;
 	private int aliasNumber;
 	
 	private PrintFormat(MPrintFormat printFormat) {
@@ -57,6 +59,7 @@ public class PrintFormat {
 			reportView = ReportView.newInstance(new MReportView(Env.getCtx(), printFormat.getAD_ReportView_ID(), null));
 		}
 		tableId = printFormat.getAD_Table_ID();
+		MTable table = MTable.get(printFormat.getCtx(), tableId);
 		tableName = MTable.getTableName(printFormat.getCtx(), printFormat.getAD_Table_ID());
 		isSummary = printFormat.isSummary();
 		//	Get Views
@@ -72,6 +75,23 @@ public class PrintFormat {
 		.setOrderBy(I_AD_PrintFormatItem.COLUMNNAME_SeqNo)
 		.getIDsAsList()
 		.forEach(printFormatItemId -> items.add(PrintFormatItem.newInstance(new MPrintFormatItem(Env.getCtx(), printFormatItemId, null))));
+		columnsDefinition = table.getColumnsAsList()
+				.stream()
+				.filter(column -> !hasPrintFormatItem(column.getAD_Column_ID()))
+				.map(column -> {
+			String columnName = column.getColumnName();
+			if(!Util.isEmpty(column.getColumnSQL())) {
+				columnName = "(" + column.getColumnSQL() + ")";
+				return PrintFormatColumn.newInstance(column).withColumnNameAlias(columnName);
+			} else {
+				columnName = getQueryColumnName(column.getColumnName());
+				return PrintFormatColumn.newInstance(column).withColumnNameAlias(columnName);
+			}
+		}).collect(Collectors.toList());
+	}
+	
+	private boolean hasPrintFormatItem(int columnId) {
+		return items.stream().filter(item -> item.getColumnId() == columnId).count() > 0;
 	}
 	
 	public static PrintFormat newInstance(MPrintFormat printFormat) {
@@ -122,6 +142,10 @@ public class PrintFormat {
 		return items.stream().filter(item -> item.isGroupBy() || item.isOrderBy()).sorted(Comparator.comparing(PrintFormatItem::getSortSequence)).collect(Collectors.toList());
 	}
 	
+	public List<PrintFormatColumn> getColumnsDefinition() {
+		return columnsDefinition;
+	}
+
 	public QueryDefinition getQuery() {
 		clearTableAlias();
 		StringBuffer query = new StringBuffer();
@@ -129,18 +153,6 @@ public class PrintFormat {
 		StringBuffer tableReferences = new StringBuffer();
 		Language language = Language.getLoginLanguage();
 		List<PrintFormatColumn> columns = new ArrayList<PrintFormatColumn>();
-		//	Add all columns
-		//	TODO: Add all from columns instead, now is from print format but is nice to have it from columns of table
-		getItems().stream().filter(item -> item.getColumnId() > 0).forEach(item -> {
-			String columnName = null;
-			if(item.isVirtualColumn()) {
-				columnName = "(" + item.getColumnSql() + ")";
-				columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(item.getColumnName()));
-			} else {
-				columnName = getQueryColumnName(item.getColumnName());
-				columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(columnName));
-			}
-		});
 		getItems().stream()
 		.filter(item -> item.isActive() && item.isPrinted())
 		.sorted(Comparator.comparing(PrintFormatItem::getSequence))
@@ -156,10 +168,12 @@ public class PrintFormat {
 					query.append(columnName);
 					query.append(" AS ").append(item.getColumnName());
 					alias = item.getColumnName();
+					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(item.getColumnName()));
 				} else {
 					columnName = getQueryColumnName(item.getColumnName());
 					query.append(columnName);
 					alias = columnName;
+					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(columnName));
 				}
 				//	Process Display Value
 				if(item.getReferenceId() == DisplayType.TableDir
@@ -311,7 +325,8 @@ public class PrintFormat {
 		return QueryDefinition.newInstance()
 				.withQuery(query.toString())
 				.withOrderBy(orderBy.toString())
-				.withColumns(columns);
+				.withColumns(Stream.concat(columns.stream(), 
+						getColumnsDefinition().stream()).collect(Collectors.toList()));
 	}
 	
 	private String getQueryColumnName(String columnName) {

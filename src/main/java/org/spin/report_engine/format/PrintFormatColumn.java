@@ -14,6 +14,7 @@
  ************************************************************************************/
 package org.spin.report_engine.format;
 
+import org.compiere.model.MColumn;
 import org.compiere.util.Util;
 
 /**
@@ -36,6 +37,18 @@ public class PrintFormatColumn {
 	private String columnSql;
 	private boolean isDisplayValue;
 	
+	private PrintFormatColumn(MColumn column) {
+		columnName = column.getColumnName();
+		columnId = column.getAD_Column_ID();
+		referenceId = column.getAD_Reference_ID();
+		referenceValueId = column.getAD_Reference_Value_ID();
+		isKey = column.isKey();
+		isParent = column.isParent();
+		isMandatory = column.isMandatory();
+		columnSql = column.getColumnSQL();
+		isVirtualColumn = !Util.isEmpty(column.getColumnSQL());
+	}
+	
 	private PrintFormatColumn(PrintFormatItem printFormatItem) {
 		printFormatItemId = printFormatItem.getPrintFormatItemId();
 		columnName = printFormatItem.getColumnName();
@@ -51,6 +64,10 @@ public class PrintFormatColumn {
 	
 	public static PrintFormatColumn newInstance(PrintFormatItem printFormatItem) {
 		return new PrintFormatColumn(printFormatItem);
+	}
+	
+	public static PrintFormatColumn newInstance(MColumn column) {
+		return new PrintFormatColumn(column);
 	}
 
 	public int getPrintFormatItemId() {
