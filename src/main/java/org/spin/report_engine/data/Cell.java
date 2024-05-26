@@ -170,4 +170,19 @@ public class Cell {
 	public String toString() {
 		return "Cell [value=" + value + ", displayValue=" + displayValue + "]";
 	}
+	
+	@Override
+	public boolean equals(Object object) {
+		if(value == null && object == null) {
+			return false;
+		}
+		if(value == null && object != null) {
+			return false;
+		}
+		if(value != null && object == null) {
+			return false;
+		}
+		Cell cell = (Cell) object;
+		return value.equals(cell.getValue());
+	}
 }

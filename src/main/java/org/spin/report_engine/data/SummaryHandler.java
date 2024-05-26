@@ -113,9 +113,7 @@ public class SummaryHandler {
 		groupedItems.forEach(groupItem -> {
 			Map<Row, Map<Integer, SummaryFunction>> groupTotals = Optional.ofNullable(summary.get(groupItem.getPrintFormatItemId())).orElse(new HashMap<Row, Map<Integer,SummaryFunction>>());
 			groupTotals.keySet().forEach(groupValueRow -> {
-//				System.err.println(groupValueRow);
 				Map<Integer, SummaryFunction> summaryValue = groupTotals.get(groupValueRow);
-//				Row row = Row.newInstance().withLevel(groupItem.getSortSequence()).withCell(groupItem.getPrintFormatItemId(), Cell.newInstance().withValue(groupValueRow));
 				summarizedItems.forEach(sumItem -> {
 					SummaryFunction function = summaryValue.get(sumItem.getPrintFormatItemId());
 					groupValueRow.withCell(sumItem.getPrintFormatItemId(), Cell.newInstance().withValue(function.getValue(SummaryFunction.F_SUM)).withFunction(function));

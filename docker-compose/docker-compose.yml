@@ -4,141 +4,86 @@ name: template-service
 
 # Example API for images
 services:
-  adempiere.database:
-    container_name: ${POSTGRES_HOST}
-    image: ${POSTGRES_IMAGE}
-    restart: ${GENERIC_RESTART}
-    volumes:
-      - volume_postgres:/var/lib/postgresql/data
-      - ./postgresql/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh
-      - ./postgresql/seed.backup:/tmp/seed.backup
-      - ./postgresql/after_run:/tmp/after_run
-    healthcheck:
-      test: "bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/5432; exit $?;'"
-      interval: 10s
-      retries: 60
-      start_period: 20s
-      timeout: 10s
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      TZ: 'America/Caracas'
-      PGTZ: 'America/Caracas'
-    networks:
-      - shared_network
+  # adempiere.database:
+  #   container_name: ${POSTGRES_HOST}
+  #   image: ${POSTGRES_IMAGE}
+  #   restart: ${GENERIC_RESTART}
+  #   volumes:
+  #     - volume_postgres:/var/lib/postgresql/data
+  #     - ./postgresql/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh
+  #     - ./postgresql/seed.backup:/tmp/seed.backup
+  #     - ./postgresql/after_run:/tmp/after_run
+  #   healthcheck:
+  #     test: "bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/5432; exit $?;'"
+  #     interval: 10s
+  #     retries: 60
+  #     start_period: 20s
+  #     timeout: 10s
+  #   environment:
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     TZ: 'America/Caracas'
+  #     PGTZ: 'America/Caracas'
+  #   networks:
+  #     - shared_network
 
+  # adempiere.zk:
+  #   image: ${ADEMPIERE_ZK_IMAGE}
+  #   container_name: ${ADEMPIERE_ZK_HOST}
+  #   restart: ${GENERIC_RESTART}
+  #   environment:
+  #     ADEMPIERE_DB_SERVER: ${ADEMPIERE_ZK_DB_HOST}
+  #     ADEMPIERE_DB_PORT: ${ADEMPIERE_ZK_DB_PORT}
+  #     ADEMPIERE_DB_NAME: ${ADEMPIERE_ZK_DB_NAME}
+  #     ADEMPIERE_DB_PASSWORD: ${ADEMPIERE_ZK_DB_PASSWORD}
+  #   depends_on:
+  #     adempiere.database:
+  #       condition: service_healthy
+  #   ports:
+  #     - ${ADEMPIERE_ZK_EXTERNAL_PORT}:${ADEMPIERE_ZK_INTERNAL_PORT}
+  #   networks:
+  #     - shared_network
 
-
-  adempiere.zk:
-    image: ${ADEMPIERE_ZK_IMAGE}
-    container_name: ${ADEMPIERE_ZK_HOST}
-    restart: ${GENERIC_RESTART}
-    environment:
-      ADEMPIERE_DB_SERVER: ${ADEMPIERE_ZK_DB_HOST}
-      ADEMPIERE_DB_PORT: ${ADEMPIERE_ZK_DB_PORT}
-      ADEMPIERE_DB_NAME: ${ADEMPIERE_ZK_DB_NAME}
-      ADEMPIERE_DB_PASSWORD: ${ADEMPIERE_ZK_DB_PASSWORD}
-    depends_on:
-      adempiere.database:
-        condition: service_healthy
-    ports:
-      - ${ADEMPIERE_ZK_EXTERNAL_PORT}:${ADEMPIERE_ZK_INTERNAL_PORT}
-    networks:
-      - shared_network
-
-
-
-  adempiere.grpc.service:
-    image: ${GRPC_SERVER_IMAGE}
-    container_name: ${GRPC_SERVER_HOST}
-    restart: ${GENERIC_RESTART}
-    healthcheck:
-      test: "bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/${GRPC_SERVER_INTERNAL_PORT}; exit $?;'"
-      interval: 10s
-      retries: 60
-      start_period: 20s
-      timeout: 10s
-    depends_on:
-      adempiere.database:
-        condition: service_healthy
-    environment:
-      SERVER_PORT: ${GRPC_SERVER_INTERNAL_PORT}
-      DB_HOST: ${POSTGRES_HOST}
-      DB_PORT: ${GRPC_SERVER_DB_PORT}
-      DB_NAME: ${GRPC_SERVER_DB_NAME}
-      DB_PASSWORD: ${GRPC_SERVER_DB_PASSWORD}
-      JWT_SECRET_KEY: ${GRPC_SERVER_JWT_SECRET_KEY}
-    networks:
-      - shared_network
-
-
+  # adempiere.grpc.service:
+  #   image: ${GRPC_SERVER_IMAGE}
+  #   container_name: ${GRPC_SERVER_HOST}
+  #   restart: ${GENERIC_RESTART}
+  #   healthcheck:
+  #     test: "bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/${GRPC_SERVER_INTERNAL_PORT}; exit $?;'"
+  #     interval: 10s
+  #     retries: 60
+  #     start_period: 20s
+  #     timeout: 10s
+  #   depends_on:
+  #     adempiere.database:
+  #       condition: service_healthy
+  #   environment:
+  #     SERVER_PORT: ${GRPC_SERVER_INTERNAL_PORT}
+  #     DB_HOST: ${POSTGRES_HOST}
+  #     DB_PORT: ${GRPC_SERVER_DB_PORT}
+  #     DB_NAME: ${GRPC_SERVER_DB_NAME}
+  #     DB_PASSWORD: ${GRPC_SERVER_DB_PASSWORD}
+  #     JWT_SECRET_KEY: ${GRPC_SERVER_JWT_SECRET_KEY}
+  #   networks:
+  #     - shared_network
 
   grpc.proxy:
     image: ${ENVOY_GRPC_PROXY_IMAGE}
-    container_name: ${GRPC_PROXY_HOST}
+    container_name: ${ENVOY_GRPC_PROXY_HOSTNAME}
     healthcheck:
-      test: "bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/${ENVOY_GRPC_PROXY_PORT}; exit $?;'"
+      test: "bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/${ENVOY_GRPC_PROXY_INTERNAL_PORT}; exit $?;'"
       interval: 10s
       retries: 60
       start_period: 20s
       timeout: 10s
     volumes:
       - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
-      - ./envoy/definitions/descriptor.dsc:/data/descriptor.dsc:ro
-    depends_on:
-      - adempiere.grpc.service
+      - ./envoy/definitions/adempiere-report-engine-service.dsc:/data/descriptor.dsc:ro
+    # depends_on:
+    #   - adempiere.grpc.service
     ports:
-     - ${ENVOY_GRPC_PROXY_PORT}:${ENVOY_GRPC_PROXY_EXTERNAL_PORT}
+     - ${ENVOY_GRPC_PROXY_EXTERNAL_PORT}:${ENVOY_GRPC_PROXY_INTERNAL_PORT}
     networks:
     - shared_network
-
-  # With repository (template)
-  # grpc.proxy:
-  #   image: ${ENVOY_GRPC_PROXY_BACKEND_IMAGE}
-  #   container_name: ${ENVOY_GRPC_PROXY_CONTAINER_NAME}
-  #   hostname: ${ENVOY_GRPC_PROXY_HOSTNAME}
-  #   healthcheck:
-  #     test: "bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/${ENVOY_GRPC_PROXY_INTERNAL_PORT}; exit $?;'"
-  #     interval: 10s
-  #     retries: 60
-  #     start_period: 20s
-  #     timeout: 10s
-  #   environment:
-  #     SERVER_PORT: ${ENVOY_GRPC_PROXY_INTERNAL_PORT}
-  #     BACKEND_HOST: ${ENVOY_GRPC_PROXY_BACKEND_SERVER_HOST}
-  #     BACKEND_PORT: ${ENVOY_GRPC_PROXY_BACKEND_SERVER_PORT}
-  #   depends_on:
-  #     - adempiere.grpc.service
-  #   ports:
-  #    - ${ENVOY_GRPC_PROXY_INTERNAL_PORT}:${ENVOY_GRPC_PROXY_EXTERNAL_PORT}
-  #   networks:
-  #   - shared_network
-
-
-
-  ui.gateway:
-    image: ${NGINX_UI_GATEWAY_IMAGE}
-    container_name: ${NGINX_UI_GATEWAY_HOST}
-    hostname: ${NGINX_UI_GATEWAY_HOST}
-    depends_on:
-      grpc.proxy:
-        condition: service_healthy
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/gateway/api_gateway_vue.conf:/etc/nginx/api_gateway.conf
-      - ./nginx/api_json_errors.conf:/etc/nginx/api_json_errors.conf
-      #- ./keys/api_keys.conf:/etc/nginx/api_keys.conf
-      # zk ui
-      - ./nginx/upstreams/adempiere_zk.conf:/etc/nginx/api_upstreams_conf.d/adempiere_zk.conf
-      - ./nginx/api/main/adempiere_zk.conf:/etc/nginx/api_conf.d/adempiere_zk.conf
-      # grpc proxy
-      - ./nginx/upstreams/grpc_proxy.conf:/etc/nginx/api_upstreams_conf.d/grpc_proxy.conf
-      - ./nginx/api/grpc_proxy/:/etc/nginx/api_conf.d/grpc_proxy/
-    ports:
-      - ${NGINX_UI_GATEWAY_EXTERNAL_PORT}:${NGINX_UI_GATEWAY_INTERNAL_PORT}
-    networks:
-      - adempiere_network
-
-
 
 networks:
   shared_network:

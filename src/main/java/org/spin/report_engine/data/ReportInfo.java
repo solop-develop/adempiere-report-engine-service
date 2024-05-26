@@ -16,8 +16,14 @@ package org.spin.report_engine.data;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.spin.report_engine.format.PrintFormat;
@@ -42,17 +48,24 @@ public class ReportInfo {
 	private SummaryHandler summaryHandler;
 	private List<PrintFormatItem> sortingItems;
 	private int level;
+	private Map<Integer, PrintFormatItem> groupLevels;
 	
 	private ReportInfo(PrintFormat printFormat) {
 		name = printFormat.getName();
 		description = printFormat.getDescription();
-		columns = new ArrayList<>();
+		columns = printFormat.getItems().stream().map(item -> ColumnInfo.newInstance(item)).collect(Collectors.toList());
 		rows = new ArrayList<Row>();
 		summaryRows = new ArrayList<Row>();
 		groupedRows = new ArrayList<Row>();
 		summaryHandler = SummaryHandler.newInstance(printFormat.getItems());
 		level = printFormat.getGroupItems().stream().mapToInt(item -> item.getSortSequence()).sum() + 1;
+		AtomicInteger counter = new AtomicInteger();
+		groupLevels = new HashMap<Integer, PrintFormatItem>();
+		printFormat.getGroupItems().stream().sorted(Comparator.comparing(PrintFormatItem::getSortSequence)).forEach(group -> {
+			groupLevels.put(counter.getAndIncrement(), group);
+		});
 		sortingItems = printFormat.getSortingItems();
+		printFormatId = printFormat.getPrintFormatId();
 	}
 	
 	public static ReportInfo newInstance(PrintFormat printFormat) {
@@ -94,11 +107,6 @@ public class ReportInfo {
 		return columns;
 	}
 	
-	public ReportInfo withColumns(List<ColumnInfo> columns) {
-		this.columns = columns;
-		return this;
-	}
-	
 	public ReportInfo addColumn(ColumnInfo column) {
 		columns.add(column);
 		return this;
@@ -138,28 +146,73 @@ public class ReportInfo {
 		return groupedRows;
 	}
 
-//	private Comparator<Row> getSortingValue(List<PrintFormatItem> groupColumns) {
-//		AtomicReference<Comparator<Row>> comparator = new AtomicReference<>();
-//		groupColumns.forEach(printFormatItem -> {
-//			Comparator<Row> groupComparator = (p, o) -> p.getCompareValue(printFormatItem.getPrintFormatItemId()).compareToIgnoreCase(o.getCompareValue(printFormatItem.getPrintFormatItemId()));
-//			if(comparator.get() == null) {
-//				comparator.set(groupComparator);
-//			} else {
-//				comparator.getAndUpdate(value -> value.thenComparing(groupComparator));
-//			}
-//		});
-//		comparator.getAndUpdate(value -> value.thenComparing(Comparator.comparing(Row::getLevel)));
-//		return comparator.get();
-//	}
+	private Comparator<Row> getSortingValue() {
+		AtomicReference<Comparator<Row>> comparator = new AtomicReference<>();
+		sortingItems.forEach(printFormatItem -> {
+			Comparator<Row> groupComparator = (p, o) -> p.getCompareValue(printFormatItem.getPrintFormatItemId()).compareToIgnoreCase(o.getCompareValue(printFormatItem.getPrintFormatItemId()));
+			if(comparator.get() == null) {
+				comparator.set(groupComparator);
+			} else {
+				comparator.getAndUpdate(value -> value.thenComparing(groupComparator));
+			}
+		});
+		comparator.getAndUpdate(value -> value.thenComparing(Comparator.comparing(Row::getLevel)));
+		return comparator.get();
+	}
 	
 	public ReportInfo completeInfo() {
 		groupedRows = summaryHandler.getAsRows();
 		List<Row> completeRows = Stream.concat(getRows().stream(), groupedRows.stream())
-				.sorted(Comparator.comparing(Row::getLevel))
+				.sorted(getSortingValue())
                 .collect(Collectors.toList());
 		rows = completeRows;
-		
 		return this;
+	}
+	
+	/**
+	 * Get all rows as tree
+	 * @return
+	 */
+	public List<Row> getRowsAsTree() {
+		List<Row> tree = new ArrayList<Row>();
+		PrintFormatItem levelGroup = groupLevels.get(0);
+		//	Add parent level
+		rows.stream().filter(row -> {
+			return row.getLevel() == levelGroup.getSortSequence();
+		}).forEach(row -> tree.add(row));
+		//	Add level 1
+		tree.forEach(treeValue -> {
+			processChildren(treeValue, 1);
+		});
+		return tree;
+	}
+	
+	private void processChildren(Row parent, int levelAsInt) {
+		List<Row> children = parent.getChildren();
+		PrintFormatItem previosLevelGroup = groupLevels.get(levelAsInt - 1);
+		PrintFormatItem levelGroup = groupLevels.get(levelAsInt);
+		if(levelGroup == null || previosLevelGroup == null) {
+			return;
+		}
+		rows.stream().filter(row -> {
+			return row.getLevel() == levelGroup.getSortSequence() && compareRows(parent, row, levelAsInt);
+		}).forEach(row -> children.add(row));
+		int nextLevel = levelAsInt + 1;
+		if(nextLevel < groupLevels.size()) {
+			children.forEach(child -> processChildren(child, nextLevel));
+		}
+	}
+	
+	private boolean compareRows(Row parent, Row child, int currentLevel) {
+		AtomicBoolean isMatched = new AtomicBoolean(true);
+		IntStream.range(0, currentLevel).forEach(levelIndex -> {
+			PrintFormatItem levelGroup = groupLevels.get(levelIndex);
+			boolean isOk = parent.getCell(levelGroup.getPrintFormatItemId()).equals(child.getCell(levelGroup.getPrintFormatItemId()));
+			if(!isOk) {
+				isMatched.set(false);
+			}
+		});
+		return isMatched.get();
 	}
 	
 	public int getPrintFormatId() {
@@ -173,6 +226,10 @@ public class ReportInfo {
 
 	public int getReportViewId() {
 		return reportViewId;
+	}
+	
+	public long getRecordCount() {
+		return rows.size();
 	}
 
 	public ReportInfo withReportViewId(int reportViewId) {

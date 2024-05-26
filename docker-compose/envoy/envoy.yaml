@@ -38,7 +38,7 @@ static_resources:
               proto_descriptor: "/data/descriptor.dsc"
               services:
                 # package.service
-                - report_engine.ReportService
+                - report_engine.ReportEngine
               print_options:
                 add_whitespace: true
                 always_print_primitive_fields: true
@@ -70,5 +70,5 @@ static_resources:
                 # WARNING: "docker.for.mac.localhost" has been deprecated from Docker v18.03.0.
                 # If you're running an older version of Docker, please use "docker.for.mac.localhost" instead.
                 # Reference: https://docs.docker.com/docker-for-mac/release-notes/#docker-community-edition-18030-ce-mac59-2018-03-26
-                address: adempiere.grpc.service # for local testing change for your ip
+                address: 20.12.0.23 #adempiere.grpc.service # for local testing change for your ip
                 port_value: 50059

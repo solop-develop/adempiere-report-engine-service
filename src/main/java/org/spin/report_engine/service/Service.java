@@ -14,9 +14,19 @@
  ************************************************************************************/
 package org.spin.report_engine.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.adempiere.exceptions.AdempiereException;
+import org.spin.backend.grpc.report_engine.ReportColumn;
+import org.spin.backend.grpc.report_engine.ReportRow;
 import org.spin.backend.grpc.report_engine.RunReportRequest;
 import org.spin.backend.grpc.report_engine.RunReportResponse;
+import org.spin.report_engine.data.ReportInfo;
+import org.spin.report_engine.data.Row;
+import org.spin.service.grpc.util.query.FilterManager;
+import org.spin.service.grpc.util.value.ValueManager;
 
 public class Service {
 		
@@ -27,9 +37,38 @@ public class Service {
 	 * @return
 	 */
 	public static RunReportResponse.Builder runReport(RunReportRequest request) {
-		if(request.getPrintFormatId() <= 0) {
+		if(request.getId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
 		}
-		return RunReportResponse.newBuilder();
+		ReportInfo reportInfo = ReportBuilder.newInstance(request.getId())
+				.withFilters(FilterManager.newInstance(request.getFilters())
+				.getConditions())
+				.run(100, 0);
+		//	
+		RunReportResponse.Builder builder = RunReportResponse.newBuilder();
+		builder.setName(ValueManager.validateNull(reportInfo.getName()))
+		.setDescription(ValueManager.validateNull(reportInfo.getDescription()))
+		.setPrintFormatId(reportInfo.getPrintFormatId())
+		.setReportViewId(reportInfo.getReportViewId())
+		.setRecordCount(reportInfo.getRecordCount())
+		.addAllColumns(
+				reportInfo.getColumns().stream().map(
+						column -> ReportColumn.newBuilder()
+						.setCode(ValueManager.validateNull(column.getCode()))
+						.setTitle(ValueManager.validateNull(column.getTitle()))
+						.setColor(ValueManager.validateNull(column.getColor()))
+						.setStyle(ValueManager.validateNull(column.getStyle()))
+						.build()
+						).collect(Collectors.toList())
+				)
+		;
+		List<ReportRow> reportRows = new ArrayList<ReportRow>();
+		reportInfo.getRowsAsTree().forEach(row -> reportRows.add(convertRow(row).build()));
+		return builder;
+	}
+	
+	private static ReportRow.Builder convertRow(Row row) {
+		ReportRow.Builder builder = ReportRow.newBuilder();
+		return builder;
 	}
 }

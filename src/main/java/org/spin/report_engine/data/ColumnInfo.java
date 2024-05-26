@@ -28,7 +28,7 @@ public class ColumnInfo {
 	private String color;
 	private String style;
 	private String code;
-	private Object title;
+	private String title;
 	
 	private ColumnInfo(PrintFormatItem item) {
 		this.title = item.getPrintText();
@@ -65,11 +65,11 @@ public class ColumnInfo {
 		return this;
 	}
 	
-	public Object getTitle() {
+	public String getTitle() {
 		return title;
 	}
 	
-	public ColumnInfo withTitle(Object title) {
+	public ColumnInfo withTitle(String title) {
 		this.title = title;
 		return this;
 	}

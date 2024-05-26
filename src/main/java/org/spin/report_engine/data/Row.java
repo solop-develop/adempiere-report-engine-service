@@ -85,7 +85,7 @@ public class Row {
 
 	@Override
 	public String toString() {
-		return "Row [data=" + data + ", level=" + level + "]";
+		return "level=" + level + ", Row [data=" + data + "]";
 	}
 	
 	@Override

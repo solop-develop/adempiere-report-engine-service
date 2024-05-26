@@ -18,7 +18,7 @@ service ReportEngine {
 	//	Generate Report
 	rpc RunReport(RunReportRequest) returns (RunReportResponse) {
 		option (google.api.http) = {
-			get: "/report-engine/run-report/{id}"
+			get: "/v1/report-engine/run-report/{id}"
 		};
 	}
 }
@@ -30,9 +30,8 @@ message RunReportRequest {
 	string sort_by = 3;
 	int32 page_size = 4;
 	string page_token = 5;
-	int32 print_format_id = 6;
-	int32 report_view_id = 7;
-	bool is_summary = 8;
+	int32 report_view_id = 6;
+	bool is_summary = 7;
 }
 
 message RunReportResponse {
@@ -48,9 +47,14 @@ message RunReportResponse {
 }
 
 message ReportColumn {
-	google.protobuf.Struct values = 1;
+	string code = 1;
+	string title = 2;
+	string color= 3;
+	string style = 4;
 }
 
 message ReportRow {
-	google.protobuf.Struct values = 1;
+	google.protobuf.Struct value = 1;
+	string display_value = 2;
+	repeated ReportRow children = 3;
 }

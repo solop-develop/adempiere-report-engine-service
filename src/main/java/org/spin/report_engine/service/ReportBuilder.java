@@ -25,7 +25,6 @@ import org.compiere.print.MPrintFormat;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.spin.report_engine.data.Cell;
-import org.spin.report_engine.data.ColumnInfo;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.QueryDefinition;
@@ -104,9 +103,6 @@ public class ReportBuilder {
 		if(getPrintFormatId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
 		}
-		withParameter("IsSOTrx", true);
-		withParameter("DocStatus", "CO");
-		withParameter("SalesRep_ID", 1000263);
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
 		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withLimit(limit, offset).buildQuery();
@@ -114,7 +110,6 @@ public class ReportBuilder {
 		DB.runResultSet(null, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
 			while (resulset.next()) {
 				format.getItems().forEach(item -> {
-					reportInfo.addColumn(ColumnInfo.newInstance(item));
 					Map<String, Cell> cells = new HashMap<String, Cell>();
 					queryDefinition.getColumns()
 					.stream()
@@ -137,16 +132,7 @@ public class ReportBuilder {
 				reportInfo.addRow();
 			}
 		});
-		reportInfo.completeInfo();
-		reportInfo.getRows().forEach(row -> {
-			System.out.println("******************************************************************");
-			System.out.print(String.format("%1$" + 5 + "s", row.getLevel()).replace(" ", "0"));
-			format.getItems().forEach(column -> {
-				System.out.print(":" + row.getCell(column.getPrintFormatItemId()).getDisplayValue());
-			});
-			System.out.println();
-		});
-		return reportInfo;
+		return reportInfo.completeInfo();
 	}
 	
 	public static void main(String[] args) {
@@ -156,6 +142,10 @@ public class ReportBuilder {
 		Env.setContext(Env.getCtx(), "#AD_Client_ID", 1000000);
 		Env.setContext(Env.getCtx(), Env.LANGUAGE, "es_VE");
 		Env.setContext(Env.getCtx(), "#AD_Role_ID", 102);
-		ReportBuilder.newInstance(1000971).run(50, 0);
+		ReportBuilder.newInstance(1000971)
+			.withParameter("IsSOTrx", true)
+			.withParameter("DocStatus", "CO")
+			.withParameter("SalesRep_ID", 1000263)
+			.run(50, 0);
 	}
 }
