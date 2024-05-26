@@ -17,8 +17,8 @@ package org.spin.report_engine.controller;
 import org.compiere.util.CLogger;
 import org.spin.backend.grpc.report_engine.ReportEngineGrpc.ReportEngineImplBase;
 import org.spin.report_engine.service.Service;
-import org.spin.backend.grpc.report_engine.RunReportRequest;
-import org.spin.backend.grpc.report_engine.RunReportResponse;
+import org.spin.backend.grpc.report_engine.GetReportRequest;
+import org.spin.backend.grpc.report_engine.Report;
 
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -29,9 +29,9 @@ public class ReportService extends ReportEngineImplBase {
 	private CLogger log = CLogger.getCLogger(ReportService.class);
 	
 	@Override
-	public void runReport(RunReportRequest request, StreamObserver<RunReportResponse> responseObserver) {
+	public void getReport(GetReportRequest request, StreamObserver<Report> responseObserver) {
 		try {
-			RunReportResponse.Builder reportBuilder = Service.runReport(request);
+			Report.Builder reportBuilder = Service.getReport(request);
 			responseObserver.onNext(reportBuilder.build());
 			responseObserver.onCompleted();
 		} catch (Exception e) {
