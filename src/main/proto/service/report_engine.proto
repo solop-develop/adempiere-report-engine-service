@@ -54,7 +54,11 @@ message ReportColumn {
 }
 
 message ReportRow {
+        repeated ReportCell cells = 1;
+	repeated ReportRow children = 2;
+}
+
+message ReportCell {
 	google.protobuf.Struct value = 1;
 	string display_value = 2;
-	repeated ReportRow children = 3;
 }
