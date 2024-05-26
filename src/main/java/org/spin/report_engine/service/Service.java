@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 import org.adempiere.exceptions.AdempiereException;
 import org.spin.backend.grpc.report_engine.ReportColumn;
 import org.spin.backend.grpc.report_engine.ReportRow;
-import org.spin.backend.grpc.report_engine.RunReportRequest;
-import org.spin.backend.grpc.report_engine.RunReportResponse;
+import org.spin.backend.grpc.report_engine.GetReportRequest;
+import org.spin.backend.grpc.report_engine.Report;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.data.Row;
 import org.spin.service.grpc.util.query.FilterManager;
@@ -36,7 +36,7 @@ public class Service {
 	 * @param request
 	 * @return
 	 */
-	public static RunReportResponse.Builder runReport(RunReportRequest request) {
+	public static Report.Builder getReport(GetReportRequest request) {
 		if(request.getId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
 		}
@@ -45,7 +45,7 @@ public class Service {
 				.getConditions())
 				.run(100, 0);
 		//	
-		RunReportResponse.Builder builder = RunReportResponse.newBuilder();
+		Report.Builder builder = Report.newBuilder();
 		builder.setName(ValueManager.validateNull(reportInfo.getName()))
 		.setDescription(ValueManager.validateNull(reportInfo.getDescription()))
 		.setPrintFormatId(reportInfo.getPrintFormatId())
