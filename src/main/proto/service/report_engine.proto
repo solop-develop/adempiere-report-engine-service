@@ -54,19 +54,7 @@ message ReportColumn {
 }
 
 message ReportRow {
-        repeated ReportCell cells = 1;
+        google.protobuf.Struct cells = 1;
 	int32 level = 2;
 	repeated ReportRow children = 3;
-}
-
-message ReportCell {
-	google.protobuf.Struct value = 1;
-	string display_value = 2;
-        google.protobuf.Struct sum = 3;
-	google.protobuf.Struct mean = 4;
-        google.protobuf.Struct count = 5;
-	google.protobuf.Struct minimum = 6;
-        google.protobuf.Struct maximum = 7;
-	google.protobuf.Struct variance = 8;
-        google.protobuf.Struct deviation = 9;
 }
