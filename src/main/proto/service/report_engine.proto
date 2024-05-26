@@ -16,15 +16,15 @@ package report_engine;
 // The greeting service definition.
 service ReportEngine {
 	//	Generate Report
-	rpc RunReport(RunReportRequest) returns (RunReportResponse) {
+	rpc GetReport(GetReportRequest) returns (Report) {
 		option (google.api.http) = {
-			get: "/v1/report-engine/run-report/{id}"
+			get: "/v1/report-engine/reports/{id}"
 		};
 	}
 }
 
 // Get Report Output Request
-message RunReportRequest {
+message GetReportRequest {
 	int32 id = 1;
 	string filters = 2;
 	string sort_by = 3;
@@ -34,7 +34,7 @@ message RunReportRequest {
 	bool is_summary = 7;
 }
 
-message RunReportResponse {
+message Report {
 	int32 id = 1;
 	string name = 2;
 	string description = 3;
