@@ -119,49 +119,49 @@ public class Cell {
 	
 	public BigDecimal getSum() {
 		if(function == null) {
-			return Env.ZERO;
+			return null;
 		}
 		return function.getValue(SummaryFunction.F_SUM);
 	}
 	
 	public BigDecimal getMean() {
 		if(function == null) {
-			return Env.ZERO;
+			return null;
 		}
 		return function.getValue(SummaryFunction.F_MEAN);
 	}
 	
 	public BigDecimal getCount() {
 		if(function == null) {
-			return Env.ZERO;
+			return null;
 		}
 		return function.getValue(SummaryFunction.F_COUNT);
 	}
 	
 	public BigDecimal getMinimum() {
 		if(function == null) {
-			return Env.ZERO;
+			return null;
 		}
 		return function.getValue(SummaryFunction.F_MIN);
 	}
 	
 	public BigDecimal getMaximum() {
 		if(function == null) {
-			return Env.ZERO;
+			return null;
 		}
 		return function.getValue(SummaryFunction.F_MAX);
 	}
 	
 	public BigDecimal getVariance() {
 		if(function == null) {
-			return Env.ZERO;
+			return null;
 		}
 		return function.getValue(SummaryFunction.F_VARIANCE);
 	}
 	
 	public BigDecimal getDeviation() {
 		if(function == null) {
-			return Env.ZERO;
+			return null;
 		}
 		return function.getValue(SummaryFunction.F_DEVIATION);
 	}

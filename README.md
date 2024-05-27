@@ -78,6 +78,10 @@ cd docker-compose
 docker compose up
 ```
 
+### Postman Check
+
+You can test it using postman with [this](docs/adempiere_report_engine.json) definition
+
 ### Some Variables
 
 You can change variables editing the `.env` file. Note that this file have a minimal example.

@@ -29,9 +29,11 @@ public class ColumnInfo {
 	private String style;
 	private String code;
 	private String title;
+	private int printFormatItemId;
 	
 	private ColumnInfo(PrintFormatItem item) {
 		this.title = item.getPrintText();
+		this.printFormatItemId = item.getPrintFormatItemId();
 	}
 	
 	public static ColumnInfo newInstance(PrintFormatItem item) {
@@ -71,6 +73,15 @@ public class ColumnInfo {
 	
 	public ColumnInfo withTitle(String title) {
 		this.title = title;
+		return this;
+	}
+
+	public int getPrintFormatItemId() {
+		return printFormatItemId;
+	}
+
+	public ColumnInfo withPrintFormatItemId(int printFormatItemId) {
+		this.printFormatItemId = printFormatItemId;
 		return this;
 	}
 

@@ -106,7 +106,7 @@ public class ReportBuilder {
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
 		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withLimit(limit, offset).buildQuery();
-		ReportInfo reportInfo = ReportInfo.newInstance(format);
+		ReportInfo reportInfo = ReportInfo.newInstance(format, queryDefinition);
 		DB.runResultSet(null, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
 			while (resulset.next()) {
 				format.getItems().forEach(item -> {

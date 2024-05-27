@@ -54,7 +54,7 @@ message ReportColumn {
 }
 
 message ReportRow {
-        google.protobuf.Struct cells = 1;
+    google.protobuf.Struct cells = 1;
 	int32 level = 2;
 	repeated ReportRow children = 3;
 }

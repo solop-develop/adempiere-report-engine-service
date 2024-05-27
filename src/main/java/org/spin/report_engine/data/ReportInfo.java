@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.PrintFormatItem;
+import org.spin.report_engine.format.QueryDefinition;
 
 
 /**
@@ -49,8 +50,9 @@ public class ReportInfo {
 	private List<PrintFormatItem> sortingItems;
 	private int level;
 	private Map<Integer, PrintFormatItem> groupLevels;
+	private QueryDefinition queryDefinition;
 	
-	private ReportInfo(PrintFormat printFormat) {
+	private ReportInfo(PrintFormat printFormat, QueryDefinition queryDefinition) {
 		name = printFormat.getName();
 		description = printFormat.getDescription();
 		columns = printFormat.getItems().stream().map(item -> ColumnInfo.newInstance(item)).collect(Collectors.toList());
@@ -66,12 +68,26 @@ public class ReportInfo {
 		});
 		sortingItems = printFormat.getSortingItems();
 		printFormatId = printFormat.getPrintFormatId();
+		this.queryDefinition = queryDefinition;
 	}
 	
-	public static ReportInfo newInstance(PrintFormat printFormat) {
-		return new ReportInfo(printFormat);
+	public static ReportInfo newInstance(PrintFormat printFormat, QueryDefinition queryDefinition) {
+		return new ReportInfo(printFormat, queryDefinition);
 	}
 	
+	public Map<Integer, PrintFormatItem> getGroupLevels() {
+		return groupLevels;
+	}
+
+	public QueryDefinition getQueryDefinition() {
+		return queryDefinition;
+	}
+
+	public ReportInfo withQueryDefinition(QueryDefinition queryDefinition) {
+		this.queryDefinition = queryDefinition;
+		return this;
+	}
+
 	public int getLevel() {
 		return level;
 	}
