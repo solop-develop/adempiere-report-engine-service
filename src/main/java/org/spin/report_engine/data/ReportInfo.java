@@ -51,6 +51,7 @@ public class ReportInfo {
 	private int level;
 	private Map<Integer, PrintFormatItem> groupLevels;
 	private QueryDefinition queryDefinition;
+	private long recordCount;
 	
 	private ReportInfo(PrintFormat printFormat, QueryDefinition queryDefinition) {
 		name = printFormat.getName();
@@ -74,7 +75,7 @@ public class ReportInfo {
 	public static ReportInfo newInstance(PrintFormat printFormat, QueryDefinition queryDefinition) {
 		return new ReportInfo(printFormat, queryDefinition);
 	}
-	
+
 	public Map<Integer, PrintFormatItem> getGroupLevels() {
 		return groupLevels;
 	}
@@ -177,6 +178,7 @@ public class ReportInfo {
 	}
 	
 	public ReportInfo completeInfo() {
+		recordCount = rows.size();
 		groupedRows = summaryHandler.getAsRows();
 		List<Row> completeRows = Stream.concat(getRows().stream(), groupedRows.stream())
 				.sorted(getSortingValue())
@@ -245,7 +247,7 @@ public class ReportInfo {
 	}
 	
 	public long getRecordCount() {
-		return rows.size();
+		return recordCount;
 	}
 
 	public ReportInfo withReportViewId(int reportViewId) {

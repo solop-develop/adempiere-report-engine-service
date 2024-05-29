@@ -20,7 +20,7 @@ def descriptorFile = "adempiere-report-engine-service.dsc"
 startScripts.enabled = false
 
 ext {
-	javaMainClass = "org.spin.template.server.TemplateServer"
+	javaMainClass = "org.spin.report_engine.server.ReportEngineServer"
 }
 
 application {

@@ -27,6 +27,8 @@ import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.data.ColumnInfo;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.data.Row;
+import org.spin.service.grpc.authentication.SessionManager;
+import org.spin.service.grpc.util.db.LimitUtil;
 import org.spin.service.grpc.util.query.FilterManager;
 import org.spin.service.grpc.util.value.ValueManager;
 
@@ -54,10 +56,13 @@ public class Service {
 		if(request.getId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
 		}
+		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
+		int limit = LimitUtil.getPageSize(request.getPageSize());
+		int offset = (pageNumber - 1) * limit;
 		ReportInfo reportInfo = ReportBuilder.newInstance(request.getId())
 				.withFilters(FilterManager.newInstance(request.getFilters())
 				.getConditions())
-				.run(1000, 0);
+				.run(limit, offset);
 		//	
 		Report.Builder builder = Report.newBuilder();
 		builder.setName(ValueManager.validateNull(reportInfo.getName()))
@@ -80,6 +85,15 @@ public class Service {
 		List<ReportRow> reportRows = new ArrayList<ReportRow>();
 		reportInfo.getRowsAsTree().forEach(row -> reportRows.add(processParent(reportInfo.getColumns(), row).build()));
 		builder.addAllRows(reportRows);
+		builder.setRecordCount(reportInfo.getRecordCount());
+		//	Set page token
+		String nexPageToken = null;
+		if(LimitUtil.isValidNextPageToken((int) reportInfo.getRecordCount(), offset, limit)) {
+			nexPageToken = LimitUtil.getPagePrefix(SessionManager.getSessionUuid()) + (pageNumber + 1);
+		}
+		builder.setNextPageToken(
+			ValueManager.validateNull(nexPageToken)
+		);
 		return builder;
 	}
 	

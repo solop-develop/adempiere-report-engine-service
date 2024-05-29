@@ -167,7 +167,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: docker/backend_alpine.Dockerfile
+          file: docker/alpine.Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKER_HUB_REPO_NAME }}:alpine-${{ github.event.release.tag_name }}
@@ -207,7 +207,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: docker/backend_focal.Dockerfile
+          file: docker/multiarch.Dockerfile
           platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
           push: true
           tags: |
@@ -273,7 +273,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: docker/grpc_proxy.Dockerfile
+          file: docker/proxy.Dockerfile
           platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
           push: true
           tags: |
