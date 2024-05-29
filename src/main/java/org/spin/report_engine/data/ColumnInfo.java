@@ -34,6 +34,7 @@ public class ColumnInfo {
 	private ColumnInfo(PrintFormatItem item) {
 		this.title = item.getPrintText();
 		this.printFormatItemId = item.getPrintFormatItemId();
+		this.code = String.valueOf(item.getPrintFormatItemId());
 	}
 	
 	public static ColumnInfo newInstance(PrintFormatItem item) {

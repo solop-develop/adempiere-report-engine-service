@@ -131,7 +131,7 @@ public class PrintFormatItem {
 	public static final String BARCODETYPE_QuickResponseCode = "QRC";
 	
 	private PrintFormatItem(MPrintFormatItem printFormatItem) {
-		name = printFormatItem.getName();
+		name = printFormatItem.get_Translation(I_AD_PrintFormatItem.COLUMNNAME_Name);
 		printText = printFormatItem.get_Translation(I_AD_PrintFormatItem.COLUMNNAME_PrintName);
 		sequence = printFormatItem.getSeqNo();
 		sortSequence = printFormatItem.getSortNo();
