@@ -84,7 +84,7 @@ docker compose up
 
 ### Postman Check
 
-You can test it using postman with [this](docs/adempiere_report_engine.json) definition
+You can test it using postman with [this](docs/adempiere_report_engine.json) definition, also you can look it from [here](https://documenter.getpostman.com/view/18440575/2sA3QtfXC3)
 
 ### Some Variables
 
