@@ -8,7 +8,7 @@
 			"type": "java",
 			"name": "ADmempiere gRPC Template",
 			"request": "launch",
-			"mainClass": "org.spin.template.server.TemplateServer",
+			"mainClass": "org.spin.report_engine.server.ReportEngineServer",
 			"projectName": "adempiere-report-engine-service",
 			"env": {
 				"ADEMPIERE_APPS_TYPE": "wildfly",
