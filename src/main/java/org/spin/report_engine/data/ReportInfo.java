@@ -192,17 +192,20 @@ public class ReportInfo {
 	 * @return
 	 */
 	public List<Row> getRowsAsTree() {
-		List<Row> tree = new ArrayList<Row>();
 		PrintFormatItem levelGroup = groupLevels.get(0);
-		//	Add parent level
-		rows.stream().filter(row -> {
-			return row.getLevel() == levelGroup.getSortSequence();
-		}).forEach(row -> tree.add(row));
-		//	Add level 1
-		tree.forEach(treeValue -> {
-			processChildren(treeValue, 1);
-		});
-		return tree;
+		if(levelGroup != null) {
+			List<Row> tree = new ArrayList<Row>();
+			//	Add parent level
+			rows.stream().filter(row -> {
+				return row.getLevel() == levelGroup.getSortSequence();
+			}).forEach(row -> tree.add(row));
+			//	Add level 1
+			tree.forEach(treeValue -> {
+				processChildren(treeValue, 1);
+			});
+			return tree;
+		}
+		return rows;
 	}
 	
 	private void processChildren(Row parent, int levelAsInt) {

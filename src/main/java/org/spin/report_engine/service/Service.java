@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.util.Util;
 import org.spin.backend.grpc.report_engine.ReportColumn;
 import org.spin.backend.grpc.report_engine.ReportRow;
 import org.spin.backend.grpc.report_engine.GetReportRequest;
@@ -59,10 +60,12 @@ public class Service {
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
-		ReportInfo reportInfo = ReportBuilder.newInstance(request.getId())
-				.withFilters(FilterManager.newInstance(request.getFilters())
-				.getConditions())
-				.run(limit, offset);
+		ReportBuilder reportBuilder = ReportBuilder.newInstance(request.getId());
+		if(!Util.isEmpty(request.getFilters())) {
+			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
+					.getConditions());
+		}
+		ReportInfo reportInfo = reportBuilder.run(limit, offset);
 		//	
 		Report.Builder builder = Report.newBuilder();
 		builder.setName(ValueManager.validateNull(reportInfo.getName()))
