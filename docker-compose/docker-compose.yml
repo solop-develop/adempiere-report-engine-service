@@ -25,8 +25,6 @@ services:
       PGTZ: 'America/Caracas'
     networks:
       - shared_network
-    ports:
-      - 9999:5432
 
   adempiere.zk:
     image: ${ADEMPIERE_ZK_IMAGE}
@@ -80,8 +78,8 @@ services:
     volumes:
       - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./envoy/definitions/adempiere-report-engine-service.dsc:/data/descriptor.dsc:ro
-    # depends_on:
-    #   - adempiere.grpc.service
+    depends_on:
+      - adempiere.grpc.service
     ports:
      - ${ENVOY_GRPC_PROXY_EXTERNAL_PORT}:${ENVOY_GRPC_PROXY_INTERNAL_PORT}
     networks:
