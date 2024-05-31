@@ -142,7 +142,7 @@ public class QueryDefinition {
 			.forEach(condition -> {
 				Optional<PrintFormatColumn> maybeColumn = getColumns()
 						.stream()
-						.filter(column -> column.getColumnNameAlias().equals(condition.getColumnName()))
+						.filter(column -> column.getColumnName().equals(condition.getColumnName()))
 						.sorted(Comparator.comparing(PrintFormatColumn::getColumnNameAlias).reversed())
 						.findFirst();
 				if(maybeColumn.isPresent()) {
