@@ -171,7 +171,7 @@ public class ReportBuilder {
 		limit = LimitUtil.getPageSize(limit);
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
-		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withLimit(limit, offset).buildQuery();
+		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withInstanceId(getInstanceId()).withLimit(limit, offset).buildQuery();
 		ReportInfo reportInfo = ReportInfo.newInstance(format, queryDefinition);
 		DB.runResultSet(transactionName, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
 			while (resulset.next()) {
