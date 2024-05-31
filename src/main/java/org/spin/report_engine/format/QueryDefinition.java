@@ -36,6 +36,7 @@ public class QueryDefinition {
 	private List<Filter> conditions;
 	private List<Object> parameters;
 	private List<PrintFormatColumn> columns;
+	private List<PrintFormatColumn> queryColumns;
 	private String whereClause;
 	private String completeQuery;
 	private int limit; 
@@ -45,6 +46,7 @@ public class QueryDefinition {
 	private QueryDefinition() {
 		conditions = new ArrayList<Filter>();
 		columns = new ArrayList<PrintFormatColumn>();
+		queryColumns = new ArrayList<PrintFormatColumn>();
 		parameters = new ArrayList<Object>();
 	}
 	
@@ -111,6 +113,15 @@ public class QueryDefinition {
 		this.columns = columns;
 		return this;
 	}
+	
+	public List<PrintFormatColumn> getQueryColumns() {
+		return queryColumns;
+	}
+
+	public QueryDefinition withQueryColumns(List<PrintFormatColumn> queryColumns) {
+		this.queryColumns = queryColumns;
+		return this;
+	}
 
 	public List<Object> getParameters() {
 		return parameters;
@@ -158,12 +169,6 @@ public class QueryDefinition {
 		//	Add Limit
 		if(limit <= 0) {
 			withLimit(100, 0);
-		}
-		if(getInstanceId() > 0) {
-			if (whereClause.length() > 0) {
-				whereClause.append(" AND ");
-			}
-			whereClause.append("AD_PInstance_ID = ").append(getInstanceId());
 		}
 		if (whereClause.length() > 0) {
 			whereClause.append(" AND ");

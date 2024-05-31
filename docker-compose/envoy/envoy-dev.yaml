@@ -29,7 +29,7 @@ static_resources:
                 }
                 route: {
                   cluster: adempiere_template_cluster,
-                  timeout: 60s
+                  timeout: 600s
                 }
           http_filters:
           - name: envoy.filters.http.grpc_json_transcoder

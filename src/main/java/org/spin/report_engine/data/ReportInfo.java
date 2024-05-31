@@ -56,7 +56,7 @@ public class ReportInfo {
 	private ReportInfo(PrintFormat printFormat, QueryDefinition queryDefinition) {
 		name = printFormat.getName();
 		description = printFormat.getDescription();
-		columns = printFormat.getItems().stream().map(item -> ColumnInfo.newInstance(item)).collect(Collectors.toList());
+		columns = printFormat.getPrintedItems().stream().map(item -> ColumnInfo.newInstance(item)).collect(Collectors.toList());
 		rows = new ArrayList<Row>();
 		summaryRows = new ArrayList<Row>();
 		groupedRows = new ArrayList<Row>();
@@ -123,11 +123,6 @@ public class ReportInfo {
 
 	public List<ColumnInfo> getColumns() {
 		return columns;
-	}
-	
-	public ReportInfo addColumn(ColumnInfo column) {
-		columns.add(column);
-		return this;
 	}
 	
 	public ReportInfo addRow(Row row) {

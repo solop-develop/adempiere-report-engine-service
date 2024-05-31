@@ -30,6 +30,7 @@ public class Cell {
 	private String color;
 	private String style;
 	private Object value;
+	private String tableName;
 	private String displayValue;
 	/**	Function	*/
 	private SummaryFunction function;
@@ -64,6 +65,15 @@ public class Cell {
 		return value;
 	}
 	
+	public String getTableName() {
+		return tableName;
+	}
+
+	public Cell withTableName(String tableName) {
+		this.tableName = tableName;
+		return this;
+	}
+
 	/**
 	 * 	Get Function Value
 	 * 	@return length or numeric value

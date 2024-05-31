@@ -113,6 +113,11 @@ public class PrintFormatColumn {
 	public String getColumnNameAlias() {
 		return columnNameAlias;
 	}
+	
+	public PrintFormatColumn withColumnName(String columnName) {
+		this.columnName = columnName;
+		return this;
+	}
 
 	public PrintFormatColumn withColumnNameAlias(String columnNameAlias) {
 		this.columnNameAlias = columnNameAlias;

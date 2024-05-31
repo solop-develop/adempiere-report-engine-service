@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.adempiere.core.domains.models.I_AD_PrintFormatItem;
 import org.adempiere.core.domains.models.I_AD_ReportView;
@@ -70,14 +69,13 @@ public class PrintFormat {
 		.forEach(reportViewId -> reportViews.add(ReportView.newInstance(new MReportView(Env.getCtx(), reportViewId, null))));
 		//	Get Items
 		items = new ArrayList<PrintFormatItem>();
-		new Query(Env.getCtx(), I_AD_PrintFormatItem.Table_Name, I_AD_PrintFormatItem.COLUMNNAME_AD_PrintFormat_ID + " = ?", null)
+		new Query(Env.getCtx(), I_AD_PrintFormatItem.Table_Name, "AD_PrintFormat_ID = ?", null)
 		.setParameters(printFormatId)
 		.setOrderBy(I_AD_PrintFormatItem.COLUMNNAME_SeqNo)
 		.getIDsAsList()
 		.forEach(printFormatItemId -> items.add(PrintFormatItem.newInstance(new MPrintFormatItem(Env.getCtx(), printFormatItemId, null))));
 		columnsDefinition = table.getColumnsAsList()
 				.stream()
-				.filter(column -> !hasPrintFormatItem(column.getAD_Column_ID()))
 				.map(column -> {
 			String columnName = column.getColumnName();
 			if(!Util.isEmpty(column.getColumnSQL())) {
@@ -88,10 +86,6 @@ public class PrintFormat {
 				return PrintFormatColumn.newInstance(column).withColumnNameAlias(columnName);
 			}
 		}).collect(Collectors.toList());
-	}
-	
-	private boolean hasPrintFormatItem(int columnId) {
-		return items.stream().filter(item -> item.getColumnId() == columnId).count() > 0;
 	}
 	
 	public static PrintFormat newInstance(MPrintFormat printFormat) {
@@ -132,6 +126,10 @@ public class PrintFormat {
 
 	public List<PrintFormatItem> getItems() {
 		return items;
+	}
+	
+	public List<PrintFormatItem> getPrintedItems() {
+		return items.stream().filter(item -> item.isPrinted()).collect(Collectors.toList());
 	}
 	
 	public List<PrintFormatItem> getGroupItems() {
@@ -299,6 +297,19 @@ public class PrintFormat {
 						tableReferences.append(columnReference.getTableName()).append(" ").append(getTableAlias()).append(" ON (")
 						.append(getQueryReferenceColumnName(columnReference.getKeyColumn())).append("=").append(getQueryColumnName(item.getColumnName())).append(")");
 					}
+				} else if(item.getColumnName().equals("Record_ID")) {
+					addTableAlias();
+					if(query.length() > 0) {
+						query.append(", ");
+					}
+					columnName = getQueryReferenceColumnName("TableName");
+					query.append("(").append(columnName).append(")");
+					query.append(" AS ").append("TableName");
+					columns.add(PrintFormatColumn.newInstance(item).withColumnName("TableName").withColumnNameAlias(columnName));
+					//	Add JOIN
+					tableReferences.append(" LEFT OUTER JOIN ");
+					tableReferences.append("AD_Table").append(" ").append(getTableAlias()).append(" ON (")
+					.append(getQueryReferenceColumnName("AD_Table_ID")).append("=").append(getQueryColumnName("AD_Table_ID")).append(")");
 				}
 				//	For Order By
 				if(item.isOrderBy()) {
@@ -325,8 +336,8 @@ public class PrintFormat {
 		return QueryDefinition.newInstance()
 				.withQuery(query.toString())
 				.withOrderBy(orderBy.toString())
-				.withColumns(Stream.concat(columns.stream(), 
-						getColumnsDefinition().stream()).collect(Collectors.toList()));
+				.withColumns(getColumnsDefinition())
+				.withQueryColumns(columns);
 	}
 	
 	private String getQueryColumnName(String columnName) {

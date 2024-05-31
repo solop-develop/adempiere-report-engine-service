@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.MTable;
+import org.compiere.util.Env;
 import org.compiere.util.Util;
 import org.spin.backend.grpc.report_engine.ReportColumn;
 import org.spin.backend.grpc.report_engine.ReportRow;
@@ -39,6 +41,7 @@ import com.google.protobuf.Value;
 public class Service {
 	private static final String VALUE_KEY = "value";
 	private static final String DISPLAY_VALUE_KEY = "display_value";
+	private static final String TABLE_NAME_KEY = "table_name";
 	private static final String SUM_KEY = "sum_value";
 	private static final String MEAN_KEY = "mean_value";
 	private static final String COUNT_KEY = "count_value";
@@ -65,6 +68,14 @@ public class Service {
 			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
 					.getConditions());
 		}
+		reportBuilder.withReportViewId(request.getReportViewId());
+		if(request.getRecordId() > 0
+				&& !Util.isEmpty(request.getTableName())) {
+			MTable table = MTable.get(Env.getCtx(), request.getTableName());
+			if(table != null) {
+				reportBuilder.withRecordId(table.getAD_Table_ID(), request.getRecordId());
+			}
+		}
 		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
 		return convertReport(reportInfo, limit, offset, pageNumber);
 	}
@@ -83,13 +94,18 @@ public class Service {
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
-		
-		
-		
 		ReportBuilder reportBuilder = ReportBuilder.newInstance().withReportId(request.getReportId());
 		if(!Util.isEmpty(request.getFilters())) {
 			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
 					.getConditions());
+		}
+		reportBuilder.withPrintFormatId(request.getPrintFormatId()).withReportViewId(request.getReportViewId());
+		if(request.getRecordId() > 0
+				&& !Util.isEmpty(request.getTableName())) {
+			MTable table = MTable.get(Env.getCtx(), request.getTableName());
+			if(table != null) {
+				reportBuilder.withRecordId(table.getAD_Table_ID(), request.getRecordId());
+			}
 		}
 		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
 		return convertReport(reportInfo, limit, offset, pageNumber);
@@ -127,6 +143,7 @@ public class Service {
 		builder.setNextPageToken(
 			ValueManager.validateNull(nexPageToken)
 		);
+		builder.setReportViewId(reportInfo.getReportViewId());
 		return builder;
 	}
 	
@@ -137,6 +154,10 @@ public class Service {
 			Cell cell = row.getCell(column.getPrintFormatItemId());
 			//	Put Value
 			cellValue.putFields(VALUE_KEY, ValueManager.getValueFromObject(cell.getValue()).build());
+			//	Table Name Reference
+			if(!Util.isEmpty(cell.getTableName())) {
+				cellValue.putFields(TABLE_NAME_KEY, ValueManager.getValueFromObject(cell.getTableName()).build());
+			}
 			//	Put Display Value
 			cellValue.putFields(DISPLAY_VALUE_KEY, ValueManager.getValueFromString(cell.getDisplayValue()).build());
 			//	Summary Values

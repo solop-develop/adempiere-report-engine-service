@@ -16,7 +16,6 @@ package org.spin.report_engine.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,9 +26,12 @@ import org.adempiere.core.domains.models.I_AD_PrintFormat;
 import org.adempiere.core.domains.models.I_AD_Process;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MClient;
+import org.compiere.model.MColumn;
 import org.compiere.model.MPInstance;
 import org.compiere.model.MProcess;
 import org.compiere.model.MProcessPara;
+import org.compiere.model.MTable;
+import org.compiere.model.PO;
 import org.compiere.model.Query;
 import org.compiere.print.MPrintFormat;
 import org.compiere.process.ProcessInfo;
@@ -38,6 +40,7 @@ import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Trx;
+import org.compiere.util.Util;
 import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.format.PrintFormat;
@@ -64,17 +67,8 @@ public class ReportBuilder {
 	private int offset;
 	private int instanceId;
 	
-	/**	Multi-Selection Parameters	*/
-    private LinkedHashMap<Integer, LinkedHashMap<String, Object>> selection;
-	private String aliasTableSelection;
-	private int tableSelectionId;
-	private List<Integer> selectedRecordsIds;
-	
-	
 	private ReportBuilder() {
 		conditions = new ArrayList<Filter>();
-		selectedRecordsIds = new ArrayList<>();
-		selection = new LinkedHashMap<Integer, LinkedHashMap<String,Object>>();
 	}
 	
 	public ReportBuilder withFilters(List<Filter> filters) {
@@ -116,6 +110,7 @@ public class ReportBuilder {
 
 	public ReportBuilder withInstanceId(int instanceId) {
 		this.instanceId = instanceId;
+		withParameter("AD_PInstance_ID", instanceId);
 		return this;
 	}
 
@@ -177,7 +172,7 @@ public class ReportBuilder {
 			while (resulset.next()) {
 				format.getItems().forEach(item -> {
 					Map<String, Cell> cells = new HashMap<String, Cell>();
-					queryDefinition.getColumns()
+					queryDefinition.getQueryColumns()
 					.stream()
 					.filter(column -> column.getColumnName().equals(item.getColumnName()))
 					.forEach(column -> {
@@ -186,8 +181,24 @@ public class ReportBuilder {
 							if(column.isDisplayValue()) {
 								cell.withDisplayValue(resulset.getString(column.getColumnNameAlias()));
 							} else {
-								if(DisplayType.isLookup(column.getReferenceId()) && column.getReferenceId() != DisplayType.List) {
-									cell.withValue(resulset.getInt(column.getColumnName()));
+								if(DisplayType.isLookup(column.getReferenceId()) && column.getReferenceId() != DisplayType.List || column.getColumnName().equals("Record_ID")) {
+									int valueId = resulset.getInt(column.getColumnName());
+									cell.withValue(valueId);
+									if(column.getColumnName().equals("Record_ID")) {
+										try {
+											String tableName = resulset.getString("TableName");
+											if(!Util.isEmpty(tableName)) {
+												cell.withTableName(tableName);
+												if(valueId > 0) {
+													MTable table = MTable.get(Env.getCtx(), tableName);
+													PO value = table.getPO(valueId, transactionName);
+													cell.withDisplayValue(value.getDisplayValue());
+												}
+											}
+										} catch (Exception e) {
+											e.printStackTrace();
+										}
+									}
 								} else {
 									cell.withValue(resulset.getObject(column.getColumnName()));
 								}
@@ -206,13 +217,20 @@ public class ReportBuilder {
 	}
 	
 	public ReportInfo run() {
-		if (reportId == 0 && printFormatId == 0) {
+		if (getReportId() <= 0 && getPrintFormatId() <= 0) {
 			throw new AdempiereException("@AD_Process_ID@ @NotFound@");
+		}
+		MProcess report = MProcess.get(Env.getCtx(), reportId);
+		if(getReportViewId() <= 0) {
+			withReportViewId(report.getAD_ReportView_ID());
+		}
+		if(getPrintFormatId() <= 0 && report.getAD_PrintFormat_ID() > 0) {
+			withPrintFormatId(report.getAD_PrintFormat_ID());
 		}
 		AtomicReference<ReportInfo> reportInfo = new AtomicReference<ReportInfo>();
 		//	Run Process before get
 		Trx.run(transactionName -> {
-			if(reportId > 0) {
+			if(getReportId() > 0) {
 				ReportProcessor.newInstance().withProcessInfo(generateProcessInfo(transactionName)).withTransactionName(transactionName).run();
 			}
 			validatePrintFormat(transactionName);
@@ -222,28 +240,28 @@ public class ReportBuilder {
 	}
 	
 	private void validatePrintFormat(String transactionName) {
-		MProcess report = MProcess.get(Env.getCtx(), reportId);
-		if(printFormatId == 0 && report.getAD_ReportView_ID() > 0) {
-			printFormatId = new Query(Env.getCtx(), I_AD_PrintFormat.Table_Name, I_AD_PrintFormat.COLUMNNAME_AD_ReportView_ID + " = ?", transactionName)
-			.setParameters(report.getAD_ReportView_ID())
+		if(getPrintFormatId() <= 0 && getReportViewId() > 0) {
+			withPrintFormatId(new Query(Env.getCtx(), I_AD_PrintFormat.Table_Name, I_AD_PrintFormat.COLUMNNAME_AD_ReportView_ID + " = ?", transactionName)
+			.setParameters(getReportViewId())
 			.setOrderBy(I_AD_PrintFormat.COLUMNNAME_AD_Client_ID + " DESC, " + I_AD_PrintFormat.COLUMNNAME_IsDefault + " DESC")
-			.firstId();
+			.firstId());
 			//	Create It
-			if(printFormatId == 0) {
+			if(getPrintFormatId() <= 0) {
+				MProcess report = MProcess.get(Env.getCtx(), getReportId());
 				MClient client = MClient.get(Env.getCtx());
-				MPrintFormat printFormat = MPrintFormat.createFromReportView(Env.getCtx(), report.getAD_ReportView_ID(), client.getName() + ": " + report.get_Translation(I_AD_Process.COLUMNNAME_Name));
-				printFormatId = printFormat.getAD_PrintFormat_ID();
+				MPrintFormat printFormat = MPrintFormat.createFromReportView(Env.getCtx(), getReportViewId(), client.getName() + ": " + report.get_Translation(I_AD_Process.COLUMNNAME_Name));
+				withPrintFormatId(printFormat.getAD_PrintFormat_ID());
 			}
 		}
 	}
 	
 	private MPInstance generateProcessInstance() {
 		//	Generate Process here
-		MProcess process = MProcess.get(Env.getCtx(), reportId);
-		MPInstance processInstance = new MPInstance(Env.getCtx(), reportId, recordId);
+		MProcess process = MProcess.get(Env.getCtx(), getReportId());
+		MPInstance processInstance = new MPInstance(Env.getCtx(), getReportId(), getRecordId());
 		processInstance.setAD_Process_ID(process.getAD_Process_ID());
 		processInstance.setName(process.get_Translation(I_AD_Process.COLUMNNAME_Name));
-		processInstance.setRecord_ID(recordId);
+		processInstance.setRecord_ID(getRecordId());
 		processInstance.saveEx();
 		withInstanceId(processInstance.getAD_PInstance_ID());
 		//	Add Parameters
@@ -266,26 +284,17 @@ public class ReportBuilder {
 		 MPInstance processInstance = generateProcessInstance();
 		 ProcessInfo processInfo;
 		 MProcess process = MProcess.get(Env.getCtx(), reportId);
-		 boolean isSelection = selectedRecordsIds.size() > 0;
 		 processInfo = new ProcessInfo(process.get_Translation(I_AD_Process.COLUMNNAME_Name), reportId, tableId, recordId, false);
 		 processInfo.setAD_PInstance_ID(processInstance.getAD_PInstance_ID());
 		 processInfo.setClassName(process.getClassname());
 		 processInfo.setTransactionName(transactionName);
-		 processInfo.setIsSelection(isSelection);
+		 processInfo.setIsSelection(false);
 		 processInfo.setPrintPreview(false);
-		 processInfo.setAliasForTableSelection(aliasTableSelection);
 		 processInfo.setAD_Client_ID(processInstance.getAD_Client_ID());
 		 processInfo.setAD_User_ID(processInstance.getAD_User_ID());
 		 processInfo.setReportType(processInstance.getReportType());
 		 processInfo.setIsBatch(false);
 		 ProcessInfoUtil.setParameterFromDB(processInfo);
-		 //	FR [ 352 ]
-		 if (isSelection) {
-			 processInfo.setSelectionKeys(selectedRecordsIds);
-			 processInfo.setTableSelectionId(tableSelectionId);
-			 processInfo.setSelectionValues(selection);
-		 }
-		 
 		 return processInfo;
 	}
 	
@@ -298,46 +307,25 @@ public class ReportBuilder {
     public ReportBuilder withRecordId(int tableId , int recordId) {
         this.tableId =  tableId;
         this.recordId = recordId;
+        if(getPrintFormatId() <= 0) {
+        	MTable table = MTable.get(Env.getCtx(), tableId);
+        	MColumn column = table.getColumn("AD_PrintFormat_ID");
+        	if(column != null) {
+        		PO entity = table.getPO(recordId, null);
+        		if(entity != null
+        				&& entity.get_ID() > 0) {
+        			withPrintFormatId(entity.get_ValueAsInt("AD_PrintFormat_ID"));
+        		}
+        	}
+        	
+        }
         return this;
-    }
-	
-    /**
-     * Define mutiples select record ids to be processed
-     * @param selectedRecordsIds
-     * @return
-     */
-    public ReportBuilder withSelectedRecordsIds(int tableSelectionId, List<Integer> selectedRecordsIds) {
-        return withSelectedRecordsIds(tableSelectionId, null, selectedRecordsIds);
     }
     
-    /**
-     * Define mutiples select record ids to be processed
-     * @param tableSelectionId
-     * @param aliasTableSelection
-     * @param selectedRecordsIds
-     * @return
-     */
-    public ReportBuilder withSelectedRecordsIds(int tableSelectionId, String aliasTableSelection, List<Integer> selectedRecordsIds) {
-        this.selectedRecordsIds = selectedRecordsIds;
-        this.tableSelectionId = tableSelectionId;
-        this.aliasTableSelection = aliasTableSelection;
-        return this;
+    public int getRecordId() {
+    	return recordId;
     }
-
-    /**
-     * Define select record ids and values
-     * @param selectedRecordsIds
-     * @param selection
-     * @return
-     */
-    public ReportBuilder withSelectedRecordsIds(int tableSelectionId , List<Integer> selectedRecordsIds, LinkedHashMap<Integer, LinkedHashMap<String, Object>> selection)
-    {
-        this.selectedRecordsIds = selectedRecordsIds;
-        this.selection = selection;
-        this.tableSelectionId = tableSelectionId;
-        return this;
-    }
-	
+    
 	public static void main(String[] args) {
 		//	50132
 		//	Stocktake Line

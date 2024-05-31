@@ -41,10 +41,6 @@ message GetReportRequest {
 	bool is_summary = 8;
 	int32 record_id = 9;
 	string table_name = 10;
-	// browser
-	int32 browser_id = 11;
-	repeated KeyValueSelection selections = 12;
-	int32 instance_id = 13;
 }
 
 //	Entities Selections
