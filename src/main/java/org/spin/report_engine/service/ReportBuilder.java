@@ -14,6 +14,8 @@
  ************************************************************************************/
 package org.spin.report_engine.service;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +41,7 @@ import org.compiere.process.ProcessInfoUtil;
 import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
+import org.compiere.util.Language;
 import org.compiere.util.Trx;
 import org.compiere.util.Util;
 import org.spin.report_engine.data.Cell;
@@ -164,6 +167,7 @@ public class ReportBuilder {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
 		}
 		limit = LimitUtil.getPageSize(limit);
+		Language language = Language.getLoginLanguage();
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
 		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withInstanceId(getInstanceId()).withLimit(limit, offset).buildQuery();
@@ -200,7 +204,19 @@ public class ReportBuilder {
 										}
 									}
 								} else {
-									cell.withValue(resulset.getObject(column.getColumnName()));
+									Object value = resulset.getObject(column.getColumnName());
+									cell.withValue(value);
+									//	Apply Format Pattern
+									String formatPattern = item.getFormatPattern();
+									if(value != null) {
+										if(DisplayType.isDate(item.getReferenceId())) {
+											Timestamp date = (Timestamp) value;
+											cell.withDisplayValue(DisplayType.getDateFormat(item.getReferenceId(), language, formatPattern).format(date));
+										} else if(DisplayType.isNumeric(item.getReferenceId()) && BigDecimal.class.isAssignableFrom(value.getClass())) {
+											BigDecimal number = (BigDecimal) value;
+											cell.withDisplayValue(DisplayType.getNumberFormat(item.getReferenceId(), language, formatPattern).format(number));
+										}
+									}
 								}
 							}
 						} catch (Exception e) {
