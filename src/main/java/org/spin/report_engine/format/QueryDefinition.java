@@ -142,15 +142,15 @@ public class QueryDefinition {
 			.forEach(condition -> {
 				Optional<PrintFormatColumn> maybeColumn = getColumns()
 						.stream()
-						.filter(column -> column.getColumnName().equals(condition.getColumnName()))
-						.sorted(Comparator.comparing(PrintFormatColumn::getColumnNameAlias))
+						.filter(column -> column.getColumnNameAlias().equals(condition.getColumnName()))
+						.sorted(Comparator.comparing(PrintFormatColumn::getColumnNameAlias).reversed())
 						.findFirst();
 				if(maybeColumn.isPresent()) {
 					if (whereClause.length() > 0) {
 						whereClause.append(" AND ");
 					}
 					PrintFormatColumn column = maybeColumn.get();
-					condition.setColumnName(column.getColumnName());
+					condition.setColumnName(column.getColumnNameAlias());
 					String restriction = getRestrictionByOperator(condition, column.getReferenceId());
 					whereClause.append(restriction);
 				}
