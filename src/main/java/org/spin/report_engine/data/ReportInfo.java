@@ -65,7 +65,8 @@ public class ReportInfo {
 		AtomicInteger counter = new AtomicInteger();
 		groupLevels = new HashMap<Integer, PrintFormatItem>();
 		printFormat.getGroupItems().stream().sorted(Comparator.comparing(PrintFormatItem::getSortSequence)).forEach(group -> {
-			groupLevels.put(counter.getAndIncrement(), group);
+			group.withSortSequence(counter.getAndIncrement());
+			groupLevels.put(counter.get(), group);
 		});
 		sortingItems = printFormat.getSortingItems();
 		printFormatId = printFormat.getPrintFormatId();

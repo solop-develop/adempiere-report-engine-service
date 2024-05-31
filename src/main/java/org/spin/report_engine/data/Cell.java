@@ -97,11 +97,18 @@ public class Cell {
 		return this;
 	}
 
-	public String getDisplayValue() {
+	public String getCompareValue() {
 		if(Util.isEmpty(displayValue)) {
 			if(value != null) {
 				return String.valueOf(value);
 			}
+			return "";
+		}
+		return displayValue;
+	}
+	
+	public String getDisplayValue() {
+		if(Util.isEmpty(displayValue)) {
 			return "";
 		}
 		return displayValue;

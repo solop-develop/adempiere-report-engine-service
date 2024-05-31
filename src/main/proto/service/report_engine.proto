@@ -15,23 +15,42 @@ package report_engine;
 
 // The greeting service definition.
 service ReportEngine {
-	//	Generate Report
+	//	Get Report Format
+	rpc GetView(GetReportRequest) returns (Report) {
+		option (google.api.http) = {
+			get: "/v1/report-engine/views/{print_format_id}"
+		};
+	}
+
 	rpc GetReport(GetReportRequest) returns (Report) {
 		option (google.api.http) = {
-			get: "/v1/report-engine/reports/{id}"
+			get: "/v1/report-engine/reports/{report_id}"
 		};
 	}
 }
 
-// Get Report Output Request
+// Get Report Request
 message GetReportRequest {
-	int32 id = 1;
+	int32 report_id = 1;
 	string filters = 2;
 	string sort_by = 3;
 	int32 page_size = 4;
 	string page_token = 5;
 	int32 report_view_id = 6;
-	bool is_summary = 7;
+	int32 print_format_id = 7;
+	bool is_summary = 8;
+	int32 record_id = 9;
+	string table_name = 10;
+	// browser
+	int32 browser_id = 11;
+	repeated KeyValueSelection selections = 12;
+	int32 instance_id = 13;
+}
+
+//	Entities Selections
+message KeyValueSelection {
+	int32 selection_id = 1;
+	google.protobuf.Struct values = 2;
 }
 
 message Report {
@@ -44,6 +63,7 @@ message Report {
 	repeated ReportColumn columns = 7;
 	repeated ReportRow rows = 8;
 	string next_page_token = 9;
+	int32 instance_id = 10;
 }
 
 message ReportColumn {

@@ -67,7 +67,7 @@ public class Row {
 	}
 	
 	public String getCompareValue(int itemId) {
-		return Optional.ofNullable(getCell(itemId).getDisplayValue()).orElse("");
+		return Optional.ofNullable(getCell(itemId).getCompareValue()).orElse("");
 	}
 
 	public int getLevel() {

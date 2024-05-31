@@ -42,4 +42,19 @@ public class ReportService extends ReportEngineImplBase {
 					.asRuntimeException());
 		}
 	}
+	
+	@Override
+	public void getView(GetReportRequest request, StreamObserver<Report> responseObserver) {
+		try {
+			Report.Builder reportBuilder = Service.getView(request);
+			responseObserver.onNext(reportBuilder.build());
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			log.severe(e.getLocalizedMessage());
+			responseObserver.onError(Status.INTERNAL
+					.withDescription(e.getLocalizedMessage())
+					.withCause(e)
+					.asRuntimeException());
+		}
+	}
 }

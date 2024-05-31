@@ -200,6 +200,11 @@ public class PrintFormatItem {
 	public int getSortSequence() {
 		return sortSequence;
 	}
+	
+	public PrintFormatItem withSortSequence(int sortSequence) {
+		this.sortSequence = sortSequence;
+		return this;
+	}
 
 	public String getPrintFormatType() {
 		return printFormatType;

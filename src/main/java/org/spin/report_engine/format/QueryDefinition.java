@@ -40,6 +40,7 @@ public class QueryDefinition {
 	private String completeQuery;
 	private int limit; 
 	private int offset;
+	private int instanceId;
 	
 	private QueryDefinition() {
 		conditions = new ArrayList<Filter>();
@@ -61,6 +62,15 @@ public class QueryDefinition {
 
 	public QueryDefinition withQuery(String query) {
 		this.query = query;
+		return this;
+	}
+	
+	public int getInstanceId() {
+		return instanceId;
+	}
+
+	public QueryDefinition withInstanceId(int instanceId) {
+		this.instanceId = instanceId;
 		return this;
 	}
 
@@ -140,7 +150,7 @@ public class QueryDefinition {
 						whereClause.append(" AND ");
 					}
 					PrintFormatColumn column = maybeColumn.get();
-					condition.setColumnName(column.getColumnNameAlias());
+					condition.setColumnName(column.getColumnName());
 					String restriction = getRestrictionByOperator(condition, column.getReferenceId());
 					whereClause.append(restriction);
 				}
@@ -148,6 +158,12 @@ public class QueryDefinition {
 		//	Add Limit
 		if(limit <= 0) {
 			withLimit(100, 0);
+		}
+		if(getInstanceId() > 0) {
+			if (whereClause.length() > 0) {
+				whereClause.append(" AND ");
+			}
+			whereClause.append("AD_PInstance_ID = ").append(getInstanceId());
 		}
 		if (whereClause.length() > 0) {
 			whereClause.append(" AND ");

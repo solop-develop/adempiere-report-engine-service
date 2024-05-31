@@ -48,24 +48,54 @@ public class Service {
 	private static final String DEVIATION_KEY = "deviation_value";
 	
 	/**
+	 * Get a View after run report
+	 * @param context
+	 * @param request
+	 * @return
+	 */
+	public static Report.Builder getView(GetReportRequest request) {
+		if(request.getPrintFormatId() <= 0) {
+			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
+		}
+		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
+		int limit = LimitUtil.getPageSize(request.getPageSize());
+		int offset = (pageNumber - 1) * limit;
+		ReportBuilder reportBuilder = ReportBuilder.newInstance().withPrintFormatId(request.getPrintFormatId());
+		if(!Util.isEmpty(request.getFilters())) {
+			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
+					.getConditions());
+		}
+		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
+		return convertReport(reportInfo, limit, offset, pageNumber);
+	}
+	
+	
+	/**
 	 * Run Report
 	 * @param context
 	 * @param request
 	 * @return
 	 */
 	public static Report.Builder getReport(GetReportRequest request) {
-		if(request.getId() <= 0) {
-			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
+		if(request.getReportId() <= 0) {
+			throw new AdempiereException("@FillMandatory@ @AD_Process_ID@");
 		}
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
-		ReportBuilder reportBuilder = ReportBuilder.newInstance(request.getId());
+		
+		
+		
+		ReportBuilder reportBuilder = ReportBuilder.newInstance().withReportId(request.getReportId());
 		if(!Util.isEmpty(request.getFilters())) {
 			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
 					.getConditions());
 		}
-		ReportInfo reportInfo = reportBuilder.run(limit, offset);
+		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
+		return convertReport(reportInfo, limit, offset, pageNumber);
+	}
+	
+	private static Report.Builder convertReport(ReportInfo reportInfo, int limit, int offset, int pageNumber) {
 		//	
 		Report.Builder builder = Report.newBuilder();
 		builder.setName(ValueManager.validateNull(reportInfo.getName()))
