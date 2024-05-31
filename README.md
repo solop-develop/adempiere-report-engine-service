@@ -86,6 +86,29 @@ docker compose up
 
 You can test it using postman with [this](docs/adempiere_report_engine.json) definition, also you can look it from [here](https://documenter.getpostman.com/view/18440575/2sA3QtfXC3)
 
+### Some Services
+
+This repo has some services, the follow is a list:
+
+- `/v1/reports/{report_id}`
+- `/v1/reportsviews/{print_format_id}`
+
+The default host is `http://0.0.0.0:5555`
+
+#### Some Curl's
+
+```Curl
+curl --location 'http://0.0.0.0:5555/v1/report-engine/views/1001918' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJBRF9DbGllbnRfSUQiOjEwMDAwMDAsIkFEX09yZ19JRCI6MTAwMDAyMCwiQURfUm9sZV9JRCI6MTAwMDAwMCwiQURfVXNlcl9JRCI6MTAwMDAxNywiTV9XYXJlaG91c2VfSUQiOjEwMDAwNjksIkFEX0xhbmd1YWdlIjoiZW5fVVMiLCJpYXQiOjE3MTY2NzY1NTR9.O6ua3R-fon2g8PypVcC_4SgOj6pVzkU4t1CgEaliubM'
+
+```
+
+```Curl
+curl --location --globoff 'http://0.0.0.0:5555/v1/report-engine/reports/53998?filters=[{%22name%22%3A%20%22C_BPartner_ID%22%2C%20%22operator%22%3A%20%22equal%22%2C%20%22values%22%3A%201001781}%2C%20{%22name%22%3A%20%22DateTo%22%2C%20%22operator%22%3A%20%22equal%22%2C%20%22values%22%3A%20%222024-05-30T00%3A00%3A00.00Z%22}]' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJBRF9DbGllbnRfSUQiOjEwMDAwMDAsIkFEX09yZ19JRCI6MTAwMDAyMCwiQURfUm9sZV9JRCI6MTAwMDAwMCwiQURfVXNlcl9JRCI6MTAwMDAxNywiTV9XYXJlaG91c2VfSUQiOjEwMDAwNjksIkFEX0xhbmd1YWdlIjoiZW5fVVMiLCJpYXQiOjE3MTY2NzY1NTR9.O6ua3R-fon2g8PypVcC_4SgOj6pVzkU4t1CgEaliubM'
+
+```
+
 ### Some Variables
 
 You can change variables editing the `.env` file. Note that this file have a minimal example.
