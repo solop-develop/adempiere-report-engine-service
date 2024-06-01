@@ -14,20 +14,26 @@
  ************************************************************************************/
 package org.spin.report_engine.mapper;
 
+import java.sql.ResultSet;
+
+import org.compiere.util.Language;
 import org.spin.report_engine.data.Cell;
+import org.spin.report_engine.format.PrintFormatColumn;
 import org.spin.report_engine.format.PrintFormatItem;
 
 /**
  * This interface represent a contract of column mapper, you can implement your own mapper based on this format
  * @author Yamel Senih, ysenih@erpya.com, ERPCyA http://www.erpya.com
  */
-public interface IColumnMapper {
+public interface IColumnMapping {
 	
 	/**
-	 * Process value from query
+	 * Process Cell Value from query
 	 * @param printFormatLine
-	 * @param value
-	 * @return
+	 * @param column
+	 * @param language
+	 * @param resultSet
+	 * @param cell
 	 */
-	public Cell processValue(PrintFormatItem printFormatLine, Object value);
+	public void processValue(PrintFormatItem printFormatLine, PrintFormatColumn column, Language language, ResultSet resultSet, Cell cell);
 }

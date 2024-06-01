@@ -14,8 +14,6 @@
  ************************************************************************************/
 package org.spin.report_engine.service;
 
-import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,15 +37,14 @@ import org.compiere.print.MPrintFormat;
 import org.compiere.process.ProcessInfo;
 import org.compiere.process.ProcessInfoUtil;
 import org.compiere.util.DB;
-import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Language;
 import org.compiere.util.Trx;
-import org.compiere.util.Util;
 import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.QueryDefinition;
+import org.spin.report_engine.mapper.DefaultMapping;
 import org.spin.service.grpc.util.db.LimitUtil;
 import org.spin.service.grpc.util.db.ParameterUtil;
 import org.spin.service.grpc.util.query.Filter;
@@ -185,39 +182,10 @@ public class ReportBuilder {
 							if(column.isDisplayValue()) {
 								cell.withDisplayValue(resulset.getString(column.getColumnNameAlias()));
 							} else {
-								if(DisplayType.isLookup(column.getReferenceId()) && column.getReferenceId() != DisplayType.List || column.getColumnName().equals("Record_ID")) {
-									int valueId = resulset.getInt(column.getColumnName());
-									cell.withValue(valueId);
-									if(column.getColumnName().equals("Record_ID")) {
-										try {
-											String tableName = resulset.getString("TableName");
-											if(!Util.isEmpty(tableName)) {
-												cell.withTableName(tableName);
-												if(valueId > 0) {
-													MTable table = MTable.get(Env.getCtx(), tableName);
-													PO value = table.getPO(valueId, transactionName);
-													cell.withDisplayValue(value.getDisplayValue());
-												}
-											}
-										} catch (Exception e) {
-											e.printStackTrace();
-										}
-									}
-								} else {
-									Object value = resulset.getObject(column.getColumnName());
-									cell.withValue(value);
-									//	Apply Format Pattern
-									String formatPattern = item.getFormatPattern();
-									if(value != null) {
-										if(DisplayType.isDate(item.getReferenceId())) {
-											Timestamp date = (Timestamp) value;
-											cell.withDisplayValue(DisplayType.getDateFormat(item.getReferenceId(), language, formatPattern).format(date));
-										} else if(DisplayType.isNumeric(item.getReferenceId()) && BigDecimal.class.isAssignableFrom(value.getClass())) {
-											BigDecimal number = (BigDecimal) value;
-											cell.withDisplayValue(DisplayType.getNumberFormat(item.getReferenceId(), language, formatPattern).format(number));
-										}
-									}
-								}
+								Object value = resulset.getObject(column.getColumnName());
+								cell.withValue(value);
+								//	Apply Default Mask
+								DefaultMapping.newInstance().processValue(item, column, language, resulset, cell);
 							}
 						} catch (Exception e) {
 							e.printStackTrace();
