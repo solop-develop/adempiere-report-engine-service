@@ -60,6 +60,7 @@ public class PrintFormatItem {
 	private boolean isMandatory;
 	private boolean isVirtualColumn;
 	private String columnSql;
+	private String mappingClassName;
 	
 	
 	/** PrintFormatType AD_Reference_ID=255 */
@@ -171,10 +172,20 @@ public class PrintFormatItem {
 		if(!Util.isEmpty(printFormatItem.getFormatPattern())) {
 			formatPattern = printFormatItem.getFormatPattern();
 		}
+		mappingClassName = printFormatItem.get_ValueAsString("MappingClassName");
 	}
 	
 	public static PrintFormatItem newInstance(MPrintFormatItem printFormatItem) {
 		return new PrintFormatItem(printFormatItem);
+	}
+
+	public String getMappingClassName() {
+		return mappingClassName;
+	}
+
+	public PrintFormatItem withMappingClassName(String mappingClassName) {
+		this.mappingClassName = mappingClassName;
+		return this;
 	}
 
 	public String getName() {

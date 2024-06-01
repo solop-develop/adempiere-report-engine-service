@@ -14,6 +14,7 @@
  ************************************************************************************/
 package org.spin.report_engine.service;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 
 import org.adempiere.core.domains.models.I_AD_PrintFormat;
 import org.adempiere.core.domains.models.I_AD_Process;
@@ -36,15 +38,18 @@ import org.compiere.model.Query;
 import org.compiere.print.MPrintFormat;
 import org.compiere.process.ProcessInfo;
 import org.compiere.process.ProcessInfoUtil;
+import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Language;
 import org.compiere.util.Trx;
+import org.compiere.util.Util;
 import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.QueryDefinition;
 import org.spin.report_engine.mapper.DefaultMapping;
+import org.spin.report_engine.mapper.IColumnMapping;
 import org.spin.service.grpc.util.db.LimitUtil;
 import org.spin.service.grpc.util.db.ParameterUtil;
 import org.spin.service.grpc.util.query.Filter;
@@ -66,6 +71,8 @@ public class ReportBuilder {
 	private int limit;
 	private int offset;
 	private int instanceId;
+	
+	private static final CLogger logger = CLogger.getCLogger(ReportBuilder.class);
 	
 	private ReportBuilder() {
 		conditions = new ArrayList<Filter>();
@@ -185,10 +192,18 @@ public class ReportBuilder {
 								Object value = resulset.getObject(column.getColumnName());
 								cell.withValue(value);
 								//	Apply Default Mask
-								DefaultMapping.newInstance().processValue(item, column, language, resulset, cell);
+								if(!Util.isEmpty(item.getMappingClassName())) {
+									IColumnMapping customMapping = loadClass(item.getMappingClassName());
+									if(customMapping != null) {
+										customMapping.processValue(item, column, language, resulset, cell);
+									}
+								} else {
+									DefaultMapping.newInstance().processValue(item, column, language, resulset, cell);
+								}
 							}
 						} catch (Exception e) {
 							e.printStackTrace();
+							logger.warning(e.getLocalizedMessage());
 						}
 						cells.put(item.getColumnName(), cell);
 					});
@@ -199,6 +214,51 @@ public class ReportBuilder {
 		});
 		return reportInfo.completeInfo();
 	}
+	
+	private Class<?> getHandlerClass(String className) {
+        //	Validate null values
+        if(Util.isEmpty(className)) {
+            return null;
+        }
+        try {
+            Class<?> clazz = Class.forName(className);
+            if(IColumnMapping.class.isAssignableFrom(clazz)) {
+                return clazz;
+            }
+            //	Make sure that it is a PO class
+            Class<?> superClazz = clazz.getSuperclass();
+            //	Validate super class
+            while (superClazz != null) {
+                if (superClazz == IColumnMapping.class) {
+                	logger.log(Level.SEVERE, "Error loading class, Use: " + className);
+                    return clazz;
+                }
+                //	Get Super Class
+                superClazz = superClazz.getSuperclass();
+            }
+        } catch (Exception e) {
+        	logger.log(Level.SEVERE, "Loading class Error "+ e.getMessage());
+        }
+        //
+        logger.log(Level.SEVERE,"Not found Class: " + className);
+        return null;
+    }	//	getHandlerClass
+
+	private IColumnMapping loadClass(String className) {
+		IColumnMapping mapping = null;
+		try {
+			Class<?> clazz = getHandlerClass(className);
+	        if (clazz == null) {
+	            logger.log(Level.SEVERE, "Class not found, Using Standard Class");
+	        } else {
+	        	Constructor<?> constructor = clazz.getDeclaredConstructor();
+	        	mapping = (IColumnMapping) constructor.newInstance();
+	        }
+		} catch (Exception e) {
+			logger.warning(e.getLocalizedMessage());
+		}
+        return mapping;
+    }
 	
 	public ReportInfo run() {
 		if (getReportId() <= 0 && getPrintFormatId() <= 0) {
