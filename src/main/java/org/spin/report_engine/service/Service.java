@@ -120,6 +120,7 @@ public class Service {
 		.setPrintFormatId(reportInfo.getPrintFormatId())
 		.setReportViewId(reportInfo.getReportViewId())
 		.setRecordCount(reportInfo.getRecordCount())
+		.setInstanceId(reportInfo.getInstanceId())
 		.addAllColumns(
 				reportInfo.getColumns().stream().map(
 						column -> ReportColumn.newBuilder()

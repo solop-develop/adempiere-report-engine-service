@@ -52,6 +52,7 @@ public class ReportInfo {
 	private Map<Integer, PrintFormatItem> groupLevels;
 	private QueryDefinition queryDefinition;
 	private long recordCount;
+	private int instanceId;
 	
 	private ReportInfo(PrintFormat printFormat, QueryDefinition queryDefinition) {
 		name = printFormat.getName();
@@ -87,6 +88,15 @@ public class ReportInfo {
 
 	public ReportInfo withQueryDefinition(QueryDefinition queryDefinition) {
 		this.queryDefinition = queryDefinition;
+		return this;
+	}
+
+	public int getInstanceId() {
+		return instanceId;
+	}
+
+	public ReportInfo withInstanceId(int instanceId) {
+		this.instanceId = instanceId;
 		return this;
 	}
 
