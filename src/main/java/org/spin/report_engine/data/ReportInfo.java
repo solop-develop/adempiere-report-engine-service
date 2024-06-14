@@ -169,7 +169,11 @@ public class ReportInfo {
 				comparator.getAndUpdate(value -> value.thenComparing(groupComparator));
 			}
 		});
-		comparator.getAndUpdate(value -> value.thenComparing(Comparator.comparing(Row::getLevel)));
+		if(comparator.get() != null) {
+			comparator.getAndUpdate(value -> value.thenComparing(Comparator.comparing(Row::getLevel)));
+		} else {
+			comparator.set(Comparator.comparing(Row::getLevel));
+		}
 		return comparator.get();
 	}
 	
