@@ -209,13 +209,30 @@ public class ReportInfo {
 			rows.stream().filter(row -> {
 				return row.getLevel() == levelGroup.getSortSequence();
 			}).forEach(row -> tree.add(row));
-			//	Add level 1
-			tree.forEach(treeValue -> {
-				processChildren(treeValue, 1);
-			});
+			if(groupLevels.size() > 1) {
+				//	Add level 1
+				tree.forEach(treeValue -> {
+					processChildren(treeValue, 1);
+				});
+			} else {
+				tree.forEach(treeValue -> {
+					processAllChildren(treeValue);
+				});
+			}
 			return tree;
 		}
 		return rows;
+	}
+	
+	private void processAllChildren(Row parent) {
+		List<Row> children = parent.getChildren();
+		PrintFormatItem previosLevelGroup = groupLevels.get(0);
+		if(previosLevelGroup == null) {
+			return;
+		}
+		rows.stream().filter(row -> {
+			return row.getLevel() > previosLevelGroup.getSortSequence() && compareRows(parent, row, 1);
+		}).forEach(row -> children.add(row));
 	}
 	
 	private void processChildren(Row parent, int levelAsInt) {
