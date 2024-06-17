@@ -48,7 +48,8 @@ public class ColumnInfo {
 	}
 
 	public ColumnInfo withDisplayTypeId(int displayTypeId) {
-		this.displayTypeId = displayTypeId;return this;
+		this.displayTypeId = displayTypeId;
+		return this;
 		
 	}
 
