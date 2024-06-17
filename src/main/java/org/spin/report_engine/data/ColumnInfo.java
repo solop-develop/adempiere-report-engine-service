@@ -30,17 +30,28 @@ public class ColumnInfo {
 	private String code;
 	private String title;
 	private int printFormatItemId;
+	private int displayTypeId;
 	
 	private ColumnInfo(PrintFormatItem item) {
 		this.title = item.getPrintText();
 		this.printFormatItemId = item.getPrintFormatItemId();
 		this.code = String.valueOf(item.getPrintFormatItemId());
+		this.displayTypeId = item.getReferenceId();
 	}
 	
 	public static ColumnInfo newInstance(PrintFormatItem item) {
 		return new ColumnInfo(item);
 	}
 	
+	public int getDisplayTypeId() {
+		return displayTypeId;
+	}
+
+	public ColumnInfo withDisplayTypeId(int displayTypeId) {
+		this.displayTypeId = displayTypeId;return this;
+		
+	}
+
 	public String getColor() {
 		return color;
 	}

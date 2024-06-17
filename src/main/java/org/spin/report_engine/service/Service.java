@@ -128,6 +128,7 @@ public class Service {
 						.setTitle(ValueManager.validateNull(column.getTitle()))
 						.setColor(ValueManager.validateNull(column.getColor()))
 						.setStyle(ValueManager.validateNull(column.getStyle()))
+						.setDisplayType(column.getDisplayTypeId())
 						.build()
 						).collect(Collectors.toList())
 				)

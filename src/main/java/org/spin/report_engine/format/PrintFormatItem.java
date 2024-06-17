@@ -17,6 +17,7 @@ package org.spin.report_engine.format;
 import org.adempiere.core.domains.models.I_AD_PrintFormatItem;
 import org.compiere.model.MColumn;
 import org.compiere.print.MPrintFormatItem;
+import org.compiere.util.DisplayType;
 import org.compiere.util.Util;
 
 /**
@@ -168,6 +169,8 @@ public class PrintFormatItem {
 			isMandatory = column.isMandatory();
 			columnSql = column.getColumnSQL();
 			isVirtualColumn = !Util.isEmpty(column.getColumnSQL());
+		} else {
+			referenceId = DisplayType.String;
 		}
 		if(!Util.isEmpty(printFormatItem.getFormatPattern())) {
 			formatPattern = printFormatItem.getFormatPattern();
