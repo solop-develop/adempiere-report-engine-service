@@ -143,7 +143,7 @@ public class ReportInfo {
 	public ReportInfo addRow() {
 		if(temporaryRow != null) {
 			addRow(Row.newInstance().withLevel(getLevel()).withCells(temporaryRow.getData()));
-			summaryHandler.addRow(Row.newInstance().withLevel(getLevel()).withCells(temporaryRow.getData()));
+			summaryHandler.addRow(Row.newInstance().withLevel(getLevel()).withSummaryRow(true).withCells(temporaryRow.getData()));
 		}
 		temporaryRow = Row.newInstance().withLevel(getLevel());
 		return this;
@@ -161,6 +161,12 @@ public class ReportInfo {
 		return rows;
 	}
 	
+	public List<Row> getCompleteRows() {
+		return rows.stream()
+				.sorted(getSortingValue(true))
+                .collect(Collectors.toList());
+	}
+	
 	public List<Row> getSummaryRows() {
 		return summaryRows;
 	}
@@ -169,7 +175,7 @@ public class ReportInfo {
 		return groupedRows;
 	}
 
-	private Comparator<Row> getSortingValue() {
+	private Comparator<Row> getSortingValue(boolean summaryAtEnd) {
 		AtomicReference<Comparator<Row>> comparator = new AtomicReference<>();
 		sortingItems.forEach(printFormatItem -> {
 			Comparator<Row> groupComparator = (p, o) -> p.getCompareValue(printFormatItem.getPrintFormatItemId()).compareToIgnoreCase(o.getCompareValue(printFormatItem.getPrintFormatItemId()));
@@ -180,9 +186,17 @@ public class ReportInfo {
 			}
 		});
 		if(comparator.get() != null) {
-			comparator.getAndUpdate(value -> value.thenComparing(Comparator.comparing(Row::getLevel)));
+			if(!summaryAtEnd) {
+				comparator.getAndUpdate(value -> value.thenComparing(Comparator.comparing(Row::getLevel)));
+			} else {
+				comparator.getAndUpdate(value -> value.thenComparing(Comparator.comparing(Row::getLevel).reversed()));
+			}
 		} else {
-			comparator.set(Comparator.comparing(Row::getLevel));
+			if(!summaryAtEnd) {
+				comparator.set(Comparator.comparing(Row::getLevel).reversed());
+			} else {
+				comparator.set(Comparator.comparing(Row::getLevel));
+			}
 		}
 		return comparator.get();
 	}
@@ -191,7 +205,7 @@ public class ReportInfo {
 		recordCount = rows.size();
 		groupedRows = summaryHandler.getAsRows();
 		List<Row> completeRows = Stream.concat(getRows().stream(), groupedRows.stream())
-				.sorted(getSortingValue())
+				.sorted(getSortingValue(false))
                 .collect(Collectors.toList());
 		rows = completeRows;
 		return this;

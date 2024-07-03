@@ -211,6 +211,8 @@ public class ReportBuilder {
 				});
 				reportInfo.addRow();
 			}
+		}).onFailure(throwable -> {
+			throw new AdempiereException(throwable);
 		});
 		return reportInfo.completeInfo();
 	}

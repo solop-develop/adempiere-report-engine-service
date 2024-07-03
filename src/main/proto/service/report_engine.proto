@@ -27,6 +27,33 @@ service ReportEngine {
 			get: "/v1/report-engine/reports/{report_id}"
 		};
 	}
+	
+	rpc RunExport(RunExportRequest) returns (RunExportResponse) {
+		option (google.api.http) = {
+			post: "/v1/report-engine/export/{report_id}/{format}"
+		};
+	}
+}
+
+// Run Export Request
+message RunExportRequest {
+	int32 report_id = 1;
+	string filters = 2;
+	string sort_by = 3;
+	int32 page_size = 4;
+	string page_token = 5;
+	int32 report_view_id = 6;
+	int32 print_format_id = 7;
+	bool is_summary = 8;
+	int32 record_id = 9;
+	string table_name = 10;
+	string format = 11;
+}
+
+//	Export Response
+message RunExportResponse {
+	int32 instance_id = 1;
+	string file_name = 2;
 }
 
 // Get Report Request
@@ -41,12 +68,7 @@ message GetReportRequest {
 	bool is_summary = 8;
 	int32 record_id = 9;
 	string table_name = 10;
-}
-
-//	Entities Selections
-message KeyValueSelection {
-	int32 selection_id = 1;
-	google.protobuf.Struct values = 2;
+	bool show_as_rows = 11;
 }
 
 message Report {

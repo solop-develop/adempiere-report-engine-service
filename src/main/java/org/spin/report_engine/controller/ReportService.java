@@ -19,6 +19,8 @@ import org.spin.backend.grpc.report_engine.ReportEngineGrpc.ReportEngineImplBase
 import org.spin.report_engine.service.Service;
 import org.spin.backend.grpc.report_engine.GetReportRequest;
 import org.spin.backend.grpc.report_engine.Report;
+import org.spin.backend.grpc.report_engine.RunExportRequest;
+import org.spin.backend.grpc.report_engine.RunExportResponse;
 
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -47,6 +49,21 @@ public class ReportService extends ReportEngineImplBase {
 	public void getView(GetReportRequest request, StreamObserver<Report> responseObserver) {
 		try {
 			Report.Builder reportBuilder = Service.getView(request);
+			responseObserver.onNext(reportBuilder.build());
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			log.severe(e.getLocalizedMessage());
+			responseObserver.onError(Status.INTERNAL
+					.withDescription(e.getLocalizedMessage())
+					.withCause(e)
+					.asRuntimeException());
+		}
+	}
+	
+	@Override
+	public void runExport(RunExportRequest request, StreamObserver<RunExportResponse> responseObserver) {
+		try {
+			RunExportResponse.Builder reportBuilder = Service.getExportReport(request);
 			responseObserver.onNext(reportBuilder.build());
 			responseObserver.onCompleted();
 		} catch (Exception e) {

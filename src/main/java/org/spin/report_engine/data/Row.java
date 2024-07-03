@@ -29,6 +29,7 @@ public class Row {
 	private Map<Integer, Cell> data;
 	private int level;
 	private List<Row> children;
+	private boolean isSummaryRow;
 	
 	public Row() {
 		data = new HashMap<>();
@@ -48,6 +49,15 @@ public class Row {
 		return new Row();
 	}
 	
+	public boolean isSummaryRow() {
+		return isSummaryRow;
+	}
+
+	public Row withSummaryRow(boolean isSummaryRow) {
+		this.isSummaryRow = isSummaryRow;
+		return this;
+	}
+
 	public Row withCell(int printFormatItemId, Cell cell) {
 		data.put(printFormatItemId, cell);
 		return this;

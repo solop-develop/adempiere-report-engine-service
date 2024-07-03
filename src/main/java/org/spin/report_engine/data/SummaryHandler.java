@@ -118,7 +118,7 @@ public class SummaryHandler {
 					SummaryFunction function = summaryValue.get(sumItem.getPrintFormatItemId());
 					groupValueRow.withCell(sumItem.getPrintFormatItemId(), Cell.newInstance().withValue(function.getValue(SummaryFunction.F_SUM)).withFunction(function));
 				});
-				rows.add(groupValueRow);
+				rows.add(groupValueRow.withSummaryRow(true));
 			});
 		});
 		return rows;

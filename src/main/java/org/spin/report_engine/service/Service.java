@@ -24,12 +24,15 @@ import org.compiere.util.Env;
 import org.compiere.util.Util;
 import org.spin.backend.grpc.report_engine.ReportColumn;
 import org.spin.backend.grpc.report_engine.ReportRow;
+import org.spin.backend.grpc.report_engine.RunExportRequest;
+import org.spin.backend.grpc.report_engine.RunExportResponse;
 import org.spin.backend.grpc.report_engine.GetReportRequest;
 import org.spin.backend.grpc.report_engine.Report;
 import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.data.ColumnInfo;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.data.Row;
+import org.spin.report_engine.export.XlsxExporter;
 import org.spin.service.grpc.authentication.SessionManager;
 import org.spin.service.grpc.util.db.LimitUtil;
 import org.spin.service.grpc.util.query.FilterManager;
@@ -77,7 +80,7 @@ public class Service {
 			}
 		}
 		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
-		return convertReport(reportInfo, limit, offset, pageNumber);
+		return convertReport(reportInfo, limit, offset, pageNumber, request.getShowAsRows());
 	}
 	
 	
@@ -108,10 +111,48 @@ public class Service {
 			}
 		}
 		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
-		return convertReport(reportInfo, limit, offset, pageNumber);
+		return convertReport(reportInfo, limit, offset, pageNumber, request.getShowAsRows());
 	}
 	
-	private static Report.Builder convertReport(ReportInfo reportInfo, int limit, int offset, int pageNumber) {
+	/**
+	 * Run Export Report
+	 * @param context
+	 * @param request
+	 * @return
+	 */
+	public static RunExportResponse.Builder getExportReport(RunExportRequest request) {
+		if(request.getReportId() <= 0) {
+			throw new AdempiereException("@FillMandatory@ @AD_Process_ID@");
+		}
+		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
+		int limit = LimitUtil.getPageSize(request.getPageSize());
+		int offset = (pageNumber - 1) * limit;
+		ReportBuilder reportBuilder = ReportBuilder.newInstance().withReportId(request.getReportId());
+		if(!Util.isEmpty(request.getFilters())) {
+			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
+					.getConditions());
+		}
+		reportBuilder.withPrintFormatId(request.getPrintFormatId()).withReportViewId(request.getReportViewId());
+		if(request.getRecordId() > 0
+				&& !Util.isEmpty(request.getTableName())) {
+			MTable table = MTable.get(Env.getCtx(), request.getTableName());
+			if(table != null) {
+				reportBuilder.withRecordId(table.getAD_Table_ID(), request.getRecordId());
+			}
+		}
+		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
+		if(request.getFormat().equals("xlsx")) {
+			String fileName = XlsxExporter.newInstance().export(reportInfo);
+			if(!Util.isEmpty(fileName)) {
+				return RunExportResponse.newBuilder().setFileName(ValueManager.validateNull(fileName)).setInstanceId(reportInfo.getInstanceId());
+			}
+		} else {
+			throw new AdempiereException("Unsupported format");
+		}
+		return RunExportResponse.newBuilder();
+	}
+	
+	private static Report.Builder convertReport(ReportInfo reportInfo, int limit, int offset, int pageNumber, boolean showAsRow) {
 		//	
 		Report.Builder builder = Report.newBuilder();
 		builder.setName(ValueManager.validateNull(reportInfo.getName()))
@@ -134,7 +175,11 @@ public class Service {
 				)
 		;
 		List<ReportRow> reportRows = new ArrayList<ReportRow>();
-		reportInfo.getRowsAsTree().forEach(row -> reportRows.add(processParent(reportInfo.getColumns(), row).build()));
+		if(showAsRow) {
+			reportInfo.getCompleteRows().forEach(row -> reportRows.add(convertRow(reportInfo.getColumns(), row).build()));
+		} else {
+			reportInfo.getRowsAsTree().forEach(row -> reportRows.add(processParent(reportInfo.getColumns(), row).build()));
+		}
 		builder.addAllRows(reportRows);
 		builder.setRecordCount(reportInfo.getRecordCount());
 		//	Set page token
