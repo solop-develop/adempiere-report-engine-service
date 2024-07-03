@@ -335,7 +335,7 @@ public class XlsxExporter implements IReportEngineExporter {
 		    workBook.write(out);
 		    out.close();
 		    workBook.dispose();
-		    return file.getAbsolutePath();
+		    return file.getName();
 		} catch (Exception e) {
 			throw new AdempiereException(e);
 		}
