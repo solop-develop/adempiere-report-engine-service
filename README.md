@@ -88,15 +88,15 @@ After run you must change some values to ensure that this service is work:
 - Go to **System Rules** -> **General Rules** -> **Server** -> **App Registration**
 - Search by **Value** `AWS3`
 - Change the **Host** value `http://<your-ip-here>` by your `IP`, keep the `http://` because is the protocol
-[App Registration](docs/setup-s3.png)
+![App Registration](docs/setup-s3.png)
 - Change the [.env](docker-compose/.env) file the variable `S3_GATEWAY_RS_S3_URL` with your `IP`
 [Env File](docs/setup-s3-env.png)
 - Down and Up the service
 - After it you can test service
-[Postman Test](docs/get-file.mp4)
+![Postman Test](docs/get-file.mp4)
 
 All files will be saved inside user `tmp` folder
-[Postman Test](docs/s3-tmp-files.png)
+![Postman Test](docs/s3-tmp-files.png)
 
 ### Postman Check
 
