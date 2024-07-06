@@ -15,6 +15,7 @@
 package org.spin.report_engine.export;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
@@ -43,14 +44,20 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.compiere.Adempiere;
+import org.compiere.model.MClientInfo;
 import org.compiere.print.MPrintFormat;
 import org.compiere.print.MPrintPaper;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Language;
 import org.compiere.util.Util;
+import org.spin.eca62.support.IS3;
+import org.spin.eca62.support.ResourceMetadata;
+import org.spin.model.MADAppRegistration;
 import org.spin.report_engine.data.ColumnInfo;
 import org.spin.report_engine.data.ReportInfo;
+import org.spin.util.support.AppSupportHandler;
+import org.spin.util.support.IAppSupport;
 
 /**
  * Report Xlsx Representation
@@ -335,7 +342,33 @@ public class XlsxExporter implements IReportEngineExporter {
 		    workBook.write(out);
 		    out.close();
 		    workBook.dispose();
-		    return file.getName();
+		    //	Push to S3
+		    MClientInfo clientInfo = MClientInfo.get(Env.getCtx());
+		    if(clientInfo.getFileHandler_ID() <= 0) {
+		    	throw new AdempiereException("@FileHandler_ID@ @NotFound@");
+		    }
+		    MADAppRegistration genericConnector = MADAppRegistration.getById(Env.getCtx(), clientInfo.getFileHandler_ID(), null);
+		    if(genericConnector == null) {
+				throw new AdempiereException("@AD_AppRegistration_ID@ @NotFound@");
+			}
+			//	Load
+			IAppSupport supportedApi = AppSupportHandler.getInstance().getAppSupport(genericConnector);
+			if(supportedApi == null) {
+				throw new AdempiereException("@AD_AppSupport_ID@ @NotFound@");
+			}
+			if(!IS3.class.isAssignableFrom(supportedApi.getClass())) {
+				throw new AdempiereException("@AD_AppSupport_ID@ @Unsupported@");
+			}
+			//	Push it
+			IS3 fileHandler = (IS3) supportedApi;
+			ResourceMetadata resourceMetadata = ResourceMetadata.newInstance()
+					.withClientId(Env.getAD_Client_ID(Env.getCtx()))
+					.withUserId(Env.getAD_User_ID(Env.getCtx()))
+					.withContainerType(ResourceMetadata.ContainerType.RESOURCE)
+					.withContainerId("tmp")
+					.withName(file.getName())
+					;
+			return fileHandler.putResource(resourceMetadata, new FileInputStream(file));
 		} catch (Exception e) {
 			throw new AdempiereException(e);
 		}
