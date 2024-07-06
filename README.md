@@ -82,6 +82,22 @@ cd docker-compose
 docker compose up
 ```
 
+After run you must change some values to ensure that this service is work:
+
+- Open [ZK](http://localhost:8080/webui/)
+- Go to **System Rules** -> **General Rules** -> **Server** -> **App Registration**
+- Search by **Value** `AWS3`
+- Change the **Host** value `http://<your-ip-here>` by your `IP`, keep the `http://` because is the protocol
+[App Registration](docs/setup-s3.png)
+- Change the [.env](docker-compose/.env) file the variable `S3_GATEWAY_RS_S3_URL` with your `IP`
+[Env File](docs/setup-s3-env.png)
+- Down and Up the service
+- After it you can test service
+[Postman Test](docs/get-file.mp4)
+
+All files will be saved inside user `tmp` folder
+[Postman Test](docs/s3-tmp-files.png)
+
 ### Postman Check
 
 You can test it using postman with [this](docs/adempiere_report_engine.json) definition, also you can look it from [here](https://documenter.getpostman.com/view/18440575/2sA3QtfXC3)
@@ -90,23 +106,46 @@ You can test it using postman with [this](docs/adempiere_report_engine.json) def
 
 This repo has some services, the follow is a list:
 
-- `/v1/reports/{report_id}`
-- `/v1/reportsviews/{print_format_id}`
+- GET `/v1/report-engine/reports/{report_id}`
+  - Query `show_as_rows`: true show all as list instead tree
+- GET `/v1/report-engine/reports/views/{print_format_id}`
+  - Query `show_as_rows`: true show all as list instead tree
+- POST `/v1/report-engine/export/{report_id}/{format}`
+  - Parameter `format` only is supported `xlsx`
 
 The default host is `http://0.0.0.0:5555`
 
 #### Some Curl's
 
+**Get Report**
+
 ```Curl
-curl --location 'http://0.0.0.0:5555/v1/report-engine/views/1001918' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJBRF9DbGllbnRfSUQiOjEwMDAwMDAsIkFEX09yZ19JRCI6MTAwMDAyMCwiQURfUm9sZV9JRCI6MTAwMDAwMCwiQURfVXNlcl9JRCI6MTAwMDAxNywiTV9XYXJlaG91c2VfSUQiOjEwMDAwNjksIkFEX0xhbmd1YWdlIjoiZW5fVVMiLCJpYXQiOjE3MTY2NzY1NTR9.O6ua3R-fon2g8PypVcC_4SgOj6pVzkU4t1CgEaliubM'
+curl --location 'http://0.0.0.0:5555/v1/report-engine/reports/145?show_as_rows=true' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJBRF9DbGllbnRfSUQiOjExLCJBRF9PcmdfSUQiOjAsIkFEX1JvbGVfSUQiOjEwMiwiQURfVXNlcl9JRCI6MTAwLCJNX1dhcmVob3VzZV9JRCI6MCwiQURfTGFuZ3VhZ2UiOiJlbl9VUyIsImlhdCI6MTcxOTk0ODQ1OX0.wNlMg2kqqXVuJj9KTzOHamXFURDRaNGU_rTilemC3zM'
 
 ```
 
-```Curl
-curl --location --globoff 'http://0.0.0.0:5555/v1/report-engine/reports/53998?filters=[{%22name%22%3A%20%22C_BPartner_ID%22%2C%20%22operator%22%3A%20%22equal%22%2C%20%22values%22%3A%201001781}%2C%20{%22name%22%3A%20%22DateTo%22%2C%20%22operator%22%3A%20%22equal%22%2C%20%22values%22%3A%20%222024-05-30T00%3A00%3A00.00Z%22}]' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJBRF9DbGllbnRfSUQiOjEwMDAwMDAsIkFEX09yZ19JRCI6MTAwMDAyMCwiQURfUm9sZV9JRCI6MTAwMDAwMCwiQURfVXNlcl9JRCI6MTAwMDAxNywiTV9XYXJlaG91c2VfSUQiOjEwMDAwNjksIkFEX0xhbmd1YWdlIjoiZW5fVVMiLCJpYXQiOjE3MTY2NzY1NTR9.O6ua3R-fon2g8PypVcC_4SgOj6pVzkU4t1CgEaliubM'
+**Get View**
 
+```Curl
+curl --location --globoff 'http://0.0.0.0:5555/v1/report-engine/views/1000001?filters=[{%22name%22%3A%20%22IsSOTrx%22%2C%20%22operator%22%3A%20%22equal%22%2C%20%22values%22%3A%20%22Y%22}%2C%20{%22name%22%3A%20%22DocStatus%22%2C%20%22operator%22%3A%20%22equal%22%2C%20%22values%22%3A%20%22CO%22}]' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJBRF9DbGllbnRfSUQiOjExLCJBRF9PcmdfSUQiOjAsIkFEX1JvbGVfSUQiOjEwMiwiQURfVXNlcl9JRCI6MTAwLCJNX1dhcmVob3VzZV9JRCI6MCwiQURfTGFuZ3VhZ2UiOiJlbl9VUyIsImlhdCI6MTcxOTk0ODQ1OX0.wNlMg2kqqXVuJj9KTzOHamXFURDRaNGU_rTilemC3zM'
+
+```
+
+**Export Report**
+
+```Curl
+curl --location --request POST 'http://0.0.0.0:5555/v1/report-engine/export/145/xlsx' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJBRF9DbGllbnRfSUQiOjExLCJBRF9PcmdfSUQiOjAsIkFEX1JvbGVfSUQiOjEwMiwiQURfVXNlcl9JRCI6MTAwLCJNX1dhcmVob3VzZV9JRCI6MCwiQURfTGFuZ3VhZ2UiOiJlbl9VUyIsImlhdCI6MTcxOTk0ODQ1OX0.wNlMg2kqqXVuJj9KTzOHamXFURDRaNGU_rTilemC3zM'
+```
+
+**Get Tmp File**
+
+Note: Replace `report_engine_6003747246856772359.xlsx` by the report name
+
+```Curl
+curl --location 'http://0.0.0.0:7878/api/resources/2433705d-bb00-4bcd-af7b-38046a92e157/user/a4bd438e-fb40-11e8-a479-7a0060f0aa01/resource/tmp/report_engine_6003747246856772359.xlsx'
 ```
 
 ### Some Variables
