@@ -93,7 +93,8 @@ After run you must change some values to ensure that this service is work:
 [Env File](docs/setup-s3-env.png)
 - Down and Up the service
 - After it you can test service
-![Postman Test](docs/get-file.mp4)
+
+https://github.com/adempiere/adempiere-report-engine-service/assets/2333092/1da9d15f-7978-41b1-b1db-5079ce74f250
 
 All files will be saved inside user `tmp` folder
 ![Postman Test](docs/s3-tmp-files.png)
