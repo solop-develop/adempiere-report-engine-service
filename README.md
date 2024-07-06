@@ -92,7 +92,7 @@ After run you must change some values to ensure that this service is work:
 - Change the **Host** value `http://<your-ip-here>` by your `IP`, keep the `http://` because is the protocol
 ![App Registration](docs/setup-s3.png)
 - Change the [.env](docker-compose/.env) file the variable `S3_GATEWAY_RS_S3_URL` with your `IP`
-[Env File](docs/setup-s3-env.png)
+![Env File](docs/setup-s3-env.png)
 - Down and Up the service
 - After it you can test service
 
