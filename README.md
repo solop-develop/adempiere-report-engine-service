@@ -116,6 +116,9 @@ This repo has some services, the follow is a list:
 
 The default host is `http://0.0.0.0:5555`
 
+- If you want to open files from browser then can open http://localhost:9090/browser/adempiere
+- If you want to open ZK then can open http://localhost:8080/webui/
+
 #### Some Curl's
 
 **Get Report**
