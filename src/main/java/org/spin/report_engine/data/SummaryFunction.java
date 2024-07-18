@@ -16,6 +16,8 @@ package org.spin.report_engine.data;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
@@ -35,6 +37,8 @@ public class SummaryFunction {
 	private BigDecimal maximum;
 	/** Sum of Squares		*/
 	private BigDecimal sumSquare;
+	/**	Display values	*/
+	private Map<String, String> displayValues;
 	
 	/** Sum			*/
 	static public final char		F_SUM = 'S';
@@ -65,6 +69,7 @@ public class SummaryFunction {
 		sum = Env.ZERO;
 		sumSquare = Env.ZERO;
 		count = 0;
+		displayValues = new HashMap<String, String>();
 	}
 	
 	public static SummaryFunction newInstance() {
@@ -151,6 +156,24 @@ public class SummaryFunction {
 		}
 		return deviation;
 	}	//	getValue
+	
+	/**
+	 * Get display value of function
+	 * @param function
+	 * @return
+	 */
+	public String getDisplayValue(char function) {
+		return displayValues.get(String.valueOf(function));
+	}
+	
+	/**
+	 * Set display value for function
+	 * @param function
+	 * @param displayValue
+	 */
+	public void setDisplayValue(char function, String displayValue) {
+		displayValues.put(String.valueOf(function), displayValue);
+	}
 	
 	/*************************************************************************/
 

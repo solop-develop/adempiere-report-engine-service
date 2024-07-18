@@ -40,30 +40,38 @@ public class DefaultMapping implements IColumnMapping {
 		return new DefaultMapping();
 	}
 	
+	public void processValue(PrintFormatItem printFormatLine, Language language, Cell cell) {
+		processValue(printFormatLine, null, language, null, cell);
+	}
+	
 	public void processValue(PrintFormatItem printFormatLine, PrintFormatColumn column, Language language, ResultSet resultSet, Cell cell) {
 		if(cell == null) {
 			return;
 		}
 		try {
-			if(DisplayType.isLookup(column.getReferenceId()) && column.getReferenceId() != DisplayType.List || column.getColumnName().equals("Record_ID")) {
-				int valueId = resultSet.getInt(column.getColumnName());
-				cell.withValue(valueId);
-				if(column.getColumnName().equals("Record_ID")) {
-					try {
-						String tableName = resultSet.getString("TableName");
-						if(!Util.isEmpty(tableName)) {
-							cell.withTableName(tableName);
-							if(valueId > 0) {
-								MTable table = MTable.get(Env.getCtx(), tableName);
-								PO entity = table.getPO(valueId, null);
-								cell.withDisplayValue(entity.getDisplayValue());
+			if(resultSet!= null && column != null) {
+				if(DisplayType.isLookup(column.getReferenceId()) && column.getReferenceId() != DisplayType.List || column.getColumnName().equals("Record_ID")) {
+					int valueId = resultSet.getInt(column.getColumnName());
+					cell.withValue(valueId);
+					if(column.getColumnName().equals("Record_ID")) {
+						try {
+							String tableName = resultSet.getString("TableName");
+							if(!Util.isEmpty(tableName)) {
+								cell.withTableName(tableName);
+								if(valueId > 0) {
+									MTable table = MTable.get(Env.getCtx(), tableName);
+									PO entity = table.getPO(valueId, null);
+									cell.withDisplayValue(entity.getDisplayValue());
+								}
 							}
+						} catch (Exception e) {
+							e.printStackTrace();
 						}
-					} catch (Exception e) {
-						e.printStackTrace();
 					}
+					return;
 				}
-			} else if(DisplayType.isDate(printFormatLine.getReferenceId())) {
+			}
+			if(DisplayType.isDate(printFormatLine.getReferenceId())) {
 				if(cell.getValue() != null) {
 					Timestamp date = (Timestamp) cell.getValue();
 					cell.withDisplayValue(DisplayType.getDateFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(date));
@@ -85,6 +93,35 @@ public class DefaultMapping implements IColumnMapping {
 						cell.withDisplayValue(Msg.getMsg(Env.getCtx(), booleanValue ? "Y" : "N"));
 					}
 				}
+			}
+			//	Set display value to functions
+			BigDecimal value = cell.getSum();
+			if(value != null) {
+				cell.withSumDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+			}
+			value = cell.getMean();
+			if(value != null) {
+				cell.withMeanDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+			}
+			value = cell.getCount();
+			if(value != null) {
+				cell.withCountDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+			}
+			value = cell.getMinimum();
+			if(value != null) {
+				cell.withMinimumDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+			}
+			value = cell.getMaximum();
+			if(value != null) {
+				cell.withMaximumDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+			}
+			value = cell.getVariance();
+			if(value != null) {
+				cell.withVarianceDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+			}
+			value = cell.getDeviation();
+			if(value != null) {
+				cell.withDeviationDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

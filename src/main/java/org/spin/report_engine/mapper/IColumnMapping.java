@@ -36,4 +36,12 @@ public interface IColumnMapping {
 	 * @param cell
 	 */
 	public void processValue(PrintFormatItem printFormatLine, PrintFormatColumn column, Language language, ResultSet resultSet, Cell cell);
+	
+	/**
+	 * Process value from complete list
+	 * @param printFormatLine
+	 * @param language
+	 * @param cell
+	 */
+	public void processValue(PrintFormatItem printFormatLine, Language language, Cell cell);
 }

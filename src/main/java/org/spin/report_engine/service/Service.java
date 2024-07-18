@@ -209,31 +209,36 @@ public class Service {
 			cellValue.putFields(DISPLAY_VALUE_KEY, ValueManager.getValueFromString(cell.getDisplayValue()).build());
 			//	Summary Values
 			if(cell.getSum() != null) {
-				cellValue.putFields(SUM_KEY, ValueManager.getValueFromObject(cell.getSum()).build());
+				cellValue.putFields(SUM_KEY, convertFunctionDisplayValue(ValueManager.getValueFromObject(cell.getSum()), cell.getSumDisplayValue()));
 			}
 			if(cell.getMean() != null) {
-				cellValue.putFields(MEAN_KEY, ValueManager.getValueFromObject(cell.getMean()).build());
+				cellValue.putFields(MEAN_KEY, convertFunctionDisplayValue(ValueManager.getValueFromObject(cell.getMean()), cell.getMeanDisplayValue()));
 			}
 			if(cell.getCount() != null) {
-				cellValue.putFields(COUNT_KEY, ValueManager.getValueFromObject(cell.getCount()).build());
+				cellValue.putFields(COUNT_KEY, convertFunctionDisplayValue(ValueManager.getValueFromObject(cell.getCount()), cell.getCountDisplayValue()));
 			}
 			if(cell.getMinimum() != null) {
-				cellValue.putFields(MINIMUM_KEY, ValueManager.getValueFromObject(cell.getMinimum()).build());
+				cellValue.putFields(MINIMUM_KEY, convertFunctionDisplayValue(ValueManager.getValueFromObject(cell.getMinimum()), cell.getMinimumDisplayValue()));
 			}
 			if(cell.getMaximum() != null) {
-				cellValue.putFields(MAXIMUM_KEY, ValueManager.getValueFromObject(cell.getMaximum()).build());
+				cellValue.putFields(MAXIMUM_KEY, convertFunctionDisplayValue(ValueManager.getValueFromObject(cell.getMaximum()), cell.getMaximumDisplayValue()));
 			}
 			if(cell.getVariance() != null) {
-				cellValue.putFields(VARIANCE_KEY, ValueManager.getValueFromObject(cell.getVariance()).build());
+				cellValue.putFields(VARIANCE_KEY, convertFunctionDisplayValue(ValueManager.getValueFromObject(cell.getVariance()), cell.getVarianceDisplayValue()));
 			}
 			if(cell.getDeviation() != null) {
-				cellValue.putFields(DEVIATION_KEY, ValueManager.getValueFromObject(cell.getDeviation()).build());
+				cellValue.putFields(DEVIATION_KEY, convertFunctionDisplayValue(ValueManager.getValueFromObject(cell.getDeviation()), cell.getDeviationDisplayValue()));
 			}
-			
 			//	Put Cell Value
 			cells.putFields("" + column.getPrintFormatItemId(), Value.newBuilder().setStructValue(cellValue.build()).build());
 		});
 		return ReportRow.newBuilder().setCells(cells).setLevel(row.getLevel());
+	}
+	
+	private static Value convertFunctionDisplayValue(Value.Builder currentValue, String displayValue) {
+		Struct.Builder struct = currentValue.getStructValueBuilder();
+		struct.putFields(DISPLAY_VALUE_KEY, ValueManager.getValueFromString(displayValue).build());
+		return Value.newBuilder().setStructValue(struct).build();
 	}
 	
 	private static ReportRow.Builder processParent(List<ColumnInfo> columns, Row row) {

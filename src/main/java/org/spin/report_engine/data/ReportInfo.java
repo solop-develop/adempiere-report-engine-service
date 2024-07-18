@@ -26,9 +26,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.compiere.util.Language;
+import org.compiere.util.Util;
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.PrintFormatItem;
 import org.spin.report_engine.format.QueryDefinition;
+import org.spin.report_engine.mapper.DefaultMapping;
+import org.spin.report_engine.mapper.IColumnMapping;
+import org.spin.report_engine.util.ClassLoaderMapping;
 
 
 /**
@@ -53,8 +58,10 @@ public class ReportInfo {
 	private QueryDefinition queryDefinition;
 	private long recordCount;
 	private int instanceId;
+	private PrintFormat printFormat;
 	
 	private ReportInfo(PrintFormat printFormat, QueryDefinition queryDefinition) {
+		this.printFormat = printFormat;
 		name = printFormat.getName();
 		description = printFormat.getDescription();
 		columns = printFormat.getPrintedItems().stream().map(item -> ColumnInfo.newInstance(item)).collect(Collectors.toList());
@@ -207,7 +214,26 @@ public class ReportInfo {
 		List<Row> completeRows = Stream.concat(getRows().stream(), groupedRows.stream())
 				.sorted(getSortingValue(false))
                 .collect(Collectors.toList());
-		rows = completeRows;
+		Language language = Language.getLoginLanguage();
+		rows = new ArrayList<Row>();
+		completeRows.forEach(row -> {
+			Row newRow = Row.newInstance();
+			//	Items
+			printFormat.getItems().forEach(printFormatItem -> {
+				Cell cell = row.getCell(printFormatItem.getPrintFormatItemId());
+				//	Apply Default Mask
+				if(!Util.isEmpty(printFormatItem.getMappingClassName())) {
+					IColumnMapping customMapping = ClassLoaderMapping.loadClass(printFormatItem.getMappingClassName());
+					if(customMapping != null) {
+						customMapping.processValue(printFormatItem, language, cell);
+					}
+				} else {
+					DefaultMapping.newInstance().processValue(printFormatItem, language, cell);
+				}
+				newRow.withCell(printFormatItem.getPrintFormatItemId(), cell);
+			});
+			rows.add(newRow);
+		});
 		return this;
 	}
 	

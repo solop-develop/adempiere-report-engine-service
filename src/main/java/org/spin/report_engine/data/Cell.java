@@ -134,6 +134,111 @@ public class Cell {
 		return this;
 	}
 	
+	public Cell withSumDisplayValue(String displayValue) {
+		if(function == null) {
+			return this;
+		}
+		function.setDisplayValue(SummaryFunction.F_SUM, displayValue);
+		return this;
+	}
+	
+	public Cell withMeanDisplayValue(String displayValue) {
+		if(function == null) {
+			return this;
+		}
+		function.setDisplayValue(SummaryFunction.F_MEAN, displayValue);
+		return this;
+	}
+	
+	public Cell withCountDisplayValue(String displayValue) {
+		if(function == null) {
+			return this;
+		}
+		function.setDisplayValue(SummaryFunction.F_COUNT, displayValue);
+		return this;
+	}
+	
+	public Cell withMinimumDisplayValue(String displayValue) {
+		if(function == null) {
+			return this;
+		}
+		function.setDisplayValue(SummaryFunction.F_MIN, displayValue);
+		return this;
+	}
+	
+	public Cell withMaximumDisplayValue(String displayValue) {
+		if(function == null) {
+			return this;
+		}
+		function.setDisplayValue(SummaryFunction.F_MAX, displayValue);
+		return this;
+	}
+	
+	public Cell withVarianceDisplayValue(String displayValue) {
+		if(function == null) {
+			return this;
+		}
+		function.setDisplayValue(SummaryFunction.F_VARIANCE, displayValue);
+		return this;
+	}
+	
+	public Cell withDeviationDisplayValue(String displayValue) {
+		if(function == null) {
+			return this;
+		}
+		function.setDisplayValue(SummaryFunction.F_DEVIATION, displayValue);
+		return this;
+	}
+	
+	public String getSumDisplayValue() {
+		if(function == null) {
+			return null;
+		}
+		return function.getDisplayValue(SummaryFunction.F_SUM);
+	}
+	
+	public String getMeanDisplayValue() {
+		if(function == null) {
+			return null;
+		}
+		return function.getDisplayValue(SummaryFunction.F_MEAN);
+	}
+	
+	public String getCountDisplayValue() {
+		if(function == null) {
+			return null;
+		}
+		return function.getDisplayValue(SummaryFunction.F_COUNT);
+	}
+	
+	public String getMinimumDisplayValue() {
+		if(function == null) {
+			return null;
+		}
+		return function.getDisplayValue(SummaryFunction.F_MIN);
+	}
+	
+	public String getMaximumDisplayValue() {
+		if(function == null) {
+			return null;
+		}
+		return function.getDisplayValue(SummaryFunction.F_MAX);
+	}
+	
+	public String getVarianceDisplayValue() {
+		if(function == null) {
+			return null;
+		}
+		return function.getDisplayValue(SummaryFunction.F_VARIANCE);
+	}
+	
+	public String getDeviationDisplayValue() {
+		if(function == null) {
+			return null;
+		}
+		return function.getDisplayValue(SummaryFunction.F_DEVIATION);
+	}
+	
 	public BigDecimal getSum() {
 		if(function == null) {
 			return null;
