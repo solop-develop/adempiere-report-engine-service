@@ -49,7 +49,6 @@ import org.spin.report_engine.format.QueryDefinition;
 import org.spin.report_engine.mapper.DefaultMapping;
 import org.spin.report_engine.mapper.IColumnMapping;
 import org.spin.report_engine.util.ClassLoaderMapping;
-import org.spin.service.grpc.util.db.LimitUtil;
 import org.spin.service.grpc.util.db.ParameterUtil;
 import org.spin.service.grpc.util.query.Filter;
 
@@ -169,7 +168,6 @@ public class ReportBuilder {
 		if(getPrintFormatId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
 		}
-		limit = LimitUtil.getPageSize(limit);
 		Language language = Language.getLoginLanguage();
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);

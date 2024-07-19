@@ -42,6 +42,7 @@ public class QueryDefinition {
 	private int limit; 
 	private int offset;
 	private int instanceId;
+	public static final int NO_LIMIT = -1;
 	
 	private QueryDefinition() {
 		conditions = new ArrayList<Filter>();
@@ -167,18 +168,20 @@ public class QueryDefinition {
 				}
 		});
 		//	Add Limit
-		if(limit <= 0) {
-			withLimit(100, 0);
+		if(limit != NO_LIMIT) {
+			if(limit == 0) {
+				withLimit(100, 0);
+			}
+			if (whereClause.length() > 0) {
+				whereClause.append(" AND ");
+			}
+			whereClause.append("ROWNUM <= ").append(limit);
+			//	Add offset
+			if (whereClause.length() > 0) {
+				whereClause.append(" AND ");
+			}
+			whereClause.append("ROWNUM >= ").append(offset);
 		}
-		if (whereClause.length() > 0) {
-			whereClause.append(" AND ");
-		}
-		whereClause.append("ROWNUM <= ").append(limit);
-		//	Add offset
-		if (whereClause.length() > 0) {
-			whereClause.append(" AND ");
-		}
-		whereClause.append("ROWNUM >= ").append(offset);
 		//	
 		withWhereClause(whereClause.toString());
 		StringBuffer completeQuery = new StringBuffer(getQuery());

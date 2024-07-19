@@ -33,6 +33,7 @@ import org.spin.report_engine.data.ColumnInfo;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.data.Row;
 import org.spin.report_engine.export.XlsxExporter;
+import org.spin.report_engine.format.QueryDefinition;
 import org.spin.service.grpc.authentication.SessionManager;
 import org.spin.service.grpc.util.db.LimitUtil;
 import org.spin.service.grpc.util.query.FilterManager;
@@ -125,8 +126,12 @@ public class Service {
 			throw new AdempiereException("@FillMandatory@ @AD_Process_ID@");
 		}
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
-		int limit = LimitUtil.getPageSize(request.getPageSize());
-		int offset = (pageNumber - 1) * limit;
+		int limit = QueryDefinition.NO_LIMIT;
+		int offset = 0;
+		if(request.getPageSize() > 0) {
+			limit = request.getPageSize();
+			offset = (pageNumber - 1) * limit;
+		}
 		ReportBuilder reportBuilder = ReportBuilder.newInstance().withReportId(request.getReportId());
 		if(!Util.isEmpty(request.getFilters())) {
 			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
