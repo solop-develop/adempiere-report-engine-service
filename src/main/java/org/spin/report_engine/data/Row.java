@@ -49,6 +49,11 @@ public class Row {
 		return new Row();
 	}
 	
+	public Row withSourceRowDefinition(Row sourceRow) {
+		return withLevel(sourceRow.getLevel())
+		.withSummaryRow(sourceRow.isSummaryRow());
+	}
+	
 	public boolean isSummaryRow() {
 		return isSummaryRow;
 	}

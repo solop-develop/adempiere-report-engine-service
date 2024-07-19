@@ -217,7 +217,7 @@ public class ReportInfo {
 		Language language = Language.getLoginLanguage();
 		rows = new ArrayList<Row>();
 		completeRows.forEach(row -> {
-			Row newRow = Row.newInstance();
+			Row newRow = Row.newInstance().withSourceRowDefinition(row);
 			//	Items
 			printFormat.getItems().forEach(printFormatItem -> {
 				Cell cell = row.getCell(printFormatItem.getPrintFormatItemId());
