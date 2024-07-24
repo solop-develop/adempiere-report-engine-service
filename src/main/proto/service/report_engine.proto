@@ -90,10 +90,13 @@ message ReportColumn {
 	string color= 3;
 	string style = 4;
 	int32 display_type = 5;
+	bool is_group_column = 6;
+	int32 sequence = 7;
 }
 
 message ReportRow {
     google.protobuf.Struct cells = 1;
 	int32 level = 2;
 	repeated ReportRow children = 3;
+	bool is_parent = 4;
 }

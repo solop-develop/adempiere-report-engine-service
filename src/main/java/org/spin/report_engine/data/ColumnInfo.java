@@ -31,12 +31,16 @@ public class ColumnInfo {
 	private String title;
 	private int printFormatItemId;
 	private int displayTypeId;
+	private int sequence;
+	private boolean isGroupColumn;
 	
 	private ColumnInfo(PrintFormatItem item) {
 		this.title = item.getPrintText();
 		this.printFormatItemId = item.getPrintFormatItemId();
 		this.code = String.valueOf(item.getPrintFormatItemId());
 		this.displayTypeId = item.getReferenceId();
+		this.sequence = item.getSequence();
+		this.isGroupColumn = item.isGroupBy();
 	}
 	
 	public static ColumnInfo newInstance(PrintFormatItem item) {
@@ -96,6 +100,14 @@ public class ColumnInfo {
 	public ColumnInfo withPrintFormatItemId(int printFormatItemId) {
 		this.printFormatItemId = printFormatItemId;
 		return this;
+	}
+
+	public int getSequence() {
+		return sequence;
+	}
+
+	public boolean isGroupColumn() {
+		return isGroupColumn;
 	}
 
 	@Override

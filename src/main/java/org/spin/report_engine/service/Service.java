@@ -16,6 +16,7 @@ package org.spin.report_engine.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.adempiere.exceptions.AdempiereException;
@@ -175,6 +176,8 @@ public class Service {
 						.setColor(ValueManager.validateNull(column.getColor()))
 						.setStyle(ValueManager.validateNull(column.getStyle()))
 						.setDisplayType(column.getDisplayTypeId())
+						.setIsGroupColumn(column.isGroupColumn())
+						.setSequence(column.getSequence())
 						.build()
 						).collect(Collectors.toList())
 				)
@@ -237,7 +240,8 @@ public class Service {
 			//	Put Cell Value
 			cells.putFields("" + column.getPrintFormatItemId(), Value.newBuilder().setStructValue(cellValue.build()).build());
 		});
-		return ReportRow.newBuilder().setCells(cells).setLevel(row.getLevel());
+		boolean isParent = Optional.ofNullable(row.getChildren()).orElse(new ArrayList<>()).size() > 0;
+		return ReportRow.newBuilder().setCells(cells).setLevel(row.getLevel()).setIsParent(isParent);
 	}
 	
 	private static Value convertFunctionDisplayValue(Value.Builder currentValue, String displayValue) {
