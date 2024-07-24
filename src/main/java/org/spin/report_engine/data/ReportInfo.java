@@ -271,10 +271,19 @@ public class ReportInfo {
 		if(nextLevel < groupLevels.size()) {
 			children.forEach(child -> processChildren(child, nextLevel));
 		} else {
-			rows.stream().filter(row -> {
-				return row.getLevel() > previosLevelGroup.getSortSequence() && compareRows(parent, row, nextLevel);
-			}).forEach(row -> children.add(row));
+			children.forEach(child -> processAllChildren(child));
 		}
+	}
+	
+	private void processAllChildren(Row parent) {
+		List<Row> children = parent.getChildren();
+		PrintFormatItem previosLevelGroup = groupLevels.get(groupLevels.size() - 1);
+		if(previosLevelGroup == null) {
+			return;
+		}
+		rows.stream().filter(row -> {
+			return row.getLevel() > parent.getLevel() && compareRows(parent, row, groupLevels.size() - 1);
+		}).forEach(row -> children.add(row));
 	}
 	
 	private boolean compareRows(Row parent, Row child, int currentLevel) {
