@@ -282,8 +282,11 @@ public class ReportInfo {
 			return;
 		}
 		rows.stream().filter(row -> {
-			return row.getLevel() > parent.getLevel() && compareRows(parent, row, groupLevels.size() - 1);
-		}).forEach(row -> children.add(row));
+			return row.getLevel() > parent.getLevel() && compareRows(parent, row, groupLevels.size());
+		}).forEach(row -> {
+			children.add(row);
+			System.err.println(row);
+		});
 	}
 	
 	private boolean compareRows(Row parent, Row child, int currentLevel) {
