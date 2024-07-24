@@ -15,6 +15,7 @@
 package org.spin.report_engine.data;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
@@ -150,9 +151,12 @@ public class SummaryFunction {
 			return variance;
 		}
 		//	Standard Deviation
-		BigDecimal deviation = new BigDecimal(Math.sqrt(variance.doubleValue()));
-		if (deviation.scale() > 4) {
-			deviation = deviation.setScale(4, RoundingMode.HALF_UP);
+		BigDecimal deviation = Env.ZERO;
+		if(variance.signum() > 0) {
+			deviation = variance.sqrt(MathContext.DECIMAL128);
+			if (deviation.scale() > 4) {
+				deviation = deviation.setScale(4, RoundingMode.HALF_UP);
+			}
 		}
 		return deviation;
 	}	//	getValue
