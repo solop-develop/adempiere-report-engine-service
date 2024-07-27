@@ -19,8 +19,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.adempiere.core.domains.models.I_AD_Menu;
+import org.adempiere.core.domains.models.I_AD_Process;
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.MRecentItem;
 import org.compiere.model.MTable;
+import org.compiere.model.Query;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
 import org.spin.backend.grpc.report_engine.ReportColumn;
@@ -54,7 +58,34 @@ public class Service {
 	private static final String MAXIMUM_KEY = "maximum_value";
 	private static final String VARIANCE_KEY = "variance_value";
 	private static final String DEVIATION_KEY = "deviation_value";
-	
+
+
+	/**
+	 * Add element to recent item
+	 * @param reportId
+	 */
+	public static void addToRecentItem(int reportId) {
+		if (reportId <= 0) {
+			return;
+		}
+		final String whereClause = I_AD_Process.COLUMNNAME_AD_Process_ID + " = ?";
+		//	Get menu
+		int menuId = new Query(
+			Env.getCtx(),
+			I_AD_Menu.Table_Name,
+			whereClause,
+			null
+		)
+			.setParameters(reportId)
+			.firstId()
+		;
+		if (menuId <= 0) {
+			return;
+		}
+		MRecentItem.addMenuOption(Env.getCtx(), menuId, 0);
+	}
+
+
 	/**
 	 * Get a View after run report
 	 * @param context
@@ -65,6 +96,11 @@ public class Service {
 		if(request.getPrintFormatId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
 		}
+		//	Add to recent Item
+		addToRecentItem(
+			request.getReportId()
+		);
+
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
@@ -96,6 +132,11 @@ public class Service {
 		if(request.getReportId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_Process_ID@");
 		}
+		//	Add to recent Item
+		addToRecentItem(
+			request.getReportId()
+		);
+
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
@@ -126,6 +167,11 @@ public class Service {
 		if(request.getReportId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_Process_ID@");
 		}
+		//	Add to recent Item
+		addToRecentItem(
+			request.getReportId()
+		);
+
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = QueryDefinition.NO_LIMIT;
 		int offset = 0;
