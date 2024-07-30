@@ -239,7 +239,7 @@ public class Service {
 		//	Set page token
 		String nexPageToken = null;
 		if(LimitUtil.isValidNextPageToken((int) reportInfo.getRecordCount(), offset, limit)) {
-			nexPageToken = LimitUtil.getPagePrefix(SessionManager.getSessionUuid()) + (pageNumber + 1);
+			nexPageToken = LimitUtil.getPagePrefix("") + String.valueOf(pageNumber + 1);
 		}
 		builder.setNextPageToken(
 			ValueManager.validateNull(nexPageToken)

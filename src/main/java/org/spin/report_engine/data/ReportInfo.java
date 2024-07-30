@@ -209,7 +209,6 @@ public class ReportInfo {
 	}
 	
 	public ReportInfo completeInfo() {
-		recordCount = rows.size();
 		groupedRows = summaryHandler.getAsRows();
 		List<Row> completeRows = Stream.concat(getRows().stream(), groupedRows.stream())
 				.sorted(getSortingValue(false))
@@ -285,7 +284,6 @@ public class ReportInfo {
 			return row.getLevel() > parent.getLevel() && compareRows(parent, row, groupLevels.size());
 		}).forEach(row -> {
 			children.add(row);
-			System.err.println(row);
 		});
 	}
 	
@@ -316,6 +314,11 @@ public class ReportInfo {
 	
 	public long getRecordCount() {
 		return recordCount;
+	}
+	
+	public ReportInfo withRecordCount(int recordCount) {
+		this.recordCount = recordCount;
+		return this;
 	}
 
 	public ReportInfo withReportViewId(int reportViewId) {

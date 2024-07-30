@@ -200,7 +200,11 @@ public class XlsxExporter implements IReportEngineExporter {
 						String value = Util.stripDiacritics(cell.getDisplayValue());
 						sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(value));
 					} else {
-						String value = Util.stripDiacritics(cell.getDisplayValue());
+						String value = cell.getDisplayValue();
+						if(Util.isEmpty(value)) {
+							value = (String) obj;
+						}
+						value = Util.stripDiacritics(value);
 						sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(value));
 					}
 				}

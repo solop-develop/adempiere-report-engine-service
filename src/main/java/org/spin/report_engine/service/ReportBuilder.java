@@ -49,6 +49,7 @@ import org.spin.report_engine.format.QueryDefinition;
 import org.spin.report_engine.mapper.DefaultMapping;
 import org.spin.report_engine.mapper.IColumnMapping;
 import org.spin.report_engine.util.ClassLoaderMapping;
+import org.spin.service.grpc.util.db.CountUtil;
 import org.spin.service.grpc.util.db.ParameterUtil;
 import org.spin.service.grpc.util.query.Filter;
 
@@ -172,7 +173,8 @@ public class ReportBuilder {
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
 		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withInstanceId(getInstanceId()).withLimit(limit, offset).buildQuery();
-		ReportInfo reportInfo = ReportInfo.newInstance(format, queryDefinition).withReportViewId(getReportViewId()).withInstanceId(getInstanceId());
+		int count = CountUtil.countRecords(queryDefinition.getCompleteQuery(), format.getTableName(), queryDefinition.getParameters());
+		ReportInfo reportInfo = ReportInfo.newInstance(format, queryDefinition).withReportViewId(getReportViewId()).withInstanceId(getInstanceId()).withRecordCount(count);
 		DB.runResultSet(transactionName, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
 			while (resulset.next()) {
 				format.getItems().forEach(item -> {
