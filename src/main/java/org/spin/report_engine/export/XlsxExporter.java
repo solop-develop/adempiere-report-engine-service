@@ -17,6 +17,7 @@ package org.spin.report_engine.export;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -185,27 +186,38 @@ public class XlsxExporter implements IReportEngineExporter {
 				org.spin.report_engine.data.Row rowValue = rows.get(rowNumber);
 				org.spin.report_engine.data.Cell cell = rowValue.getCell(columnInfo.getPrintFormatItemId());
 				int displayType = columnInfo.getDisplayTypeId();
-				Object obj = cell.getValue();
-				if(obj != null) {
+				Object valueasObject = cell.getValue();
+				if(valueasObject != null) {
 					if (DisplayType.isDate(displayType)) {
-						Timestamp value = (Timestamp)obj;
+						Timestamp value = (Timestamp)valueasObject;
 						sheetCell.setCellValue(value);
 					} else if (DisplayType.isNumeric(displayType)) {
 						double value = 0;
-						if (obj instanceof Number) {
-							value = ((Number)obj).doubleValue();
+						if (valueasObject instanceof Number) {
+							value = ((Number) valueasObject).doubleValue();
 						}
 						sheetCell.setCellValue(value);
 					} else if (DisplayType.YesNo == displayType) {
 						String value = Util.stripDiacritics(cell.getDisplayValue());
 						sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(value));
 					} else {
-						String value = cell.getDisplayValue();
-						if(Util.isEmpty(value)) {
-							value = (String) obj;
+						String displayValue = cell.getDisplayValue();
+						if(Util.isEmpty(displayValue)) {
+							if(valueasObject instanceof BigDecimal) {
+								sheetCell.setCellValue(((BigDecimal) valueasObject).doubleValue());
+							} else if (valueasObject instanceof Integer) {
+								sheetCell.setCellValue((Integer) valueasObject);
+							} else if (valueasObject instanceof String) {
+								displayValue = (String) valueasObject;
+								displayValue = Util.stripDiacritics(displayValue);
+								sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue));
+							} else if (valueasObject instanceof Boolean) {
+								sheetCell.setCellValue((Boolean) valueasObject);
+							} else if(valueasObject instanceof Timestamp) {
+								Timestamp value = (Timestamp) valueasObject;
+								sheetCell.setCellValue(value);
+							}
 						}
-						value = Util.stripDiacritics(value);
-						sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(value));
 					}
 				}
 				//
