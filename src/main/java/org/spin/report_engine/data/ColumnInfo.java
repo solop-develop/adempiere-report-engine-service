@@ -37,6 +37,9 @@ public class ColumnInfo {
 	private int columnCharactersSize;
 	private boolean isFixedWidth;
 	private String fontCode;
+	private String mappingClassName;
+	private PrintFormatItem item;
+	
 	
 	private ColumnInfo(PrintFormatItem item) {
 		this.title = item.getPrintText();
@@ -49,10 +52,20 @@ public class ColumnInfo {
 		this.isFixedWidth = item.isFixedWidth();
 		this.fontCode = item.getFontCode();
 		this.color = item.getColor();
+		this.mappingClassName = item.getMappingClassName();
+		this.item = item;
 	}
 	
 	public static ColumnInfo newInstance(PrintFormatItem item) {
 		return new ColumnInfo(item);
+	}
+	
+	public PrintFormatItem getPrintformatItem() {
+		return item;
+	}
+	
+	public String getMappingClassName() {
+		return mappingClassName;
 	}
 	
 	public int getColumnCharactersSize() {

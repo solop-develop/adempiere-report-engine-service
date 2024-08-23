@@ -57,6 +57,9 @@ import org.spin.eca62.support.ResourceMetadata;
 import org.spin.model.MADAppRegistration;
 import org.spin.report_engine.data.ColumnInfo;
 import org.spin.report_engine.data.ReportInfo;
+import org.spin.report_engine.mapper.DefaultMapping;
+import org.spin.report_engine.mapper.IColumnMapping;
+import org.spin.report_engine.util.ClassLoaderMapping;
 import org.spin.util.support.AppSupportHandler;
 import org.spin.util.support.IAppSupport;
 
@@ -185,6 +188,15 @@ public class XlsxExporter implements IReportEngineExporter {
 				ColumnInfo columnInfo = columns.get(columnNumber);
 				org.spin.report_engine.data.Row rowValue = rows.get(rowNumber);
 				org.spin.report_engine.data.Cell cell = rowValue.getCell(columnInfo.getPrintFormatItemId());
+				//	Apply Default Mask
+				if(!Util.isEmpty(columnInfo.getMappingClassName())) {
+					IColumnMapping customMapping = ClassLoaderMapping.loadClass(columnInfo.getMappingClassName());
+					if(customMapping != null) {
+						customMapping.processValue(columnInfo.getPrintformatItem(), language, cell);
+					}
+				} else {
+					DefaultMapping.newInstance().processValue(columnInfo.getPrintformatItem(), language, cell);
+				}
 				int displayType = columnInfo.getDisplayTypeId();
 				Object valueasObject = cell.getValue();
 				if(valueasObject != null) {
@@ -203,20 +215,25 @@ public class XlsxExporter implements IReportEngineExporter {
 					} else {
 						String displayValue = cell.getDisplayValue();
 						if(Util.isEmpty(displayValue)) {
-							if(valueasObject instanceof BigDecimal) {
-								sheetCell.setCellValue(((BigDecimal) valueasObject).doubleValue());
-							} else if (valueasObject instanceof Integer) {
-								sheetCell.setCellValue((Integer) valueasObject);
-							} else if (valueasObject instanceof String) {
-								displayValue = (String) valueasObject;
-								displayValue = Util.stripDiacritics(displayValue);
-								sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue));
-							} else if (valueasObject instanceof Boolean) {
-								sheetCell.setCellValue((Boolean) valueasObject);
-							} else if(valueasObject instanceof Timestamp) {
-								Timestamp value = (Timestamp) valueasObject;
-								sheetCell.setCellValue(value);
+							if(!DisplayType.isLookup(displayType)) {
+								if(valueasObject instanceof BigDecimal) {
+									sheetCell.setCellValue(((BigDecimal) valueasObject).doubleValue());
+								} else if (valueasObject instanceof Integer) {
+									sheetCell.setCellValue((Integer) valueasObject);
+								} else if (valueasObject instanceof String) {
+									displayValue = (String) valueasObject;
+									displayValue = Util.stripDiacritics(displayValue);
+									sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue));
+								} else if (valueasObject instanceof Boolean) {
+									sheetCell.setCellValue((Boolean) valueasObject);
+								} else if(valueasObject instanceof Timestamp) {
+									Timestamp value = (Timestamp) valueasObject;
+									sheetCell.setCellValue(value);
+								}
 							}
+						} else {
+							displayValue = Util.stripDiacritics(displayValue);
+							sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue));
 						}
 					}
 				}
