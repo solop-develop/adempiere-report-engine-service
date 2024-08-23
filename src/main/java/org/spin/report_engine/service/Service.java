@@ -110,6 +110,7 @@ public class Service {
 					.getConditions());
 		}
 		reportBuilder.withReportViewId(request.getReportViewId());
+		reportBuilder.withSummary(request.getIsSummary());
 		if(request.getRecordId() > 0
 				&& !Util.isEmpty(request.getTableName())) {
 			MTable table = MTable.get(Env.getCtx(), request.getTableName());
@@ -146,6 +147,7 @@ public class Service {
 					.getConditions());
 		}
 		reportBuilder.withPrintFormatId(request.getPrintFormatId()).withReportViewId(request.getReportViewId());
+		reportBuilder.withSummary(request.getIsSummary());
 		if(request.getRecordId() > 0
 				&& !Util.isEmpty(request.getTableName())) {
 			MTable table = MTable.get(Env.getCtx(), request.getTableName());
@@ -192,6 +194,7 @@ public class Service {
 				reportBuilder.withRecordId(table.getAD_Table_ID(), request.getRecordId());
 			}
 		}
+		reportBuilder.withSummary(request.getIsSummary());
 		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
 		if(request.getFormat().equals("xlsx")) {
 			String fileName = XlsxExporter.newInstance().export(reportInfo);

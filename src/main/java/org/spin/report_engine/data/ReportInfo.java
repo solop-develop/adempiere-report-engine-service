@@ -221,6 +221,7 @@ public class ReportInfo {
                 .collect(Collectors.toList());
 		Language language = Language.getLoginLanguage();
 		rows = new ArrayList<Row>();
+		summaryRows = new ArrayList<Row>();
 		completeRows.forEach(row -> {
 			Row newRow = Row.newInstance().withSourceRowDefinition(row);
 			//	Items
@@ -247,6 +248,9 @@ public class ReportInfo {
 				newRow.withCell(printFormatItem.getPrintFormatItemId(), cell);
 			});
 			rows.add(newRow);
+			if(newRow.isSummaryRow()) {
+				summaryRows.add(newRow);
+			}
 		});
 		columns = columns.stream().map(column -> column.withColumnCharactersSize(columnLength.get(column.getPrintFormatItemId()))).collect(Collectors.toList());
 		return this;

@@ -179,7 +179,7 @@ public class XlsxExporter implements IReportEngineExporter {
 			sheetCell.setCellStyle(style);
 		});
 		//	Export content
-		List<org.spin.report_engine.data.Row> rows = reportInfo.getCompleteRows();
+		List<org.spin.report_engine.data.Row> rows = reportInfo.isSummary()? reportInfo.getSummaryRows(): reportInfo.getCompleteRows();
 		IntStream.range(0, rows.size()).forEach(rowNumber -> {
 			Row sheetRow = sheet.createRow(rowNumber + 1);
 			IntStream.range(0, columns.size())
