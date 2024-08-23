@@ -15,11 +15,11 @@
 package org.spin.report_engine.format;
 
 import org.adempiere.core.domains.models.I_AD_PrintFormatItem;
-import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MColumn;
 import org.compiere.print.MPrintColor;
 import org.compiere.print.MPrintFont;
 import org.compiere.print.MPrintFormatItem;
+import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Util;
 
@@ -70,6 +70,7 @@ public class PrintFormatItem {
 	private String fontCode;
 	private String color;
 	
+	private static final CLogger logger = CLogger.getCLogger(PrintFormatItem.class);
 	
 	/** PrintFormatType AD_Reference_ID=255 */
 	public static final int PRINTFORMATTYPE_AD_Reference_ID=255;
@@ -202,7 +203,7 @@ public class PrintFormatItem {
 					int rgbColor = Integer.parseInt(colorCode);
 					color = String.format("#%06x", rgbColor & 0x00ffffff);
 				} catch (Exception e) {
-					throw new AdempiereException(e);
+					logger.warning(e.getLocalizedMessage());
 				}
 			}
 		}

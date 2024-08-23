@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -213,6 +214,7 @@ public class ReportInfo {
 	}
 
 	public ReportInfo completeInfo() {
+		Map<Integer, Integer> columnLength = new HashMap<>();
 		groupedRows = summaryHandler.getAsRows();
 		List<Row> completeRows = Stream.concat(getRows().stream(), groupedRows.stream())
 				.sorted(getSortingValue(false))
@@ -233,10 +235,20 @@ public class ReportInfo {
 				} else {
 					DefaultMapping.newInstance().processValue(printFormatItem, language, cell);
 				}
+				int newLength = Optional.ofNullable(cell.getDisplayValue()).orElse("").length();
+				if(columnLength.containsKey(printFormatItem.getPrintFormatItemId())) {
+					int characters = columnLength.get(printFormatItem.getPrintFormatItemId());
+					if(newLength > characters) {
+						columnLength.put(printFormatItem.getPrintFormatItemId(), newLength);
+					}
+				} else {
+					columnLength.put(printFormatItem.getPrintFormatItemId(), newLength);
+				}
 				newRow.withCell(printFormatItem.getPrintFormatItemId(), cell);
 			});
 			rows.add(newRow);
 		});
+		columns = columns.stream().map(column -> column.withColumnCharactersSize(columnLength.get(column.getPrintFormatItemId()))).collect(Collectors.toList());
 		return this;
 	}
 	
