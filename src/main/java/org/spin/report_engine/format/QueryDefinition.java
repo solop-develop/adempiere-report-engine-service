@@ -39,6 +39,7 @@ public class QueryDefinition {
 	private List<PrintFormatColumn> queryColumns;
 	private String whereClause;
 	private String completeQuery;
+	private String completeQueryCount;
 	private int limit; 
 	private int offset;
 	private int instanceId;
@@ -141,6 +142,15 @@ public class QueryDefinition {
 		return completeQuery;
 	}
 
+	public String getCompleteQueryCount() {
+		return completeQueryCount;
+	}
+
+	public QueryDefinition withCompleteQueryCount(String completeQueryCount) {
+		this.completeQueryCount = completeQueryCount;
+		return this;
+	}
+
 	public QueryDefinition withCompleteQuery(String completeQuery) {
 		this.completeQuery = completeQuery;
 		return this;
@@ -167,6 +177,18 @@ public class QueryDefinition {
 					whereClause.append(restriction);
 				}
 		});
+		//	No Limit for Counter
+		StringBuffer completeQueryWithoutLimit = new StringBuffer(getQuery());
+		if(!Util.isEmpty(getWhereClause())) {
+			completeQueryWithoutLimit.append(" WHERE ").append(whereClause);
+		}
+		if(!Util.isEmpty(getGroupBy())) {
+			completeQueryWithoutLimit.append(" GROUP BY ").append(getGroupBy());
+		}
+		if(!Util.isEmpty(getOrderBy())) {
+			completeQueryWithoutLimit.append(" ORDER BY ").append(getOrderBy());
+		}
+		withCompleteQueryCount(completeQueryWithoutLimit.toString());
 		//	Add Limit
 		if(limit != NO_LIMIT) {
 			if(limit == 0) {

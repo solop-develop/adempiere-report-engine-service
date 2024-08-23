@@ -15,7 +15,10 @@
 package org.spin.report_engine.format;
 
 import org.adempiere.core.domains.models.I_AD_PrintFormatItem;
+import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MColumn;
+import org.compiere.print.MPrintColor;
+import org.compiere.print.MPrintFont;
 import org.compiere.print.MPrintFormatItem;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Util;
@@ -62,6 +65,10 @@ public class PrintFormatItem {
 	private boolean isVirtualColumn;
 	private String columnSql;
 	private String mappingClassName;
+	private int columnWidth;
+	private boolean isFixedWidth;
+	private String fontCode;
+	private String color;
 	
 	
 	/** PrintFormatType AD_Reference_ID=255 */
@@ -176,6 +183,29 @@ public class PrintFormatItem {
 			formatPattern = printFormatItem.getFormatPattern();
 		}
 		mappingClassName = printFormatItem.get_ValueAsString("MappingClassName");
+		columnWidth = printFormatItem.getMaxWidth();
+		isFixedWidth = printFormatItem.isFixedWidth();
+		if(printFormatItem.getAD_PrintFont_ID() > 0) {
+			MPrintFont printFont = MPrintFont.get(printFormatItem.getAD_PrintFont_ID());
+			if(printFont != null) {
+				fontCode = printFont.getCode();
+			}
+		}
+		if(printFormatItem.getAD_PrintColor_ID() > 0) {
+			MPrintColor printColor = MPrintColor.get(printFormatItem.getCtx(), printFormatItem.getAD_PrintColor_ID());
+			String colorCode = printColor.getCode();
+			if(!Util.isEmpty(colorCode)) {
+				try {
+					if(colorCode.equals(".")) {
+						colorCode = "0";
+					}
+					int rgbColor = Integer.parseInt(colorCode);
+					color = String.format("#%06x", rgbColor & 0x00ffffff);
+				} catch (Exception e) {
+					throw new AdempiereException(e);
+				}
+			}
+		}
 	}
 	
 	public static PrintFormatItem newInstance(MPrintFormatItem printFormatItem) {
@@ -189,6 +219,22 @@ public class PrintFormatItem {
 	public PrintFormatItem withMappingClassName(String mappingClassName) {
 		this.mappingClassName = mappingClassName;
 		return this;
+	}
+
+	public int getColumnWidth() {
+		return columnWidth;
+	}
+
+	public boolean isFixedWidth() {
+		return isFixedWidth;
+	}
+
+	public String getFontCode() {
+		return fontCode;
+	}
+
+	public String getColor() {
+		return color;
 	}
 
 	public String getName() {

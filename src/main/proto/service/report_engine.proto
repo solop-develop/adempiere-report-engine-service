@@ -87,11 +87,15 @@ message Report {
 message ReportColumn {
 	string code = 1;
 	string title = 2;
-	string color= 3;
+	string color = 3;
 	string style = 4;
 	int32 display_type = 5;
 	bool is_group_column = 6;
 	int32 sequence = 7;
+	int32 column_width = 8;
+	int32 column_characters_size = 9;
+	bool is_fixed_width = 10;
+	string font_code = 11;
 }
 
 message ReportRow {

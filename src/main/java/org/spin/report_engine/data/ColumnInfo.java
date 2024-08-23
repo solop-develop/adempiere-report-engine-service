@@ -33,6 +33,10 @@ public class ColumnInfo {
 	private int displayTypeId;
 	private int sequence;
 	private boolean isGroupColumn;
+	private int columnWidth;
+	private int columnCharactersSize;
+	private boolean isFixedWidth;
+	private String fontCode;
 	
 	private ColumnInfo(PrintFormatItem item) {
 		this.title = item.getPrintText();
@@ -41,12 +45,37 @@ public class ColumnInfo {
 		this.displayTypeId = item.getReferenceId();
 		this.sequence = item.getSequence();
 		this.isGroupColumn = item.isGroupBy();
+		this.columnWidth = item.getColumnWidth();
+		this.isFixedWidth = item.isFixedWidth();
+		this.fontCode = item.getFontCode();
+		this.color = item.getColor();
 	}
 	
 	public static ColumnInfo newInstance(PrintFormatItem item) {
 		return new ColumnInfo(item);
 	}
 	
+	public int getColumnCharactersSize() {
+		return columnCharactersSize;
+	}
+
+	public ColumnInfo withColumnCharactersSize(int columnCharactersSize) {
+		this.columnCharactersSize = columnCharactersSize;
+		return this;
+	}
+
+	public int getColumnWidth() {
+		return columnWidth;
+	}
+
+	public boolean isFixedWidth() {
+		return isFixedWidth;
+	}
+
+	public String getFontCode() {
+		return fontCode;
+	}
+
 	public int getDisplayTypeId() {
 		return displayTypeId;
 	}

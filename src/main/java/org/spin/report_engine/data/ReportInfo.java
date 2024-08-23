@@ -208,6 +208,10 @@ public class ReportInfo {
 		return comparator.get();
 	}
 	
+	public PrintFormat getPrintFormat() {
+		return printFormat;
+	}
+
 	public ReportInfo completeInfo() {
 		groupedRows = summaryHandler.getAsRows();
 		List<Row> completeRows = Stream.concat(getRows().stream(), groupedRows.stream())
