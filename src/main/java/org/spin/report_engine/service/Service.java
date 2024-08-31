@@ -41,6 +41,7 @@ import org.spin.report_engine.export.XlsxExporter;
 import org.spin.report_engine.format.QueryDefinition;
 import org.spin.service.grpc.authentication.SessionManager;
 import org.spin.service.grpc.util.db.LimitUtil;
+import org.spin.service.grpc.util.query.Filter;
 import org.spin.service.grpc.util.query.FilterManager;
 import org.spin.service.grpc.util.value.ValueManager;
 
@@ -143,8 +144,10 @@ public class Service {
 		int offset = (pageNumber - 1) * limit;
 		ReportBuilder reportBuilder = ReportBuilder.newInstance().withReportId(request.getReportId());
 		if(!Util.isEmpty(request.getFilters())) {
-			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
-					.getConditions());
+			List<Filter> conditionsList = FilterManager.newInstance(request.getFilters())
+				.getConditions()
+			;
+			reportBuilder.withFilters(conditionsList);
 		}
 		reportBuilder.withPrintFormatId(request.getPrintFormatId()).withReportViewId(request.getReportViewId());
 		reportBuilder.withSummary(request.getIsSummary());
