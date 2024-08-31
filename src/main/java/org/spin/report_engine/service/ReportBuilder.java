@@ -76,7 +76,11 @@ public class ReportBuilder {
 	private ReportBuilder() {
 		conditions = new ArrayList<Filter>();
 	}
-	
+
+	public List<Filter> getFilters() {
+		return this.conditions;
+	}
+
 	public ReportBuilder withFilters(List<Filter> filters) {
 		this.conditions = filters;
 		return this;
@@ -88,7 +92,7 @@ public class ReportBuilder {
 		condition.put(Filter.VALUES, value);
 		Filter filter = new Filter(condition);
 		filter.setColumnName(key);
-		conditions.add(filter);
+		this.conditions.add(filter);
 		return this;
 	}
 
@@ -172,9 +176,19 @@ public class ReportBuilder {
 		Language language = Language.getLoginLanguage();
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
-		QueryDefinition queryDefinition = format.getQuery().withConditions(conditions).withInstanceId(getInstanceId()).withLimit(limit, offset).buildQuery();
+		QueryDefinition queryDefinition = format.getQuery()
+			.withConditions(conditions)
+			.withInstanceId(getInstanceId())
+			.withLimit(limit, offset)
+			.buildQuery()
+		;
 		int count = CountUtil.countRecords(queryDefinition.getCompleteQueryCount(), format.getTableName(), queryDefinition.getParameters());
-		ReportInfo reportInfo = ReportInfo.newInstance(format, queryDefinition).withReportViewId(getReportViewId()).withInstanceId(getInstanceId()).withRecordCount(count).withSummary(isSummary());
+		ReportInfo reportInfo = ReportInfo.newInstance(format, queryDefinition)
+			.withReportViewId(getReportViewId())
+			.withInstanceId(getInstanceId())
+			.withRecordCount(count)
+			.withSummary(isSummary())
+		;
 		DB.runResultSet(transactionName, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
 			while (resulset.next()) {
 				format.getItems().forEach(item -> {
@@ -263,7 +277,9 @@ public class ReportBuilder {
 		processInstance.setName(process.get_Translation(I_AD_Process.COLUMNNAME_Name));
 		processInstance.setRecord_ID(getRecordId());
 		processInstance.saveEx();
-		withInstanceId(processInstance.getAD_PInstance_ID());
+		if (!Util.isEmpty(process.getClassname(), true)) {
+			withInstanceId(processInstance.getAD_PInstance_ID());
+		}
 		//	Add Parameters
 		AtomicInteger sequence = new AtomicInteger(0);
 		conditions.forEach(filter -> {

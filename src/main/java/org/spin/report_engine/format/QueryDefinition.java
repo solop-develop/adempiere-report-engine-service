@@ -40,7 +40,7 @@ public class QueryDefinition {
 	private String whereClause;
 	private String completeQuery;
 	private String completeQueryCount;
-	private int limit; 
+	private int limit;
 	private int offset;
 	private int instanceId;
 	public static final int NO_LIMIT = -1;
@@ -97,7 +97,7 @@ public class QueryDefinition {
 		this.offset = offset;
 		return this;
 	}
-	
+
 	public List<Filter> getConditions() {
 		return conditions;
 	}
@@ -130,7 +130,7 @@ public class QueryDefinition {
 	}
 
 	public String getWhereClause() {
-		return whereClause;
+		return this.whereClause;
 	}
 
 	public QueryDefinition withWhereClause(String whereClause) {
@@ -157,6 +157,11 @@ public class QueryDefinition {
 	}
 
 	public QueryDefinition buildQuery() {
+		// Add Query columns
+		StringBuffer completeQuery = new StringBuffer(getQuery());
+		StringBuffer completeQueryWithoutLimit = new StringBuffer(getQuery());
+
+		// Add Where restriction
 		// TODO: Add 1=1 to remove `if (whereClause.length() > 0)` and change stream with parallelStream
 		StringBuffer whereClause = new StringBuffer();
 		getConditions().stream()
@@ -177,46 +182,53 @@ public class QueryDefinition {
 					whereClause.append(restriction);
 				}
 		});
-		//	No Limit for Counter
-		StringBuffer completeQueryWithoutLimit = new StringBuffer(getQuery());
-		if(!Util.isEmpty(getWhereClause())) {
-			completeQueryWithoutLimit.append(" WHERE ").append(whereClause);
+		withWhereClause(whereClause.toString());
+		if(!Util.isEmpty(getWhereClause(), true)) {
+			completeQuery.append(" WHERE ").append(getWhereClause());
+			completeQueryWithoutLimit.append(" WHERE ").append(getWhereClause());
 		}
-		if(!Util.isEmpty(getGroupBy())) {
-			completeQueryWithoutLimit.append(" GROUP BY ").append(getGroupBy());
-		}
-		if(!Util.isEmpty(getOrderBy())) {
-			completeQueryWithoutLimit.append(" ORDER BY ").append(getOrderBy());
-		}
-		withCompleteQueryCount(completeQueryWithoutLimit.toString());
-		//	Add Limit
-		if(limit != NO_LIMIT) {
-			if(limit == 0) {
+
+		//	Add Limit records
+		if(this.limit != NO_LIMIT) {
+			if(this.limit == 0) {
 				withLimit(100, 0);
 			}
-			if (whereClause.length() > 0) {
-				whereClause.append(" AND ");
+
+			StringBuffer limitClause = new StringBuffer()
+				// TODO: Implement with use https://github.com/adempiere/adempiere/pull/4142
+				// .append(" LIMIT ")
+				// .append(this.limit)
+				// .append(" OFFSET ")
+				// .append(this.offset)
+				// .append(completeQueryCount)
+			;
+
+			if(!Util.isEmpty(getWhereClause(), true)) {
+				limitClause.insert(0, " AND ");
+			} else {
+				limitClause.insert(0, " WHERE ");
 			}
-			whereClause.append("ROWNUM <= ").append(limit);
-			//	Add offset
-			if (whereClause.length() > 0) {
-				whereClause.append(" AND ");
-			}
-			whereClause.append("ROWNUM >= ").append(offset);
+			limitClause.append(" ROWNUM <= ").append(this.limit);
+			limitClause.append(" AND ROWNUM >= ").append(this.offset);
+
+			completeQuery.append(limitClause.toString());
 		}
-		//	
-		withWhereClause(whereClause.toString());
-		StringBuffer completeQuery = new StringBuffer(getQuery());
-		if(!Util.isEmpty(getWhereClause())) {
-			completeQuery.append(" WHERE ").append(getWhereClause());
-		}
-		if(!Util.isEmpty(getGroupBy())) {
+
+		// Add Group By
+		if(!Util.isEmpty(getGroupBy(), true)) {
 			completeQuery.append(" GROUP BY ").append(getGroupBy());
+			completeQueryWithoutLimit.append(" GROUP BY ").append(getGroupBy());
 		}
-		if(!Util.isEmpty(getOrderBy())) {
+
+		// Add Order By
+		if(!Util.isEmpty(getOrderBy(), true)) {
 			completeQuery.append(" ORDER BY ").append(getOrderBy());
+			completeQueryWithoutLimit.append(" ORDER BY ").append(getOrderBy());
 		}
+
+		withCompleteQueryCount(completeQueryWithoutLimit.toString());
 		withCompleteQuery(completeQuery.toString());
+
 		return this;
 	}
 	
