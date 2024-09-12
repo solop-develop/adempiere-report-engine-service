@@ -177,7 +177,7 @@ public class ReportBuilder {
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
 		QueryDefinition queryDefinition = format.getQuery()
-			.withConditions(conditions)
+			.withConditions(this.conditions)
 			.withInstanceId(getInstanceId())
 			.withLimit(limit, offset)
 			.buildQuery()
