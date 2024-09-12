@@ -49,7 +49,7 @@ public class QueryDefinition {
 		conditions = new ArrayList<Filter>();
 		columns = new ArrayList<PrintFormatColumn>();
 		queryColumns = new ArrayList<PrintFormatColumn>();
-		this.parameters = new ArrayList<Object>();
+		parameters = new ArrayList<Object>();
 	}
 	
 	public static QueryDefinition newInstance() {
@@ -126,7 +126,7 @@ public class QueryDefinition {
 	}
 
 	public List<Object> getParameters() {
-		return this.parameters;
+		return parameters;
 	}
 
 	public String getWhereClause() {
