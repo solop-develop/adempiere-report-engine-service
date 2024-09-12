@@ -217,8 +217,9 @@ public class ReportInfo {
 		Map<Integer, Integer> columnLength = new HashMap<>();
 		groupedRows = summaryHandler.getAsRows();
 		List<Row> completeRows = Stream.concat(getRows().stream(), groupedRows.stream())
-				.sorted(getSortingValue(false))
-                .collect(Collectors.toList());
+			.sorted(getSortingValue(false))
+			.collect(Collectors.toList())
+		;
 		Language language = Language.getLoginLanguage();
 		rows = new ArrayList<Row>();
 		summaryRows = new ArrayList<Row>();
@@ -252,7 +253,17 @@ public class ReportInfo {
 				summaryRows.add(newRow);
 			}
 		});
-		columns = columns.stream().map(column -> column.withColumnCharactersSize(columnLength.get(column.getPrintFormatItemId()))).collect(Collectors.toList());
+
+		if (columnLength == null || columnLength.isEmpty()) {
+			return this;
+		}
+		columns = columns.stream()
+			.map(column -> {
+				Integer columnCharactersSizeId = columnLength.get(column.getPrintFormatItemId());
+				return column.withColumnCharactersSize(columnCharactersSizeId);
+			})
+			.collect(Collectors.toList())
+		;
 		return this;
 	}
 	
