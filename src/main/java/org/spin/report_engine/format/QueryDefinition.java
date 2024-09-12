@@ -49,7 +49,7 @@ public class QueryDefinition {
 		conditions = new ArrayList<Filter>();
 		columns = new ArrayList<PrintFormatColumn>();
 		queryColumns = new ArrayList<PrintFormatColumn>();
-		parameters = new ArrayList<Object>();
+		this.parameters = new ArrayList<Object>();
 	}
 	
 	public static QueryDefinition newInstance() {
@@ -126,7 +126,7 @@ public class QueryDefinition {
 	}
 
 	public List<Object> getParameters() {
-		return parameters;
+		return this.parameters;
 	}
 
 	public String getWhereClause() {
@@ -168,10 +168,15 @@ public class QueryDefinition {
 			.filter(condition -> !Util.isEmpty(condition.getColumnName(), true))
 			.forEach(condition -> {
 				Optional<PrintFormatColumn> maybeColumn = getColumns()
-						.stream()
-						.filter(column -> column.getColumnName().equals(condition.getColumnName()))
-						.sorted(Comparator.comparing(PrintFormatColumn::getColumnNameAlias).reversed())
-						.findFirst();
+					.stream()
+					.filter(column -> {
+						final String conditionColumnName = condition.getColumnName();
+						return conditionColumnName.equals(column.getColumnName())
+							|| conditionColumnName.equals(column.getColumnName() + "_To");
+					})
+					.sorted(Comparator.comparing(PrintFormatColumn::getColumnNameAlias).reversed())
+					.findFirst()
+				;
 				if(maybeColumn.isPresent()) {
 					if (whereClause.length() > 0) {
 						whereClause.append(" AND ");
@@ -286,7 +291,7 @@ public class QueryDefinition {
 						displayType,
 						currentValue
 					);
-					parameters.add(valueToFilter);
+					this.parameters.add(valueToFilter);
 				});
 			}
 
@@ -312,15 +317,15 @@ public class QueryDefinition {
 			if (valueStartToFilter == null) {
 				sqlValue = " ? ";
 				sqlOperator = OperatorUtil.convertOperator(OperatorUtil.LESS_EQUAL);
-				parameters.add(valueEndToFilter);
+				this.parameters.add(valueEndToFilter);
 			} else if (valueEndToFilter == null) {
 				sqlValue = " ? ";
 				sqlOperator = OperatorUtil.convertOperator(OperatorUtil.GREATER_EQUAL);
-				parameters.add(valueStartToFilter);
+				this.parameters.add(valueStartToFilter);
 			} else {
 				sqlValue = " ? AND ? ";
-				parameters.add(valueStartToFilter);
-				parameters.add(valueEndToFilter);
+				this.parameters.add(valueStartToFilter);
+				this.parameters.add(valueEndToFilter);
 			}
 		} else if(operatorValue.equals(OperatorUtil.LIKE) || operatorValue.equals(OperatorUtil.NOT_LIKE)) {
 			columnName = "UPPER(" + columnName + ")";
@@ -337,7 +342,7 @@ public class QueryDefinition {
 			// }
 			// valueToFilter = "UPPPER(" + valueToFilter + ")";
 			sqlValue = "'%' || UPPER(?) || '%'";
-			parameters.add(valueToFilter);
+			this.parameters.add(valueToFilter);
 		} else if(operatorValue.equals(OperatorUtil.NULL) || operatorValue.equals(OperatorUtil.NOT_NULL)) {
 			;
 		} else if (operatorValue.equals(OperatorUtil.EQUAL) || operatorValue.equals(OperatorUtil.NOT_EQUAL)) {
@@ -365,7 +370,7 @@ public class QueryDefinition {
 				displayType,
 				parameterValue
 			);
-			parameters.add(valueToFilter);
+			this.parameters.add(valueToFilter);
 		} else {
 			// Greater, Greater Equal, Less, Less Equal
 			sqlValue = " ? ";
@@ -374,7 +379,7 @@ public class QueryDefinition {
 				displayType,
 				condition.getValue()
 			);
-			parameters.add(valueToFilter);
+			this.parameters.add(valueToFilter);
 		}
 
 		String rescriction = "(" + columnName + sqlOperator + sqlValue + additionalSQL.toString() + ")";
