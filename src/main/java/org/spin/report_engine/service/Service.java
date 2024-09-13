@@ -220,6 +220,7 @@ public class Service {
 		.setReportViewId(reportInfo.getReportViewId())
 		.setRecordCount(reportInfo.getRecordCount())
 		.setInstanceId(reportInfo.getInstanceId())
+		.setTableName(ValueManager.validateNull(reportInfo.getTableName()))
 		.addAllColumns(
 				reportInfo.getColumns().stream().map(
 						column -> ReportColumn.newBuilder()
@@ -228,6 +229,7 @@ public class Service {
 						.setColor(ValueManager.validateNull(column.getColor()))
 						.setStyle(ValueManager.validateNull(column.getStyle()))
 						.setFontCode(ValueManager.validateNull(column.getFontCode()))
+						.setColumnName(ValueManager.validateNull(column.getColumnName()))
 						.setIsFixedWidth(column.isFixedWidth())
 						.setColumnWidth(column.getColumnWidth())
 						.setColumnCharactersSize(column.getColumnCharactersSize())

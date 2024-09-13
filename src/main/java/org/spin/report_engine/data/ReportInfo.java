@@ -60,6 +60,7 @@ public class ReportInfo {
 	private long recordCount;
 	private int instanceId;
 	private PrintFormat printFormat;
+	private String tableName;
 	
 	private ReportInfo(PrintFormat printFormat, QueryDefinition queryDefinition) {
 		this.printFormat = printFormat;
@@ -80,6 +81,7 @@ public class ReportInfo {
 		sortingItems = printFormat.getSortingItems();
 		printFormatId = printFormat.getPrintFormatId();
 		this.queryDefinition = queryDefinition;
+		this.tableName = printFormat.getTableName();
 	}
 	
 	public static ReportInfo newInstance(PrintFormat printFormat, QueryDefinition queryDefinition) {
@@ -88,6 +90,15 @@ public class ReportInfo {
 
 	public Map<Integer, PrintFormatItem> getGroupLevels() {
 		return groupLevels;
+	}
+
+	public String getTableName() {
+		return tableName;
+	}
+
+	public ReportInfo withTableName(String tableName) {
+		this.tableName = tableName;
+		return this;
 	}
 
 	public QueryDefinition getQueryDefinition() {

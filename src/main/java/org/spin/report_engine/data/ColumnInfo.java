@@ -39,9 +39,11 @@ public class ColumnInfo {
 	private String fontCode;
 	private String mappingClassName;
 	private PrintFormatItem item;
+	private String columnName;
 	
 	
 	private ColumnInfo(PrintFormatItem item) {
+		this.columnName = item.getColumnName();
 		this.title = item.getPrintText();
 		this.printFormatItemId = item.getPrintFormatItemId();
 		this.code = String.valueOf(item.getPrintFormatItemId());
@@ -64,6 +66,15 @@ public class ColumnInfo {
 		return item;
 	}
 	
+	public String getColumnName() {
+		return columnName;
+	}
+
+	public ColumnInfo withColumnName(String columnName) {
+		this.columnName = columnName;
+		return this;
+	}
+
 	public String getMappingClassName() {
 		return mappingClassName;
 	}
