@@ -7,6 +7,7 @@ option java_outer_classname = "ReportEngineService";
 
 import "google/api/annotations.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 // Base URL
 // /report-engine/
@@ -15,6 +16,13 @@ package report_engine;
 
 // The greeting service definition.
 service ReportEngine {
+	// system information
+	rpc GetSystemInfo(GetSystemInfoRequest) returns (SystemInfo) {
+		option (google.api.http) = {
+			get: "/v1/report-engine/system-info"
+		};
+	}
+
 	//	Get Report Format
 	rpc GetView(GetReportRequest) returns (Report) {
 		option (google.api.http) = {
@@ -33,6 +41,16 @@ service ReportEngine {
 			post: "/v1/report-engine/export/{report_id}/{format}"
 		};
 	}
+}
+
+message GetSystemInfoRequest {
+	// empty request
+}
+message SystemInfo {
+	// report service
+	google.protobuf.Timestamp date_version = 1;
+	string main_version = 2;
+	string implementation_version = 3;
 }
 
 // Run Export Request

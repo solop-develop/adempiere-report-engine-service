@@ -31,6 +31,8 @@ import org.spin.backend.grpc.report_engine.ReportColumn;
 import org.spin.backend.grpc.report_engine.ReportRow;
 import org.spin.backend.grpc.report_engine.RunExportRequest;
 import org.spin.backend.grpc.report_engine.RunExportResponse;
+import org.spin.backend.grpc.report_engine.SystemInfo;
+import org.spin.base.Version;
 import org.spin.backend.grpc.report_engine.GetReportRequest;
 import org.spin.backend.grpc.report_engine.Report;
 import org.spin.report_engine.data.Cell;
@@ -43,6 +45,7 @@ import org.spin.service.grpc.authentication.SessionManager;
 import org.spin.service.grpc.util.db.LimitUtil;
 import org.spin.service.grpc.util.query.Filter;
 import org.spin.service.grpc.util.query.FilterManager;
+import org.spin.service.grpc.util.value.TimeManager;
 import org.spin.service.grpc.util.value.ValueManager;
 
 import com.google.protobuf.Struct;
@@ -84,6 +87,33 @@ public class Service {
 			return;
 		}
 		MRecentItem.addMenuOption(Env.getCtx(), menuId, 0);
+	}
+
+
+	public static SystemInfo.Builder getSystemInfo() {
+		SystemInfo.Builder builder = SystemInfo.newBuilder();
+
+		// backend info
+		builder.setDateVersion(
+				ValueManager.getTimestampFromDate(
+					TimeManager.getTimestampFromString(
+						Version.DATE_VERSION
+					)
+				)
+			)
+			.setMainVersion(
+				ValueManager.validateNull(
+					Version.MAIN_VERSION
+				)
+			)
+			.setImplementationVersion(
+				ValueManager.validateNull(
+					Version.IMPLEMENTATION_VERSION
+				)
+			)
+		;
+
+		return builder;
 	}
 
 
