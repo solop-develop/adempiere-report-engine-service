@@ -30,6 +30,7 @@ import org.compiere.model.MColumn;
 import org.compiere.model.MPInstance;
 import org.compiere.model.MProcess;
 import org.compiere.model.MProcessPara;
+import org.compiere.model.MRole;
 import org.compiere.model.MTable;
 import org.compiere.model.PO;
 import org.compiere.model.Query;
@@ -182,14 +183,20 @@ public class ReportBuilder {
 			.withLimit(limit, offset)
 			.buildQuery()
 		;
-		int count = CountUtil.countRecords(queryDefinition.getCompleteQueryCount(), format.getTableName(), queryDefinition.getParameters());
+		//	Add Access
+		String completeQuery = MRole.getDefault(Env.getCtx(), false).addAccessSQL(
+				queryDefinition.getCompleteQuery(), format.getTableName(), MRole.SQL_FULLYQUALIFIED, MRole.SQL_RO);
+		String completeQueryCount = MRole.getDefault(Env.getCtx(), false).addAccessSQL(
+				queryDefinition.getCompleteQueryCount(), format.getTableName(), MRole.SQL_FULLYQUALIFIED, MRole.SQL_RO);
+		//	Count
+		int count = CountUtil.countRecords(completeQueryCount, format.getTableName(), queryDefinition.getParameters());
 		ReportInfo reportInfo = ReportInfo.newInstance(format, queryDefinition)
 			.withReportViewId(getReportViewId())
 			.withInstanceId(getInstanceId())
 			.withRecordCount(count)
 			.withSummary(isSummary())
 		;
-		DB.runResultSet(transactionName, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
+		DB.runResultSet(transactionName, completeQuery, queryDefinition.getParameters(), resulset -> {
 			while (resulset.next()) {
 				format.getItems().forEach(item -> {
 					Map<String, Cell> cells = new HashMap<String, Cell>();
