@@ -39,10 +39,12 @@ repositories {
 	mavenLocal()
     mavenCentral()
     maven {
-    	url = System.getenv("GITHUB_DEPLOY_REPOSITORY") ?: System.properties['deploy.repository'] ?: 'https://maven.pkg.github.com'
-        credentials {
-        	username = System.getenv("GITHUB_DEPLOY_USER") ?: System.properties['deploy.user']
-            password = System.getenv("GITHUB_DEPLOY_TOKEN") ?: System.properties['deploy.token'] 
+		// Adempiere GitHub Organization
+		url = 'https://maven.pkg.github.com/adempiere/adempiere'
+		credentials {
+			// project property, system properrty, enviroment variable
+			username = findProperty("deployUsername") ?: System.properties['deploy.user'] ?: System.getenv("GITHUB_DEPLOY_USER")
+			password = findProperty("deployToken") ?: System.properties['deploy.token'] ?: System.getenv("GITHUB_DEPLOY_TOKEN")
 		}
 	}
 }
@@ -161,7 +163,7 @@ dependencies {
 
 	// ADempiere Projects with additional features
 	//	ADempiere gRPC Utils Base (https://central.sonatype.com/artifact/io.github.adempiere/adempiere-grpc-utils)
-	implementation "${baseGroupId}:adempiere-grpc-utils:1.4.8"
+	implementation "${baseGroupId}:adempiere-grpc-utils:1.5.1"
 	// AWS3 Connector to use as File Storagee (https://central.sonatype.com/artifact/io.github.adempiere/adempiere-s3-connector)
 	implementation "${baseGroupId}:adempiere-s3-connector:1.0.4"
 

@@ -13,7 +13,14 @@ sed -i "s|adempiere_database_value|$DB_NAME|g" env.yaml
 sed -i "s|adempiere_user_value|$DB_USER|g" env.yaml
 sed -i "s|adempiere_pass_value|$DB_PASSWORD|g" env.yaml
 sed -i "s|PostgreSQL|$DB_TYPE|g" env.yaml
-sed -i "s|$DEFAULT_JAVA_OPTIONS|$GRPC_JAVA_OPTIONS|g" bin/adempiere-report-engine-service-server
+sed -i "s|fill_idle_timeout|$IDLE_TIMEOUT|g" env.yaml
+sed -i "s|fill_minimum_idle|$MINIMUM_IDLE|g" env.yaml
+sed -i "s|fill_maximum_pool_size|$MAXIMUM_POOL_SIZE|g" env.yaml
+sed -i "s|fill_connection_timeout|$CONNECTION_TIMEOUT|g" env.yaml
+sed -i "s|fill_maximum_lifetime|$MAXIMUM_LIFETIME|g" env.yaml
+sed -i "s|fill_keepalive_time|$KEEPALIVE_TIME|g" env.yaml
+sed -i "s|fill_connection_test_query|$CONNECTION_TEST_QUERY|g" env.yaml
+sed -i "s|$DEFAULT_JAVA_OPTIONS|$GRPC_JAVA_OPTIONS|g" bin/adempiere-mobile-service-server
 
 # Run app
 bin/adempiere-report-engine-service-server env.yaml
