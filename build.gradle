@@ -172,5 +172,5 @@ dependencies {
 	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.0'
 	implementation "org.apache.poi:poi-ooxml:5.2.5"
 	//	ADempiere Core + Patches + Features
-	implementation "com.solop:adempiere.solop_libs:3.9.4.001-1.1.2"
+	implementation "com.solop:adempiere.solop_libs:3.9.4.001-1.1.4"
 }
