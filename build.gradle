@@ -166,6 +166,10 @@ dependencies {
 	implementation "${baseGroupId}:adempiere-grpc-utils:1.5.1"
 	// AWS3 Connector to use as File Storagee (https://central.sonatype.com/artifact/io.github.adempiere/adempiere-s3-connector)
 	implementation "${baseGroupId}:adempiere-s3-connector:1.0.4"
+	implementation "${baseGroupId}:adempiere-jwt-token:1.0.3"
+	implementation "io.jsonwebtoken:jjwt-api:0.12.6"
+	implementation "io.jsonwebtoken:jjwt-impl:0.12.6"
+	implementation "io.jsonwebtoken:jjwt-jackson:0.12.6"
 
 	//	Others
 	compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
