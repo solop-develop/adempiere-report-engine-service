@@ -18,7 +18,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+
+import org.compiere.model.MRole;
 import org.compiere.util.DisplayType;
+import org.compiere.util.Env;
 import org.compiere.util.Util;
 import org.spin.service.grpc.util.db.OperatorUtil;
 import org.spin.service.grpc.util.db.ParameterUtil;
@@ -44,6 +47,7 @@ public class QueryDefinition {
 	private int offset;
 	private int instanceId;
 	public static final int NO_LIMIT = -1;
+	private String tableName;
 	
 	private QueryDefinition() {
 		conditions = new ArrayList<Filter>();
@@ -58,6 +62,15 @@ public class QueryDefinition {
 
 	public String getQuery() {
 		return query;
+	}
+
+	public String getTableName() {
+		return tableName;
+	}
+
+	public QueryDefinition withTableName(String tableName) {
+		this.tableName = tableName;
+		return this;
 	}
 
 	public String getOrderBy() {
@@ -158,9 +171,7 @@ public class QueryDefinition {
 
 	public QueryDefinition buildQuery() {
 		// Add Query columns
-		StringBuffer completeQuery = new StringBuffer(getQuery());
-		StringBuffer completeQueryWithoutLimit = new StringBuffer(getQuery());
-
+		String query = getQuery();
 		// Add Where restriction
 		// TODO: Add 1=1 to remove `if (whereClause.length() > 0)` and change stream with parallelStream
 		StringBuffer whereClause = new StringBuffer();
@@ -189,10 +200,15 @@ public class QueryDefinition {
 		});
 		withWhereClause(whereClause.toString());
 		if(!Util.isEmpty(getWhereClause(), true)) {
-			completeQuery.append(" WHERE ").append(getWhereClause());
-			completeQueryWithoutLimit.append(" WHERE ").append(getWhereClause());
+			query = query + " WHERE " + getWhereClause();
 		}
-
+		//	Add SQL Access
+		if(!tableName.equals("T_Report")) {
+			query = MRole.getDefault(Env.getCtx(), false).addAccessSQL(
+					query, getTableName(), MRole.SQL_FULLYQUALIFIED, MRole.SQL_RO);
+		}
+		StringBuffer completeQuery = new StringBuffer(query);
+		StringBuffer completeQueryWithoutLimit = new StringBuffer(query);
 		//	Add Limit records
 		if(this.limit != NO_LIMIT) {
 			if(this.limit == 0) {
@@ -213,7 +229,7 @@ public class QueryDefinition {
 			} else {
 				limitClause.insert(0, " WHERE ");
 			}
-			limitClause.append(" ROWNUM <= ").append(this.limit);
+			limitClause.append("ROWNUM <= ").append(this.limit);
 			limitClause.append(" AND ROWNUM >= ").append(this.offset);
 
 			completeQuery.append(limitClause.toString());
