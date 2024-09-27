@@ -158,6 +158,14 @@ public class ReportInfo {
 		rows.add(row);
 		return this;
 	}
+	public ReportInfo addRow(int level, int sequence) {
+		if(temporaryRow != null) {
+			addRow(Row.newInstance().withLevel(level).withCells(temporaryRow.getData()).withSequence(sequence));
+			summaryHandler.addRow(Row.newInstance().withLevel(level).withSummaryRow(true).withCells(temporaryRow.getData()));
+		}
+		temporaryRow = Row.newInstance().withLevel(level);
+		return this;
+	}
 	
 	public ReportInfo addRow() {
 		if(temporaryRow != null) {
@@ -260,7 +268,7 @@ public class ReportInfo {
 				newRow.withCell(printFormatItem.getPrintFormatItemId(), cell);
 			});
 			rows.add(newRow);
-			if(newRow.isSummaryRow()) {
+			if(newRow.isSummaryRow() || (newRow.getLevel() == 0 && isFinancialReport())) {
 				summaryRows.add(newRow);
 			}
 		});
@@ -278,24 +286,49 @@ public class ReportInfo {
 		return this;
 	}
 	
+	private boolean isFinancialReport() {
+		return getTableName().equals("T_Report");
+	}
+	
 	/**
 	 * Get all rows as tree
 	 * @return
 	 */
 	public List<Row> getRowsAsTree() {
-		PrintFormatItem levelGroup = groupLevels.get(0);
-		if(levelGroup != null) {
+		if(isFinancialReport()) {
 			List<Row> tree = new ArrayList<Row>();
 			//	Add parent level
 			rows.stream().filter(row -> {
-				return row.getLevel() == levelGroup.getSortSequence();
+				return row.getLevel() == 0;
 			}).forEach(row -> tree.add(row));
 			tree.forEach(treeValue -> {
-				processChildren(treeValue, 1);
+				processChildrenFinancialReport(treeValue, 1);
 			});
 			return tree;
+		} else {
+			PrintFormatItem levelGroup = groupLevels.get(0);
+			if(levelGroup != null) {
+				List<Row> tree = new ArrayList<Row>();
+				//	Add parent level
+				rows.stream().filter(row -> {
+					return row.getLevel() == levelGroup.getSortSequence();
+				}).forEach(row -> tree.add(row));
+				tree.forEach(treeValue -> {
+					processChildren(treeValue, 1);
+				});
+				return tree;
+			}
 		}
 		return rows;
+	}
+	
+	private void processChildrenFinancialReport(Row parent, int levelAsInt) {
+		List<Row> children = parent.getChildren();
+		rows.stream().filter(row -> {
+			return row.getLevel() == levelAsInt && row.getSequence() == parent.getSequence();
+		}).forEach(row -> children.add(row));
+		int nextLevel = levelAsInt + 1;
+		children.forEach(child -> processChildrenFinancialReport(child, nextLevel));
 	}
 	
 	private void processChildren(Row parent, int levelAsInt) {
