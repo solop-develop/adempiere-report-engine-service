@@ -325,6 +325,20 @@ public class PrintFormat {
 				}
 			}
 		});
+		if(getTableName().equals("T_Report")) {
+			//	Level No
+			if(query.length() > 0) {
+				query.append(", ");
+			}
+			query.append("(").append("T_Report.LevelNo").append(")");
+			query.append(" AS ").append("LevelNo");
+			//	Sequence
+			if(query.length() > 0) {
+				query.append(", ");
+			}
+			query.append("(").append("T_Report.SeqNo").append(")");
+			query.append(" AS ").append("SeqNo");
+		}
 		if(query.length() > 0) {
 			query.insert(0, "SELECT ");
 			query.append(" FROM ").append(getTableName());

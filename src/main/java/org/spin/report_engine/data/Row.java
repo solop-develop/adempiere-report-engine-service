@@ -28,6 +28,7 @@ public class Row {
 	/**	Data for Row	*/
 	private Map<Integer, Cell> data;
 	private int level;
+	private int sequence;
 	private List<Row> children;
 	private boolean isSummaryRow;
 	
@@ -51,9 +52,19 @@ public class Row {
 	
 	public Row withSourceRowDefinition(Row sourceRow) {
 		return withLevel(sourceRow.getLevel())
-		.withSummaryRow(sourceRow.isSummaryRow());
+		.withSummaryRow(sourceRow.isSummaryRow())
+		.withSequence(sourceRow.getSequence());
 	}
 	
+	public int getSequence() {
+		return sequence;
+	}
+
+	public Row withSequence(int sequence) {
+		this.sequence = sequence;
+		return this;
+	}
+
 	public boolean isSummaryRow() {
 		return isSummaryRow;
 	}
