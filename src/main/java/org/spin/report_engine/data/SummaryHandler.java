@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import org.spin.report_engine.format.PrintFormatItem;
@@ -37,9 +38,9 @@ public class SummaryHandler {
 	private SummaryHandler(List<PrintFormatItem> printFormatItems) {
 		groupedItems = printFormatItems.stream().filter(item -> item.isGroupBy()).sorted(Comparator.comparing(PrintFormatItem::getSortSequence)).collect(Collectors.toList());
 		summarizedItems = printFormatItems.stream().filter(printItem -> {
-			if(printItem.isHideGrandTotal()) {
-				return false;
-			}
+//			if(printItem.isHideGrandTotal()) {
+//				return false;
+//			}
 			return printItem.isAveraged() || printItem.isCounted() || printItem.isMaxCalc() || printItem.isMinCalc() || printItem.isSummarized() || printItem.isVarianceCalc();
 		}).collect(Collectors.toList());
 		summary = new HashMap<Integer, Map<Row, Map<Integer, SummaryFunction>>>();
@@ -110,16 +111,24 @@ public class SummaryHandler {
 	
 	public List<Row> getAsRows() {
 		List<Row> rows = new ArrayList<Row>();
+		AtomicBoolean isFirst = new AtomicBoolean(true);
 		groupedItems.forEach(groupItem -> {
 			Map<Row, Map<Integer, SummaryFunction>> groupTotals = Optional.ofNullable(summary.get(groupItem.getPrintFormatItemId())).orElse(new HashMap<Row, Map<Integer,SummaryFunction>>());
 			groupTotals.keySet().forEach(groupValueRow -> {
 				Map<Integer, SummaryFunction> summaryValue = groupTotals.get(groupValueRow);
-				summarizedItems.forEach(sumItem -> {
+				summarizedItems.stream().filter(printItem -> {
+					if(printItem.isHideGrandTotal() && isFirst.get()) {
+						return false;
+					}
+					return true;
+				})
+				.forEach(sumItem -> {
 					SummaryFunction function = summaryValue.get(sumItem.getPrintFormatItemId());
 					groupValueRow.withCell(sumItem.getPrintFormatItemId(), Cell.newInstance().withValue(function.getValue(SummaryFunction.F_SUM)).withFunction(function));
 				});
 				rows.add(groupValueRow.withSummaryRow(true));
 			});
+			isFirst.set(false);
 		});
 		return rows;
 	}
