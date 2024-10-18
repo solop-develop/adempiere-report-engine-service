@@ -184,7 +184,7 @@ public class ReportBuilder {
 			.buildQuery()
 		;
 		//	Count
-		int count = CountUtil.countRecords(queryDefinition.getCompleteQueryCount(), format.getTableName(), queryDefinition.getParameters());
+		int count = CountUtil.countRecords(queryDefinition.getCompleteQueryCount(), format.getTableName(), queryDefinition.getParameters(), transactionName);
 		ReportInfo reportInfo = ReportInfo.newInstance(format, queryDefinition)
 			.withReportViewId(getReportViewId())
 			.withInstanceId(getInstanceId())
