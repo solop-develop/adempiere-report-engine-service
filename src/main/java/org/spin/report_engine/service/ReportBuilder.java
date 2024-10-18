@@ -217,7 +217,6 @@ public class ReportBuilder {
 								}
 							}
 						} catch (Exception e) {
-							e.printStackTrace();
 							logger.warning(e.getLocalizedMessage());
 						}
 						cells.put(item.getColumnName(), cell);
