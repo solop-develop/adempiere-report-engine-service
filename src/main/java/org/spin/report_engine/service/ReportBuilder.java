@@ -290,7 +290,7 @@ public class ReportBuilder {
 		conditions.forEach(filter -> {
 			MProcessPara processParameter = process.getParameter(filter.getColumnName());
 			if(processParameter != null) {
-				Object value = ParameterUtil.getValueToFilterRestriction(processParameter.getAD_Reference_ID(), filter.getValue());
+				Object value = ParameterUtil.getValueToFilterRestriction(processParameter.getAD_Reference_ID(), filter.getFromValue());
 				processInstance.createParameter(sequence.addAndGet(10), filter.getColumnName(), value);
 				if(filter.getToValue() != null) {
 					Object valueTo = ParameterUtil.getValueToFilterRestriction(processParameter.getAD_Reference_ID(), filter.getToValue());
