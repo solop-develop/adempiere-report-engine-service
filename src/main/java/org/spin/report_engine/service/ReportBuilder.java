@@ -119,8 +119,10 @@ public class ReportBuilder {
 	}
 
 	public ReportBuilder withInstanceId(int instanceId) {
-		this.instanceId = instanceId;
-		withParameter("AD_PInstance_ID", instanceId);
+		if(instanceId > 0) {
+			this.instanceId = instanceId;
+			withParameter("AD_PInstance_ID", instanceId);
+		}
 		return this;
 	}
 

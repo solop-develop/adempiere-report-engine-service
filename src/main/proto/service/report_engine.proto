@@ -66,6 +66,7 @@ message RunExportRequest {
 	int32 record_id = 9;
 	string table_name = 10;
 	string format = 11;
+	int32 instance_id = 12;
 }
 
 //	Export Response
@@ -87,6 +88,7 @@ message GetReportRequest {
 	int32 record_id = 9;
 	string table_name = 10;
 	bool show_as_rows = 11;
+	int32 instance_id = 12;
 }
 
 message Report {

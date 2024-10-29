@@ -135,7 +135,7 @@ public class Service {
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
-		ReportBuilder reportBuilder = ReportBuilder.newInstance().withPrintFormatId(request.getPrintFormatId());
+		ReportBuilder reportBuilder = ReportBuilder.newInstance().withPrintFormatId(request.getPrintFormatId()).withInstanceId(request.getInstanceId());
 		if(!Util.isEmpty(request.getFilters())) {
 			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
 					.getConditions());
