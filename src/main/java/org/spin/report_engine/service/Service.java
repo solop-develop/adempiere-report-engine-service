@@ -135,13 +135,14 @@ public class Service {
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
-		ReportBuilder reportBuilder = ReportBuilder.newInstance().withPrintFormatId(request.getPrintFormatId()).withInstanceId(request.getInstanceId());
+		ReportBuilder reportBuilder = ReportBuilder.newInstance().withPrintFormatId(request.getPrintFormatId());
 		if(!Util.isEmpty(request.getFilters())) {
 			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
 					.getConditions());
 		}
 		reportBuilder.withReportViewId(request.getReportViewId());
 		reportBuilder.withSummary(request.getIsSummary());
+		reportBuilder.withInstanceId(request.getInstanceId());
 		if(request.getRecordId() > 0
 				&& !Util.isEmpty(request.getTableName())) {
 			MTable table = MTable.get(Env.getCtx(), request.getTableName());
