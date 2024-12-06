@@ -15,6 +15,8 @@
 package org.spin.report_engine.data;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 
 import org.compiere.util.Env;
 import org.compiere.util.Util;
@@ -108,6 +110,9 @@ public class Cell {
 	}
 
 	public String getCompareValue() {
+		if(value instanceof Timestamp && value != null) {
+			return new SimpleDateFormat("yyyy-MM-dd").format((Timestamp) value);
+		}
 		if(Util.isEmpty(displayValue)) {
 			if(value != null) {
 				return String.valueOf(value);
