@@ -56,8 +56,8 @@ To use this Docker image you must have your Docker engine version greater than o
  * `CONNECTION_TEST_QUERY`: It sets how often HikariCP will check if a connection is still working properly. This helps prevent problems with connections that might become inactive. Default: `SELECT 1`
  * `SERVER_PORT`: Port to access Adempiere-Backend from outside of the container. Default: `50059`.
  * `SERVER_LOG_LEVEL`: Log Level. Default: `WARNING`.
+ * `JAVA_OPTIONS`: Custom settings to the Java Virtual Machine (JVM). Default: `-Xms64M -Xmx1512M`.
  * `TZ`: (Time Zone) Indicates the time zone to set in the nginx-based container, the default value is `America/Caracas` (UTC -4:00).
- * `SYSTEM_LOGO_URL`: Logo of the main image of the system, shown in the login screen.
 
 You can download the last image from docker hub, just run the follow command:
 

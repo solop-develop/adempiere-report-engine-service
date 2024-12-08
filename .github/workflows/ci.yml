@@ -22,17 +22,19 @@ on:
       - master
       - develop
       - experimental
+      - test/**
       - bugfix/**
       - hotfix/**
       - feature/**
     paths-ignore:
       - README.md
       - README.es.md
+      - docker/*
 
 jobs:
 
   build-ci:
-    name: Build Template
+    name: Build ADempiere Report Engine
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -47,10 +49,10 @@ jobs:
           architecture: x64
 
       - name: Build with Gradle
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/actions/setup-gradle@v3
         env:
-          GITHUB_DEPLOY_USER: "${{ secrets.DEPLOY_USER }}"
-          GITHUB_DEPLOY_TOKEN: "${{ secrets.DEPLOY_TOKEN }}"
+          GITHUB_DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GITHUB_DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
           GITHUB_DEPLOY_REPOSITORY: ${{ secrets.DEPLOY_REPOSITORY }}
         with:
           gradle-version: 8.0.2

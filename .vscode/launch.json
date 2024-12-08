@@ -6,7 +6,7 @@
 	"configurations": [
 		{
 			"type": "java",
-			"name": "ADmempiere gRPC Template",
+			"name": "ADmempiere Report Engine",
 			"request": "launch",
 			"mainClass": "org.spin.report_engine.server.ReportEngineServer",
 			"projectName": "adempiere-report-engine-service",
