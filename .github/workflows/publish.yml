@@ -14,7 +14,7 @@ jobs:
 
   # Build dist application adempiere-report-engine-service
   build-app:
-    name: Build dist Template
+    name: Build dist ADempiere Report Engine
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -43,18 +43,25 @@ jobs:
           gradle-version: 8.0.2
           arguments: createRelease
         env:
-          GITHUB_DEPLOY_USER: ${{ github.actor }}
-          GITHUB_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_DEPLOY_REPOSITORY: ${{ secrets.DEPLOY_REPOSITORY }}
           ORG_GRADLE_PROJECT_deployUsername: ${{ secrets.DEPLOY_USER }}
           ORG_GRADLE_PROJECT_deployToken: ${{ secrets.DEPLOY_TOKEN }}
           ORG_GRADLE_PROJECT_deplyRepository: ${{ secrets.DEPLOY_REPOSITORY }}
+          GITHUB_DEPLOY_USER: ${{ github.actor }}
+          GITHUB_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_DEPLOY_REPOSITORY: ${{ secrets.DEPLOY_REPOSITORY }}
 
       - name: Upload descriptor file artifact
         uses: actions/upload-artifact@v4
         with:
           name: adempiere-report-engine-service.dsc
           path: build/descriptors/adempiere-report-engine-service.dsc
+          retention-days: 1
+
+      - name: Upload envoy file artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: envoy.yaml
+          path: resources/envoy.yaml
 
       - name: Upload dist app zip artifact
         uses: actions/upload-artifact@v4
@@ -97,6 +104,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: adempiere-report-engine-service.dsc/adempiere-report-engine-service.dsc
+
+      - name: Upload Envoy config
+        uses: skx/github-action-publish-binaries@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: envoy.yaml/envoy.yaml
 
       - name: Upload zip
         uses: skx/github-action-publish-binaries@master
@@ -175,8 +189,9 @@ jobs:
           # CONFIGURE DOCKER SECRETS INTO REPOSITORY
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
+
       - name: Push alpine image in Docker Hub
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/alpine.Dockerfile
@@ -206,8 +221,10 @@ jobs:
           unzip adempiere-report-engine-service.zip -d docker/
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -215,11 +232,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Push alpine image in Docker Hub
-        uses: docker/build-push-action@v5
+      - name: Push image in Docker Hub
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: docker/multiarch.Dockerfile
+          file: docker/focal.Dockerfile
           platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
           push: true
           tags: |
@@ -251,9 +268,9 @@ jobs:
           fi
 
   # TODO: Download .tar and add docker image without uncompress
-  # Publish docker multiplatform image in Docker Hub Registry to application
-  push-proxy-imame-dhr:
-    name: Push multiplatform proxy docker image to Docker Hub
+  # Publish docker image multiplatform in Docker Hub Registry to application
+  push-grpc-proxy-imame-dhr:
+    name: Push grpc-proxy docker image to Docker Hub
     needs:
       - check-proxy-docker-secrets
     # Skip step based on secret
@@ -271,6 +288,7 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -281,8 +299,8 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Push alpine image in Docker Hub
-        uses: docker/build-push-action@v5
+      - name: Push image in Docker Hub
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/proxy.Dockerfile
