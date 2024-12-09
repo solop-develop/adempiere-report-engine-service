@@ -21,12 +21,16 @@ import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
 
+import org.compiere.util.CLogger;
+
 /**
  * @author Edwin Betancourt, EdwinBetanc0urt@outlook.com, https://github.com/EdwinBetanc0urt
  * Service for backend of Version
  */
 public final class Version
 {
+
+	private static CLogger log = CLogger.getCLogger(Version.class);
 
 	/** Main Version String         */
 	// Conventions for naming second number is even for stable, and odd for unstable
@@ -60,7 +64,8 @@ public final class Version
 					IMPLEMENTATION_VERSION = properties.getProperty("IMPLEMENTATION_VERSION");
 				}
 			} catch (IOException e) {
-				// file does not exist
+				// file does not exists
+				log.warning("File version.properties does no exists");
 			}
 		}
 	}

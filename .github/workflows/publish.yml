@@ -41,6 +41,11 @@ jobs:
       - name: Set Main Version
         run: echo "MAIN_VERSION=${{ github.event.release.name }}" >> src/main/java/org/spin/base/version.properties
 
+      - name: Test version
+        run: |
+          run ${{ github.event.release.name }}
+          cat src/main/java/org/spin/base/version.properties
+
       - name: Set Release Date
         run: echo "DATE_VERSION=$(date +'%Y-%m-%d')" >> src/main/java/org/spin/base/version.properties
 
