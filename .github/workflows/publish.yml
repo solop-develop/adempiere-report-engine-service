@@ -43,7 +43,7 @@ jobs:
 
       - name: Test version
         run: |
-          run ${{ github.event.release.name }}
+          echo ${{ github.event.release.name }}
           cat src/main/java/org/spin/base/version.properties
 
       - name: Set Release Date
