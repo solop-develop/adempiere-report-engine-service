@@ -84,16 +84,17 @@ protobuf {
 }
 
 sourceSets {
-    main {
-        java {
-            srcDirs 'build/generated/source/proto/main/grpc'
-            srcDirs 'build/generated/source/proto/main/java'
-            srcDirs 'src/main/proto'
-        }
+	main {
+		java {
+			srcDirs 'build/generated/source/proto/main/grpc'
+			srcDirs 'build/generated/source/proto/main/java'
+			srcDirs 'src/main/proto'
+		}
 		resources {
+			srcDirs 'src/main/java'
 			include 'org/spin/base/version.properties'
 		}
-    }
+	}
 }
 
 // Copy proto descriptor another folder
@@ -111,16 +112,16 @@ allprojects {
 	}
 }
 
-task AdempiereTemplateServer(type: CreateStartScripts) {
+task AdempiereReportEngineServer(type: CreateStartScripts) {
 	mainClass = javaMainClass
-    applicationName = 'adempiere-report-engine-service-server'
-    outputDir = new File(project.buildDir, 'tmp')
-    classpath = jar.outputs.files + project.configurations.runtimeClasspath
+	applicationName = 'adempiere-report-engine-service-server'
+	outputDir = new File(project.buildDir, 'tmp')
+	classpath = jar.outputs.files + project.configurations.runtimeClasspath
 }
 
 applicationDistribution.into('bin') {
-	from(AdempiereTemplateServer)
-    fileMode = 0755
+	from(AdempiereReportEngineServer)
+	fileMode = 0755
 }
 
 //	Create release for project
