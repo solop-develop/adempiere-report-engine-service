@@ -28,16 +28,6 @@ jobs:
           java-version: 11
           architecture: x64
 
-      - name: Build with Gradle
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-version: 8.0.2
-          arguments: createRelease
-        env:
-          GITHUB_DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          GITHUB_DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
-          GITHUB_DEPLOY_REPOSITORY: ${{ secrets.DEPLOY_REPOSITORY }}
-
       - name: Set Main Version
         run: echo "MAIN_VERSION=${{ github.event.release.name }}" >> src/main/java/org/spin/base/version.properties
 
@@ -47,10 +37,15 @@ jobs:
       - name: Set Implementation Version
         run: echo "IMPLEMENTATION_VERSION=${{ github.event.release.tag_name }}" >> src/main/java/org/spin/base/version.properties
 
-      - name: Test version
-        run: |
-          echo ${{ github.event.release.name }}
-          cat src/main/java/org/spin/base/version.properties
+      - name: Build with Gradle
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: 8.0.2
+          arguments: createRelease
+        env:
+          GITHUB_DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GITHUB_DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          GITHUB_DEPLOY_REPOSITORY: ${{ secrets.DEPLOY_REPOSITORY }}
 
       - name: Upload descriptor file artifact
         uses: actions/upload-artifact@v4
