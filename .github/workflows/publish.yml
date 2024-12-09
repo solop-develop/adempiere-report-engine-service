@@ -41,16 +41,16 @@ jobs:
       - name: Set Main Version
         run: echo "MAIN_VERSION=${{ github.event.release.name }}" >> src/main/java/org/spin/base/version.properties
 
-      - name: Test version
-        run: |
-          echo ${{ github.event.release.name }}
-          cat src/main/java/org/spin/base/version.properties
-
       - name: Set Release Date
         run: echo "DATE_VERSION=$(date +'%Y-%m-%d')" >> src/main/java/org/spin/base/version.properties
 
       - name: Set Implementation Version
         run: echo "IMPLEMENTATION_VERSION=${{ github.event.release.tag_name }}" >> src/main/java/org/spin/base/version.properties
+
+      - name: Test version
+        run: |
+          echo ${{ github.event.release.name }}
+          cat src/main/java/org/spin/base/version.properties
 
       - name: Upload descriptor file artifact
         uses: actions/upload-artifact@v4
