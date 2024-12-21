@@ -335,12 +335,22 @@ public class ReportInfo {
 		List<Row> children = parent.getChildren();
 		PrintFormatItem previosLevelGroup = groupLevels.get(levelAsInt - 1);
 		PrintFormatItem levelGroup = groupLevels.get(levelAsInt);
-		if(levelGroup == null || previosLevelGroup == null) {
+		if((levelGroup == null && groupLevels.size() > 1) || previosLevelGroup == null) {
 			return;
 		}
 		rows.stream().filter(row -> {
-			return row.getLevel() == levelGroup.getSortSequence() && compareRows(parent, row, levelAsInt);
+			if(levelGroup == null && row.getLevel() > parent.getLevel() && compareRows(parent, row, levelAsInt)) {
+				return true;
+			}
+			if(levelGroup != null && row.getLevel() == levelGroup.getSortSequence() && compareRows(parent, row, levelAsInt)) {
+				return true;
+			}
+			return false;
 		}).forEach(row -> children.add(row));
+		//	No Recursive
+		if(groupLevels.size() == 1) {	
+			return;
+		}
 		int nextLevel = levelAsInt + 1;
 		if(nextLevel < groupLevels.size()) {
 			children.forEach(child -> processChildren(child, nextLevel));
