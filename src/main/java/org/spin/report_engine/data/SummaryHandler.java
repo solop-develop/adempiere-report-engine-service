@@ -38,9 +38,6 @@ public class SummaryHandler {
 	private SummaryHandler(List<PrintFormatItem> printFormatItems) {
 		groupedItems = printFormatItems.stream().filter(item -> item.isGroupBy()).sorted(Comparator.comparing(PrintFormatItem::getSortSequence)).collect(Collectors.toList());
 		summarizedItems = printFormatItems.stream().filter(printItem -> {
-//			if(printItem.isHideGrandTotal()) {
-//				return false;
-//			}
 			return printItem.isAveraged() || printItem.isCounted() || printItem.isMaxCalc() || printItem.isMinCalc() || printItem.isSummarized() || printItem.isVarianceCalc();
 		}).collect(Collectors.toList());
 		summary = new HashMap<Integer, Map<Row, Map<Integer, SummaryFunction>>>();
@@ -116,13 +113,7 @@ public class SummaryHandler {
 			Map<Row, Map<Integer, SummaryFunction>> groupTotals = Optional.ofNullable(summary.get(groupItem.getPrintFormatItemId())).orElse(new HashMap<Row, Map<Integer,SummaryFunction>>());
 			groupTotals.keySet().forEach(groupValueRow -> {
 				Map<Integer, SummaryFunction> summaryValue = groupTotals.get(groupValueRow);
-				summarizedItems.stream().filter(printItem -> {
-					if(printItem.isHideGrandTotal() && isFirst.get()) {
-						return false;
-					}
-					return true;
-				})
-				.forEach(sumItem -> {
+				summarizedItems.forEach(sumItem -> {
 					SummaryFunction function = summaryValue.get(sumItem.getPrintFormatItemId());
 					groupValueRow.withCell(sumItem.getPrintFormatItemId(), Cell.newInstance().withValue(function.getValue(SummaryFunction.F_SUM)).withFunction(function));
 				});
@@ -133,23 +124,6 @@ public class SummaryHandler {
 		return rows;
 	}
 	
-//	public List<Row> getTotalsAsRows() {
-//		List<Row> rows = new ArrayList<Row>();
-//		groupedItems.forEach(groupItem -> {
-//			Map<String, Map<Integer, SummaryFunction>> groupTotals = Optional.ofNullable(completeSummary.get(groupItem.getPrintFormatItemId())).orElse(new HashMap<String, Map<Integer,SummaryFunction>>());
-//			groupTotals.keySet().forEach(groupValue -> {
-//				Map<Integer, SummaryFunction> summaryValue = groupTotals.get(groupValue);
-//				Row summaryRow = Row.newInstance().withLevel(0).withCell(groupItem.getPrintFormatItemId(), Cell.newInstance().withValue(groupValue));
-//				summarizedItems.forEach(sumItem -> {
-//					SummaryFunction function = summaryValue.get(sumItem.getPrintFormatItemId());
-//					summaryRow.withCell(sumItem.getPrintFormatItemId(), Cell.newInstance().withValue(function.getValue(SummaryFunction.F_SUM)).withFunction(function));
-//				});
-//				rows.add(summaryRow);
-//			});
-//		});
-//		return rows;
-//	}
-
 	@Override
 	public String toString() {
 		return "SummaryHandler [groupedItems=" + groupedItems + ", summarizedItems=" + summarizedItems + ", summary="
