@@ -118,6 +118,7 @@ message ReportColumn {
 	bool is_fixed_width = 10;
 	string font_code = 11;
 	string column_name = 12;
+	bool is_hide_grand_total = 13;
 }
 
 message ReportRow {

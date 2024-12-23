@@ -267,6 +267,7 @@ public class Service {
 						.setDisplayType(column.getDisplayTypeId())
 						.setIsGroupColumn(column.isGroupColumn())
 						.setSequence(column.getSequence())
+						.setIsHideGrandTotal(column.isHideGrandTotal())
 						.build()
 						).collect(Collectors.toList())
 				)
