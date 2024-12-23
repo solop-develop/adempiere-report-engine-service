@@ -40,6 +40,7 @@ public class ColumnInfo {
 	private String mappingClassName;
 	private PrintFormatItem item;
 	private String columnName;
+	private boolean isHideGrandTotal;
 	
 	
 	private ColumnInfo(PrintFormatItem item) {
@@ -56,6 +57,7 @@ public class ColumnInfo {
 		this.color = item.getColor();
 		this.mappingClassName = item.getMappingClassName();
 		this.item = item;
+		this.isHideGrandTotal = item.isHideGrandTotal();
 	}
 	
 	public static ColumnInfo newInstance(PrintFormatItem item) {
@@ -161,6 +163,15 @@ public class ColumnInfo {
 
 	public boolean isGroupColumn() {
 		return isGroupColumn;
+	}
+
+	public final boolean isHideGrandTotal() {
+		return isHideGrandTotal;
+	}
+
+	public final ColumnInfo withHideGrandTotal(boolean isHideGrandTotal) {
+		this.isHideGrandTotal = isHideGrandTotal;
+		return this;
 	}
 
 	@Override
