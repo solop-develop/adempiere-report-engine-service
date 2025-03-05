@@ -1,10 +1,9 @@
-version: "3.9"
 
 name: adempiere-report-engine-dev-service
 
 # Example API for images
 services:
-  adempiere.database:
+  adempiere-database:
     container_name: ${POSTGRES_HOST}
     image: ${POSTGRES_IMAGE}
     restart: ${GENERIC_RESTART}
@@ -28,24 +27,27 @@ services:
     networks:
       - shared_network
 
-  adempiere.zk:
+  adempiere-zk:
     image: ${ADEMPIERE_ZK_IMAGE}
     container_name: ${ADEMPIERE_ZK_HOST}
     restart: ${GENERIC_RESTART}
+    secrets:
+      - adempiere_db_password
     environment:
       ADEMPIERE_DB_SERVER: ${ADEMPIERE_ZK_DB_HOST}
       ADEMPIERE_DB_PORT: ${ADEMPIERE_ZK_DB_PORT}
       ADEMPIERE_DB_NAME: ${ADEMPIERE_ZK_DB_NAME}
-      ADEMPIERE_DB_PASSWORD: ${ADEMPIERE_ZK_DB_PASSWORD}
+      # ADEMPIERE_DB_PASSWORD: ${ADEMPIERE_ZK_DB_PASSWORD}
+      ADEMPIERE_DB_PASSWORD_FILE: /run/secrets/adempiere_db_password
     depends_on:
-      adempiere.database:
+      adempiere-database:
         condition: service_healthy
     ports:
       - ${ADEMPIERE_ZK_EXTERNAL_PORT}:${ADEMPIERE_ZK_INTERNAL_PORT}
     networks:
       - shared_network
-      
-  grpc.proxy:
+
+  grpc-proxy:
     image: ${ENVOY_GRPC_PROXY_IMAGE}
     container_name: ${ENVOY_GRPC_PROXY_HOSTNAME}
     healthcheck:
@@ -61,9 +63,9 @@ services:
      - ${ENVOY_GRPC_PROXY_EXTERNAL_PORT}:${ENVOY_GRPC_PROXY_INTERNAL_PORT}
     networks:
     - shared_network
-    
-    # S3 Storage used to export formats
-  s3.storage:
+
+  # S3 Storage used to export formats
+  s3-storage:
     image: ${S3_IMAGE}
     container_name: ${S3_HOST}
     restart: ${GENERIC_RESTART}
@@ -88,27 +90,27 @@ services:
     networks:
       - shared_network
 
-  s3.client:
+  s3-client:
     image: ${S3_CLIENT_IMAGE}
     container_name: ${S3_CLIENT_HOST}
     depends_on:
-      s3.storage:
+      s3-storage:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set s3_minio_server http://s3.storage:9000 ${S3_CLIENT_ACCESS_KEY} ${S3_CLIENT_SECRET_KEY};
+      /usr/bin/mc alias set s3_minio_server http://s3-storage:9000 ${S3_CLIENT_ACCESS_KEY} ${S3_CLIENT_SECRET_KEY};
       /usr/bin/mc mb s3_minio_server/${S3_CLIENT_BUCKET_NAME} || true;
       exit 0;
       "
     networks:
       - shared_network
 
-  s3.gateway.rs:
+  s3-gateway-rs:
     image: ${S3_GATEWAY_RS_IMAGE}
     container_name: ${S3_GATEWAY_RS_HOST}
     restart: ${GENERIC_RESTART}
     depends_on:
-      s3.storage:
+      s3-storage:
         condition: service_healthy
     environment:
       S3_URL: ${S3_GATEWAY_RS_S3_URL}
@@ -121,6 +123,7 @@ services:
     networks:
       - shared_network
 
+
 networks:
   shared_network:
     name: ${DEFAULT_NETWORK}
@@ -130,3 +133,7 @@ volumes:
     name: ${POSTGRES_VOLUME}
   volume_s3:
     name: ${S3_VOLUME}
+
+secrets:
+  adempiere_db_password:
+    file: ./secrets/adempiere_db_password.txt
