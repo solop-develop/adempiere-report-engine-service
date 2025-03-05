@@ -61,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: envoy.yaml
-          path: resources/envoy.yaml
+          path: docker-compose/envoy/envoy.yaml
 
       - name: Upload dist app zip artifact
         uses: actions/upload-artifact@v4
