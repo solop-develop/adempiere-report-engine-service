@@ -1,10 +1,9 @@
-version: "3.9"
 
 name: adempiere-report-engine-complete-service
 
 # Example API for images
 services:
-  adempiere.database:
+  adempiere-database:
     container_name: ${POSTGRES_HOST}
     image: ${POSTGRES_IMAGE}
     restart: ${GENERIC_RESTART}
@@ -26,24 +25,27 @@ services:
     networks:
       - shared_network
 
-  adempiere.zk:
+  adempiere-zk:
     image: ${ADEMPIERE_ZK_IMAGE}
     container_name: ${ADEMPIERE_ZK_HOST}
     restart: ${GENERIC_RESTART}
+    secrets:
+      - adempiere_db_password
     environment:
       ADEMPIERE_DB_SERVER: ${ADEMPIERE_ZK_DB_HOST}
       ADEMPIERE_DB_PORT: ${ADEMPIERE_ZK_DB_PORT}
       ADEMPIERE_DB_NAME: ${ADEMPIERE_ZK_DB_NAME}
-      ADEMPIERE_DB_PASSWORD: ${ADEMPIERE_ZK_DB_PASSWORD}
+      # ADEMPIERE_DB_PASSWORD: ${ADEMPIERE_ZK_DB_PASSWORD}
+      ADEMPIERE_DB_PASSWORD_FILE: /run/secrets/adempiere_db_password
     depends_on:
-      adempiere.database:
+      adempiere-database:
         condition: service_healthy
     ports:
       - ${ADEMPIERE_ZK_EXTERNAL_PORT}:${ADEMPIERE_ZK_INTERNAL_PORT}
     networks:
       - shared_network
 
-  adempiere.grpc.service:
+  adempiere-grpc-service:
     image: ${GRPC_SERVER_IMAGE}
     container_name: ${GRPC_SERVER_HOST}
     restart: ${GENERIC_RESTART}
@@ -54,19 +56,22 @@ services:
       start_period: 20s
       timeout: 10s
     depends_on:
-      adempiere.database:
+      adempiere-database:
         condition: service_healthy
+    secrets:
+      - adempiere_db_password
     environment:
       SERVER_PORT: ${GRPC_SERVER_INTERNAL_PORT}
       DB_HOST: ${POSTGRES_HOST}
       DB_PORT: ${GRPC_SERVER_DB_PORT}
       DB_NAME: ${GRPC_SERVER_DB_NAME}
-      DB_PASSWORD: ${GRPC_SERVER_DB_PASSWORD}
+      # DB_PASSWORD: ${GRPC_SERVER_DB_PASSWORD}
+      DB_PASSWORD_FILE: /run/secrets/adempiere_db_password
       JWT_SECRET_KEY: ${GRPC_SERVER_JWT_SECRET_KEY}
     networks:
       - shared_network
 
-  grpc.proxy:
+  grpc-proxy:
     image: ${ENVOY_GRPC_PROXY_IMAGE}
     container_name: ${ENVOY_GRPC_PROXY_HOSTNAME}
     healthcheck:
@@ -79,14 +84,14 @@ services:
       - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./envoy/definitions/adempiere-report-engine-service.dsc:/data/descriptor.dsc:ro
     depends_on:
-      - adempiere.grpc.service
+      - adempiere-grpc-service
     ports:
      - ${ENVOY_GRPC_PROXY_EXTERNAL_PORT}:${ENVOY_GRPC_PROXY_INTERNAL_PORT}
     networks:
     - shared_network
     
   # S3 Storage used to export formats
-  s3.storage:
+  s3-storage:
     image: ${S3_IMAGE}
     container_name: ${S3_HOST}
     restart: ${GENERIC_RESTART}
@@ -111,27 +116,27 @@ services:
     networks:
       - shared_network
 
-  s3.client:
+  s3-client:
     image: ${S3_CLIENT_IMAGE}
     container_name: ${S3_CLIENT_HOST}
     depends_on:
-      s3.storage:
+      s3-storage:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set s3_minio_server http://s3.storage:9000 ${S3_CLIENT_ACCESS_KEY} ${S3_CLIENT_SECRET_KEY};
+      /usr/bin/mc alias set s3_minio_server http://s3-storage:9000 ${S3_CLIENT_ACCESS_KEY} ${S3_CLIENT_SECRET_KEY};
       /usr/bin/mc mb s3_minio_server/${S3_CLIENT_BUCKET_NAME} || true;
       exit 0;
       "
     networks:
       - shared_network
 
-  s3.gateway.rs:
+  s3-gateway-rs:
     image: ${S3_GATEWAY_RS_IMAGE}
     container_name: ${S3_GATEWAY_RS_HOST}
     restart: ${GENERIC_RESTART}
     depends_on:
-      s3.storage:
+      s3-storage:
         condition: service_healthy
     environment:
       S3_URL: ${S3_GATEWAY_RS_S3_URL}
@@ -144,6 +149,7 @@ services:
     networks:
       - shared_network
 
+
 networks:
   shared_network:
     name: ${DEFAULT_NETWORK}
@@ -153,3 +159,7 @@ volumes:
     name: ${POSTGRES_VOLUME}
   volume_s3:
     name: ${S3_VOLUME}
+
+secrets:
+  adempiere_db_password:
+    file: ./secrets/adempiere_db_password.txt
