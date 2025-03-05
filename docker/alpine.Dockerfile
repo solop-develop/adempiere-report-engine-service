@@ -1,7 +1,7 @@
 FROM eclipse-temurin:11.0.24_8-jdk-alpine
 
 LABEL maintainer="ySenih@erpya.com; EdwinBetanc0urt@outlook.com;" \
-	description="Backend gRPC"
+	description="ADempiere Report Engine gRPC"
 
 # Init ENV with default values
 ENV \
@@ -47,6 +47,7 @@ COPY docker/env.yaml /opt/apps/server/env.yaml
 COPY docker/start.sh /opt/apps/server/start.sh
 
 
+# Add adempiere as user
 RUN addgroup adempiere && \
 	adduser --disabled-password --gecos "" --ingroup adempiere --no-create-home adempiere && \
 	chown -R adempiere /opt/apps/server/ && \
