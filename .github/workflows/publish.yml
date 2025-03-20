@@ -20,12 +20,12 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: Set up Java JDK 11
+      - name: Set up Java JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-package: 'jdk'
-          java-version: 11
+          java-version: 17
           architecture: x64
 
       - name: Set Main Version
@@ -37,18 +37,11 @@ jobs:
       - name: Set Implementation Version
         run: echo "IMPLEMENTATION_VERSION=${{ github.event.release.tag_name }}" >> src/main/java/org/spin/base/version.properties
 
-      - name: Build with Gradle
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-version: 8.0.2
-          arguments: createRelease
+      - name: Run Create Release
+        run: gradle createRelease
         env:
-          ORG_GRADLE_PROJECT_deployUsername: ${{ secrets.DEPLOY_USER }}
-          ORG_GRADLE_PROJECT_deployToken: ${{ secrets.DEPLOY_TOKEN }}
-          ORG_GRADLE_PROJECT_deplyRepository: ${{ secrets.DEPLOY_REPOSITORY }}
-          GITHUB_DEPLOY_USER: ${{ github.actor }}
-          GITHUB_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_DEPLOY_REPOSITORY: ${{ secrets.DEPLOY_REPOSITORY }}
+          GITHUB_DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GITHUB_DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
 
       - name: Upload descriptor file artifact
         uses: actions/upload-artifact@v4
@@ -62,30 +55,35 @@ jobs:
         with:
           name: envoy.yaml
           path: resources/envoy.yaml
+          retention-days: 1
 
       - name: Upload dist app zip artifact
         uses: actions/upload-artifact@v4
         with:
           name: adempiere-report-engine-service.zip
           path: build/release/adempiere-report-engine-service.zip
+          retention-days: 1
 
       - name: Upload dist app zip.MD5 artifact
         uses: actions/upload-artifact@v4
         with:
           name: adempiere-report-engine-service.zip.MD5
           path: build/release/adempiere-report-engine-service.zip.MD5
+          retention-days: 1
 
       - name: Upload dist app tar artifact
         uses: actions/upload-artifact@v4
         with:
           name: adempiere-report-engine-service.tar
           path: build/release/adempiere-report-engine-service.tar
+          retention-days: 1
 
       - name: Upload dist app tar.MD5 artifact
         uses: actions/upload-artifact@v4
         with:
           name: adempiere-report-engine-service.tar.MD5
           path: build/release/adempiere-report-engine-service.tar.MD5
+          retention-days: 1
 
   publish-binaries:
     name: Upload Binaries adempiere-report-engine-service
@@ -149,11 +147,12 @@ jobs:
       - build-app
     runs-on: ubuntu-latest
     outputs:
-      is_have_secrets: ${{ steps.check_secret_job.outputs.is_have_secrets }}
+      is_have_secrets: ${{ steps.check_docker_hub_secrets_job.outputs.is_have_secrets }}
     steps:
-      - id: check_secret_job
+      - id: check_docker_hub_secrets_job
         run: |
-          if [[ "${{ secrets.DOCKER_HUB_REPO_NAME }}" != "" && \
+          if [[ "${{ vars.DOCKER_REGISTRY }}" != "" && \
+                "${{ vars.DOCKER_REPO }}" != "" && \
                 "${{ secrets.DOCKER_USERNAME }}" != "" && \
                 "${{ secrets.DOCKER_TOKEN }}" != "" ]]; \
           then
@@ -176,6 +175,7 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
+
       - name: Download build dist app
         uses: actions/download-artifact@v4
         with:
@@ -187,6 +187,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           # CONFIGURE DOCKER SECRETS INTO REPOSITORY
+          registry: ${{ vars.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
@@ -197,13 +198,13 @@ jobs:
           file: docker/alpine.Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_HUB_REPO_NAME }}:alpine-${{ github.event.release.tag_name }}
-            ${{ secrets.DOCKER_HUB_REPO_NAME }}:alpine
+            ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:alpine
+            ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:alpine-${{ github.event.release.tag_name }}
 
   # TODO: Download .tar and add docker image without uncompress
   # Publish docker multiplatform image in Docker Hub Registry to application
   push-imame-dhr:
-    name: Push multiplatform docker image to Docker Hub
+    name: Push docker multiplatform image to Docker Hub
     needs:
       - check-docker-secrets
     # Skip step based on secret
@@ -212,6 +213,7 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
+
       - name: Download build dist app
         uses: actions/download-artifact@v4
         with:
@@ -229,83 +231,18 @@ jobs:
         uses: docker/login-action@v3
         with:
           # CONFIGURE DOCKER SECRETS INTO REPOSITORY
+          registry: ${{ vars.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Push image in Docker Hub
+      - name: Push focal image in Docker Hub
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/focal.Dockerfile
-          platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
+          platforms: linux/amd64,linux/amd64/v2
+          # platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
           push: true
           tags: |
-            ${{ secrets.DOCKER_HUB_REPO_NAME }}:${{ github.event.release.tag_name }}
-            ${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
-
-
-
-  # Check secrets to push image in docker hub registry
-  check-proxy-docker-secrets:
-    name: Check if docker hub registry information was set on secrets
-    needs:
-      - build-app
-    runs-on: ubuntu-latest
-    outputs:
-      is_have_secrets: ${{ steps.check_secret_job.outputs.is_have_secrets }}
-    steps:
-      - id: check_secret_job
-        run: |
-          if [[ "${{ secrets.DOCKER_HUB_PROXY_REPO_NAME }}" != "" && \
-                "${{ secrets.DOCKER_USERNAME }}" != "" && \
-                "${{ secrets.DOCKER_TOKEN }}" != "" ]]; \
-          then
-            echo "Secrets to use a container registry are configured in the repo"
-            echo "is_have_secrets=true" >> $GITHUB_OUTPUT
-          else
-            echo "Secrets to use a container registry were not configured in the repo"
-            echo "is_have_secrets=false" >> $GITHUB_OUTPUT
-          fi
-
-  # TODO: Download .tar and add docker image without uncompress
-  # Publish docker image multiplatform in Docker Hub Registry to application
-  push-grpc-proxy-imame-dhr:
-    name: Push grpc-proxy docker image to Docker Hub
-    needs:
-      - check-proxy-docker-secrets
-    # Skip step based on secret
-    if: needs.check-proxy-docker-secrets.outputs.is_have_secrets == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-
-      - name: Download descriptor app
-        uses: actions/download-artifact@v4
-        with:
-          name: adempiere-report-engine-service.dsc
-          path: docker/
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          # CONFIGURE DOCKER SECRETS INTO REPOSITORY
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Push image in Docker Hub
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/proxy.Dockerfile
-          platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_HUB_PROXY_REPO_NAME }}:${{ github.event.release.tag_name }}
-            ${{ secrets.DOCKER_HUB_PROXY_REPO_NAME }}:latest
+            ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:${{ github.event.release.tag_name }}
+            ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:latest
