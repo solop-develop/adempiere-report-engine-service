@@ -236,7 +236,7 @@ public class ReportBuilder {
 		});
 		return reportInfo.completeInfo();
 	}
-	
+
 	public ReportInfo run() {
 		if (getReportId() <= 0 && getPrintFormatId() <= 0) {
 			throw new AdempiereException("@AD_Process_ID@ @NotFound@");
@@ -252,14 +252,18 @@ public class ReportBuilder {
 		//	Run Process before get
 		Trx.run(transactionName -> {
 			if(getReportId() > 0) {
-				ReportProcessor.newInstance().withProcessInfo(generateProcessInfo(transactionName)).withTransactionName(transactionName).run();
+				ReportProcessor.newInstance()
+					.withProcessInfo(generateProcessInfo(transactionName))
+					.withTransactionName(transactionName)
+					.run()
+				;
 			}
 			validatePrintFormat(transactionName);
 			reportInfo.set(get(transactionName));
 		});
 		return reportInfo.get();
 	}
-	
+
 	private void validatePrintFormat(String transactionName) {
 		if(getPrintFormatId() <= 0 && getReportViewId() > 0) {
 			withPrintFormatId(new Query(Env.getCtx(), I_AD_PrintFormat.Table_Name, I_AD_PrintFormat.COLUMNNAME_AD_ReportView_ID + " = ?", transactionName)
