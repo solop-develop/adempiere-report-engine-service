@@ -72,7 +72,7 @@ dependencies {
 	implementation "org.apache.poi:poi-ooxml:5.2.5"
 
 	//	ADempiere Core + Patches + Features
-	implementation "com.solop:adempiere.solop_libs:base-0.5.3-clean-0.0.1"
+	implementation "com.solop:adempiere.solop_libs:clean-0.0.3"
 }
 
 configurations.all {
