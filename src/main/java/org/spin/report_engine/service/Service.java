@@ -41,10 +41,12 @@ import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.data.Row;
 import org.spin.report_engine.export.XlsxExporter;
 import org.spin.report_engine.format.QueryDefinition;
+import org.spin.report_engine.util.RecordUtil;
 import org.spin.service.grpc.authentication.SessionManager;
 import org.spin.service.grpc.util.db.LimitUtil;
 import org.spin.service.grpc.util.query.Filter;
 import org.spin.service.grpc.util.query.FilterManager;
+import org.spin.service.grpc.util.value.StringManager;
 import org.spin.service.grpc.util.value.TimeManager;
 import org.spin.service.grpc.util.value.ValueManager;
 
@@ -132,29 +134,46 @@ public class Service {
 			request.getReportId()
 		);
 
+		ReportBuilder reportBuilder = ReportBuilder.newInstance()
+			.withPrintFormatId(request.getPrintFormatId())
+			.withReportViewId(request.getReportViewId())
+			.withSummary(request.getIsSummary())
+			.withInstanceId(request.getInstanceId())
+		;
+
+		// Parameters as filters
+		if(!Util.isEmpty(request.getFilters())) {
+			List<Filter> conditionsList = FilterManager.newInstance(request.getFilters())
+				.getConditions()
+			;
+			reportBuilder.withFilters(conditionsList);
+		}
+
+		// Window table name and record identifier
+		if (!Util.isEmpty(request.getTableName(), true)) {
+			MTable table = RecordUtil.validateAndGetTable(
+				request.getTableName()
+			);
+			RecordUtil.validateRecordId(
+				request.getRecordId(),
+				table.getAccessLevel()
+			);
+			reportBuilder.withRecordId(
+				table.getAD_Table_ID(),
+				request.getRecordId()
+			);
+		}
+
+		// Fill pagination
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
-		ReportBuilder reportBuilder = ReportBuilder.newInstance().withPrintFormatId(request.getPrintFormatId());
-		if(!Util.isEmpty(request.getFilters())) {
-			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
-					.getConditions());
-		}
-		reportBuilder.withReportViewId(request.getReportViewId());
-		reportBuilder.withSummary(request.getIsSummary());
-		reportBuilder.withInstanceId(request.getInstanceId());
-		if(request.getRecordId() > 0
-				&& !Util.isEmpty(request.getTableName())) {
-			MTable table = MTable.get(Env.getCtx(), request.getTableName());
-			if(table != null) {
-				reportBuilder.withRecordId(table.getAD_Table_ID(), request.getRecordId());
-			}
-		}
+
 		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
 		return convertReport(reportInfo, limit, offset, pageNumber, request.getShowAsRows());
 	}
-	
-	
+
+
 	/**
 	 * Run Report
 	 * @param context
@@ -170,29 +189,46 @@ public class Service {
 			request.getReportId()
 		);
 
-		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
-		int limit = LimitUtil.getPageSize(request.getPageSize());
-		int offset = (pageNumber - 1) * limit;
-		ReportBuilder reportBuilder = ReportBuilder.newInstance().withReportId(request.getReportId());
+		ReportBuilder reportBuilder = ReportBuilder.newInstance()
+			.withReportId(request.getReportId())
+			.withPrintFormatId(request.getPrintFormatId())
+			.withReportViewId(request.getReportViewId())
+			.withSummary(request.getIsSummary())
+		;
+
+		// Parameters as filters
 		if(!Util.isEmpty(request.getFilters())) {
 			List<Filter> conditionsList = FilterManager.newInstance(request.getFilters())
 				.getConditions()
 			;
 			reportBuilder.withFilters(conditionsList);
 		}
-		reportBuilder.withPrintFormatId(request.getPrintFormatId()).withReportViewId(request.getReportViewId());
-		reportBuilder.withSummary(request.getIsSummary());
-		if(request.getRecordId() > 0
-				&& !Util.isEmpty(request.getTableName())) {
-			MTable table = MTable.get(Env.getCtx(), request.getTableName());
-			if(table != null) {
-				reportBuilder.withRecordId(table.getAD_Table_ID(), request.getRecordId());
-			}
+
+		// Window table name and record identifier
+		if (!Util.isEmpty(request.getTableName(), true)) {
+			MTable table = RecordUtil.validateAndGetTable(
+				request.getTableName()
+			);
+			RecordUtil.validateRecordId(
+				request.getRecordId(),
+				table.getAccessLevel()
+			);
+			reportBuilder.withRecordId(
+				table.getAD_Table_ID(),
+				request.getRecordId()
+			);
 		}
+
+		// Fill pagination
+		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
+		int limit = LimitUtil.getPageSize(request.getPageSize());
+		int offset = (pageNumber - 1) * limit;
+
 		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
 		return convertReport(reportInfo, limit, offset, pageNumber, request.getShowAsRows());
 	}
-	
+
+
 	/**
 	 * Run Export Report
 	 * @param context
@@ -208,6 +244,41 @@ public class Service {
 			request.getReportId()
 		);
 
+		if(request.getFormat().equals("xlsx")) {
+			throw new AdempiereException("Unsupported format");
+		}
+
+		ReportBuilder reportBuilder = ReportBuilder.newInstance()
+			.withReportId(request.getReportId())
+			.withPrintFormatId(request.getPrintFormatId())
+			.withReportViewId(request.getReportViewId())
+			.withSummary(request.getIsSummary())
+		;
+
+		// Parameters as filters
+		if(!Util.isEmpty(request.getFilters())) {
+			List<Filter> conditionsList = FilterManager.newInstance(request.getFilters())
+				.getConditions()
+			;
+			reportBuilder.withFilters(conditionsList);
+		}
+
+		// Window table name and record identifier
+		if (!Util.isEmpty(request.getTableName(), true)) {
+			MTable table = RecordUtil.validateAndGetTable(
+				request.getTableName()
+			);
+			RecordUtil.validateRecordId(
+				request.getRecordId(),
+				table.getAccessLevel()
+			);
+			reportBuilder.withRecordId(
+				table.getAD_Table_ID(),
+				request.getRecordId()
+			);
+		}
+
+		// Fill pagination
 		int pageNumber = LimitUtil.getPageNumber(SessionManager.getSessionUuid(), request.getPageToken());
 		int limit = QueryDefinition.NO_LIMIT;
 		int offset = 0;
@@ -215,32 +286,26 @@ public class Service {
 			limit = request.getPageSize();
 			offset = (pageNumber - 1) * limit;
 		}
-		ReportBuilder reportBuilder = ReportBuilder.newInstance().withReportId(request.getReportId());
-		if(!Util.isEmpty(request.getFilters())) {
-			reportBuilder.withFilters(FilterManager.newInstance(request.getFilters())
-					.getConditions());
-		}
-		reportBuilder.withPrintFormatId(request.getPrintFormatId()).withReportViewId(request.getReportViewId());
-		if(request.getRecordId() > 0
-				&& !Util.isEmpty(request.getTableName())) {
-			MTable table = MTable.get(Env.getCtx(), request.getTableName());
-			if(table != null) {
-				reportBuilder.withRecordId(table.getAD_Table_ID(), request.getRecordId());
-			}
-		}
-		reportBuilder.withSummary(request.getIsSummary());
+
 		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
-		if(request.getFormat().equals("xlsx")) {
-			String fileName = XlsxExporter.newInstance().export(reportInfo);
-			if(!Util.isEmpty(fileName)) {
-				return RunExportResponse.newBuilder().setFileName(ValueManager.validateNull(fileName)).setInstanceId(reportInfo.getInstanceId());
-			}
-		} else {
-			throw new AdempiereException("Unsupported format");
+		RunExportResponse.Builder builder = RunExportResponse.newBuilder()
+			.setInstanceId(
+				reportInfo.getInstanceId()
+			)
+		;
+
+		String fileName = XlsxExporter.newInstance().export(reportInfo);
+		if (!Util.isEmpty(fileName, true)) {
+			builder
+				.setFileName(
+					StringManager.getValidString(fileName)
+				)
+			;
 		}
-		return RunExportResponse.newBuilder();
+		return builder;
 	}
-	
+
+
 	private static Report.Builder convertReport(ReportInfo reportInfo, int limit, int offset, int pageNumber, boolean showAsRow) {
 		//	
 		Report.Builder builder = Report.newBuilder();
