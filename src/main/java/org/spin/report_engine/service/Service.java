@@ -15,6 +15,7 @@
 package org.spin.report_engine.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -64,6 +65,13 @@ public class Service {
 	private static final String MAXIMUM_KEY = "maximum_value";
 	private static final String VARIANCE_KEY = "variance_value";
 	private static final String DEVIATION_KEY = "deviation_value";
+
+
+	/** Supported file extensions to enable export */
+	public static final List<String> SUPPORTED_EXPORT_EXTENSIONS = Arrays.asList(
+		"xlsx"
+	);
+
 
 
 	/**
@@ -244,8 +252,15 @@ public class Service {
 			request.getReportId()
 		);
 
-		if(request.getFormat().equals("xlsx")) {
-			throw new AdempiereException("Unsupported format");
+		// Validate extension to export file
+		String format = request.getFormat();
+		if (Util.isEmpty(format, true)) {
+			format = "xlsx";
+		}
+		if (!SUPPORTED_EXPORT_EXTENSIONS.contains(format)) {
+			throw new AdempiereException(
+				"@FileInvalidExtension@. @EXP_Format_ID@: " + SUPPORTED_EXPORT_EXTENSIONS.toString()
+			);
 		}
 
 		ReportBuilder reportBuilder = ReportBuilder.newInstance()
