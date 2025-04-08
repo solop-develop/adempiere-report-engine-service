@@ -18,6 +18,8 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 
+import org.adempiere.core.domains.models.I_AD_ChangeLog;
+import org.adempiere.core.domains.models.I_AD_Table;
 import org.compiere.model.MTable;
 import org.compiere.model.PO;
 import org.compiere.util.DisplayType;
@@ -28,7 +30,9 @@ import org.compiere.util.Util;
 import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.format.PrintFormatColumn;
 import org.spin.report_engine.format.PrintFormatItem;
+import org.spin.report_engine.util.RecordUtil;
 import org.spin.service.grpc.util.value.BooleanManager;
+import org.spin.service.grpc.util.value.NumberManager;
 
 /**
  * Default just return the same value of cell
@@ -50,18 +54,23 @@ public class DefaultMapping implements IColumnMapping {
 		}
 		try {
 			if(resultSet!= null && column != null) {
-				if(DisplayType.isLookup(column.getReferenceId()) && column.getReferenceId() != DisplayType.List || column.getColumnName().equals("Record_ID")) {
-					int valueId = resultSet.getInt(column.getColumnName());
-					cell.withValue(valueId);
-					if(column.getColumnName().equals("Record_ID")) {
+				if(DisplayType.isLookup(column.getReferenceId()) && column.getReferenceId() != DisplayType.List || column.getColumnName().equals(I_AD_ChangeLog.COLUMNNAME_Record_ID)) {
+					Object value = resultSet.getObject(column.getColumnName());
+					cell.withValue(value);
+					if(column.getColumnName().equals(I_AD_ChangeLog.COLUMNNAME_Record_ID)) {
 						try {
-							String tableName = resultSet.getString("TableName");
-							if(!Util.isEmpty(tableName)) {
+							String tableName = resultSet.getString(I_AD_Table.COLUMNNAME_TableName);
+							if(!Util.isEmpty(tableName, true)) {
+								MTable table = MTable.get(Env.getCtx(), tableName);
+								int valueId = NumberManager.getIntFromObject(value);
 								cell.withTableName(tableName);
-								if(valueId > 0) {
-									MTable table = MTable.get(Env.getCtx(), tableName);
+								if (RecordUtil.isValidId(valueId, table)) {
 									PO entity = table.getPO(valueId, null);
-									cell.withDisplayValue(entity.getDisplayValue());
+									cell.withValue(valueId)
+										.withDisplayValue(
+											entity.getDisplayValue()
+										)
+									;
 								}
 							}
 						} catch (Exception e) {
