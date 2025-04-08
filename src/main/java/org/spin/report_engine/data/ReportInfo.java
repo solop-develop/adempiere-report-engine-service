@@ -160,8 +160,18 @@ public class ReportInfo {
 	}
 	public ReportInfo addRow(int level, int sequence) {
 		if(temporaryRow != null) {
-			addRow(Row.newInstance().withLevel(level).withCells(temporaryRow.getData()).withSequence(sequence));
-			summaryHandler.addRow(Row.newInstance().withLevel(level).withSummaryRow(true).withCells(temporaryRow.getData()));
+			addRow(
+				Row.newInstance()
+					.withLevel(level)
+					.withCells(temporaryRow.getData())
+					.withSequence(sequence)
+			);
+			summaryHandler.addRow(
+				Row.newInstance()
+					.withLevel(level)
+					.withSummaryRow(true)
+					.withCells(temporaryRow.getData())
+			);
 		}
 		temporaryRow = Row.newInstance().withLevel(level);
 		return this;
@@ -169,8 +179,17 @@ public class ReportInfo {
 	
 	public ReportInfo addRow() {
 		if(temporaryRow != null) {
-			addRow(Row.newInstance().withLevel(getLevel()).withCells(temporaryRow.getData()));
-			summaryHandler.addRow(Row.newInstance().withLevel(getLevel()).withSummaryRow(true).withCells(temporaryRow.getData()));
+			addRow(
+				Row.newInstance()
+					.withLevel(getLevel())
+					.withCells(temporaryRow.getData())
+			);
+			summaryHandler.addRow(
+				Row.newInstance()
+					.withLevel(getLevel())
+					.withSummaryRow(true)
+					.withCells(temporaryRow.getData())
+			);
 		}
 		temporaryRow = Row.newInstance().withLevel(getLevel());
 		return this;
