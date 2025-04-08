@@ -112,12 +112,12 @@ public class Service {
 				)
 			)
 			.setMainVersion(
-				ValueManager.validateNull(
+				StringManager.getValidString(
 					Version.MAIN_VERSION
 				)
 			)
 			.setImplementationVersion(
-				ValueManager.validateNull(
+				StringManager.getValidString(
 					Version.IMPLEMENTATION_VERSION
 				)
 			)
@@ -323,40 +323,72 @@ public class Service {
 
 	private static Report.Builder convertReport(ReportInfo reportInfo, int limit, int offset, int pageNumber, boolean showAsRow) {
 		//	
-		Report.Builder builder = Report.newBuilder();
-		builder.setName(ValueManager.validateNull(reportInfo.getName()))
-		.setDescription(ValueManager.validateNull(reportInfo.getDescription()))
-		.setId(reportInfo.getPrintFormatId())
-		.setPrintFormatId(reportInfo.getPrintFormatId())
-		.setReportViewId(reportInfo.getReportViewId())
-		.setRecordCount(reportInfo.getRecordCount())
-		.setInstanceId(reportInfo.getInstanceId())
-		.setTableName(ValueManager.validateNull(reportInfo.getTableName()))
-		.addAllColumns(
-				reportInfo.getColumns().stream().map(
-						column -> ReportColumn.newBuilder()
-						.setCode(ValueManager.validateNull(column.getCode()))
-						.setTitle(ValueManager.validateNull(column.getTitle()))
-						.setColor(ValueManager.validateNull(column.getColor()))
-						.setStyle(ValueManager.validateNull(column.getStyle()))
-						.setFontCode(ValueManager.validateNull(column.getFontCode()))
-						.setColumnName(ValueManager.validateNull(column.getColumnName()))
-						.setIsFixedWidth(column.isFixedWidth())
-						.setColumnWidth(column.getColumnWidth())
-						.setColumnCharactersSize(column.getColumnCharactersSize())
-						.setDisplayType(column.getDisplayTypeId())
-						.setIsGroupColumn(column.isGroupColumn())
-						.setSequence(column.getSequence())
-						.setIsHideGrandTotal(column.isHideGrandTotal())
-						.build()
-						).collect(Collectors.toList())
+		Report.Builder builder = Report.newBuilder()
+			.setName(
+				StringManager.getValidString(
+					reportInfo.getName()
 				)
+			)
+			.setDescription(
+				StringManager.getValidString(
+					reportInfo.getDescription()
+				)
+			)
+			.setId(
+				reportInfo.getPrintFormatId()
+			)
+			.setPrintFormatId(
+				reportInfo.getPrintFormatId()
+			)
+			.setReportViewId(
+				reportInfo.getReportViewId()
+			)
+			.setRecordCount(
+				reportInfo.getRecordCount()
+			)
+			.setInstanceId(
+				reportInfo.getInstanceId()
+			)
+			.setTableName(
+				StringManager.getValidString(
+					reportInfo.getTableName()
+				)
+			)
 		;
+
+		List<ReportColumn> reportColumnsList = reportInfo.getColumns()
+			.stream()
+			.map(column -> {
+				ReportColumn.Builder columnBuilder = convertColumn(column);
+				return columnBuilder.build();
+			})
+			.collect(Collectors.toList())
+		;
+		if (reportColumnsList != null && reportColumnsList.size() > 0) {
+			builder.addAllColumns(reportColumnsList);
+		}
+
 		List<ReportRow> reportRows = new ArrayList<ReportRow>();
 		if(showAsRow) {
-			reportInfo.getCompleteRows().forEach(row -> reportRows.add(convertRow(reportInfo.getColumns(), row).build()));
+			reportInfo.getCompleteRows().forEach(row -> {
+				ReportRow.Builder rowBuilder = convertRow(
+					reportInfo.getColumns(),
+					row
+				);
+				reportRows.add(
+					rowBuilder.build()
+				);
+			});
 		} else {
-			reportInfo.getRowsAsTree().forEach(row -> reportRows.add(processParent(reportInfo.getColumns(), row).build()));
+			reportInfo.getRowsAsTree().forEach(row -> {
+				ReportRow.Builder rowBuilder = processParent(
+					reportInfo.getColumns(),
+					row
+				);
+				reportRows.add(
+					rowBuilder.build()
+				);
+			});
 		}
 		builder.addAllRows(reportRows);
 		builder.setRecordCount(reportInfo.getRecordCount());
@@ -366,12 +398,69 @@ public class Service {
 			nexPageToken = LimitUtil.getPagePrefix("") + String.valueOf(pageNumber + 1);
 		}
 		builder.setNextPageToken(
-			ValueManager.validateNull(nexPageToken)
+			StringManager.getValidString(nexPageToken)
 		);
 		builder.setReportViewId(reportInfo.getReportViewId());
 		return builder;
 	}
 	
+	private static ReportColumn.Builder convertColumn(ColumnInfo column) {
+		ReportColumn.Builder columnBuilder = ReportColumn.newBuilder()
+			.setCode(
+				StringManager.getValidString(
+					column.getCode()
+				)
+			)
+			.setTitle(
+				StringManager.getValidString(
+					column.getTitle()
+				)
+			)
+			.setColor(
+				StringManager.getValidString(
+					column.getColor()
+				)
+			)
+			.setStyle(
+				StringManager.getValidString(
+					column.getStyle()
+				)
+			)
+			.setFontCode(
+				StringManager.getValidString(
+					column.getFontCode()
+				)
+			)
+			.setColumnName(
+				StringManager.getValidString(
+					column.getColumnName()
+				)
+			)
+			.setIsFixedWidth(
+				column.isFixedWidth()
+			)
+			.setColumnWidth(
+				column.getColumnWidth()
+			)
+			.setColumnCharactersSize(
+				column.getColumnCharactersSize()
+			)
+			.setDisplayType(
+				column.getDisplayTypeId()
+			)
+			.setIsGroupColumn(
+				column.isGroupColumn()
+			)
+			.setSequence(
+				column.getSequence()
+			)
+			.setIsHideGrandTotal(
+				column.isHideGrandTotal()
+			)
+		;
+		return columnBuilder;
+	}
+
 	private static ReportRow.Builder convertRow(List<ColumnInfo> columns, Row row) {
 		Struct.Builder cells = Struct.newBuilder();
 		columns.forEach(column -> {
