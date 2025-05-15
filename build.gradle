@@ -12,18 +12,17 @@ group 'com.nikhilm'
 
 sourceCompatibility = 1.11
 
-def grpcVersion = '1.62.2'
+def grpcVersion = '1.63.0'
 def protobufVersion = '3.25.3'
 def baseVersion = '3.9.4'
 def baseGroupId = 'io.github.adempiere'
 def privateDependencyBaseVersion = "adempiere-3.9.4"
+
+def javaMainClass = "org.spin.report_engine.server.ReportEngineServer"
 def descriptorFile = "adempiere-report-engine-service.dsc"
 
 startScripts.enabled = false
 
-ext {
-	javaMainClass = "org.spin.report_engine.server.ReportEngineServer"
-}
 
 application {
 	mainClass.set(javaMainClass)
@@ -34,6 +33,17 @@ jar {
 			"Main-Class": javaMainClass
 		)
 	}
+}
+
+run {
+	doFirst {
+		// Set environment variables by .env project file
+		environment "ADEMPIERE_APPS_TYPE", projectEnv.get("ADEMPIERE_APPS_TYPE", null) ?: "wildfly"
+		environment "TZ", projectEnv.get("TZ", null) ?: "America/Caracas"
+	}
+	args = [
+		"resources/env.yaml"
+	]
 }
 
 repositories {
