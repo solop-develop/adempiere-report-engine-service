@@ -178,11 +178,15 @@ public class ReportBuilder {
 		Language language = Language.getLoginLanguage();
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
 		PrintFormat format = PrintFormat.newInstance(printFormat);
+		if (this.getReportViewId() > 0) {
+			format.setReportViewId(this.getReportViewId());
+		}
 		QueryDefinition queryDefinition = format.getQuery()
-			.withConditions(this.conditions)
 			.withInstanceId(getInstanceId())
-			.withLimit(limit, offset)
 			.withTableName(format.getTableName())
+			.withConditions(this.conditions)
+			.withWhereClause(format.getReportViewWhereClause())
+			.withLimit(limit, offset)
 			.buildQuery()
 		;
 		//	Count
@@ -266,15 +270,26 @@ public class ReportBuilder {
 
 	private void validatePrintFormat(String transactionName) {
 		if(getPrintFormatId() <= 0 && getReportViewId() > 0) {
-			withPrintFormatId(new Query(Env.getCtx(), I_AD_PrintFormat.Table_Name, I_AD_PrintFormat.COLUMNNAME_AD_ReportView_ID + " = ?", transactionName)
-			.setParameters(getReportViewId())
-			.setOrderBy(I_AD_PrintFormat.COLUMNNAME_AD_Client_ID + " DESC, " + I_AD_PrintFormat.COLUMNNAME_IsDefault + " DESC")
-			.firstId());
+			final int somePrintFormatId = new Query(
+				Env.getCtx(),
+				I_AD_PrintFormat.Table_Name,
+				I_AD_PrintFormat.COLUMNNAME_AD_ReportView_ID + " = ?",
+				transactionName
+			)
+				.setParameters(getReportViewId())
+				.setOrderBy(I_AD_PrintFormat.COLUMNNAME_AD_Client_ID + " DESC, " + I_AD_PrintFormat.COLUMNNAME_IsDefault + " DESC")
+				.firstId()
+			;
+			withPrintFormatId(somePrintFormatId);
 			//	Create It
 			if(getPrintFormatId() <= 0) {
 				MProcess report = MProcess.get(Env.getCtx(), getReportId());
 				MClient client = MClient.get(Env.getCtx());
-				MPrintFormat printFormat = MPrintFormat.createFromReportView(Env.getCtx(), getReportViewId(), client.getName() + ": " + report.get_Translation(I_AD_Process.COLUMNNAME_Name));
+				MPrintFormat printFormat = MPrintFormat.createFromReportView(
+					Env.getCtx(),
+					getReportViewId(),
+					client.getName() + ": " + report.get_Translation(I_AD_Process.COLUMNNAME_Name)
+				);
 				withPrintFormatId(printFormat.getAD_PrintFormat_ID());
 			}
 		}
