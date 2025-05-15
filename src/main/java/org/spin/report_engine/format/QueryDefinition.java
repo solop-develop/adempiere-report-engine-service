@@ -41,6 +41,7 @@ public class QueryDefinition {
 	private List<PrintFormatColumn> columns;
 	private List<PrintFormatColumn> queryColumns;
 	private String whereClause;
+	private String dynamicWhereClause; // dynamic where by filters
 	private String completeQuery;
 	private String completeQueryCount;
 	private int limit;
@@ -151,6 +152,15 @@ public class QueryDefinition {
 		return this;
 	}
 
+	public String getDynamicWhereClause() {
+		return this.dynamicWhereClause;
+	}
+
+	public QueryDefinition withDynamicWhereClause(String whereClause) {
+		this.dynamicWhereClause = whereClause;
+		return this;
+	}
+
 	public String getCompleteQuery() {
 		return completeQuery;
 	}
@@ -175,6 +185,11 @@ public class QueryDefinition {
 		// Add Where restriction
 		// TODO: Add 1=1 to remove `if (whereClause.length() > 0)` and change stream with parallelStream
 		StringBuffer whereClause = new StringBuffer();
+		if(!Util.isEmpty(this.getWhereClause(), true)) {
+			whereClause.append(
+				this.getWhereClause()
+			);
+		}
 		getConditions().stream()
 			.filter(condition -> !Util.isEmpty(condition.getColumnName(), true))
 			.forEach(condition -> {
@@ -198,9 +213,9 @@ public class QueryDefinition {
 					whereClause.append(restriction);
 				}
 		});
-		withWhereClause(whereClause.toString());
-		if(!Util.isEmpty(getWhereClause(), true)) {
-			query = query + " WHERE " + getWhereClause();
+		withDynamicWhereClause(whereClause.toString());
+		if(!Util.isEmpty(this.getDynamicWhereClause(), true)) {
+			query = query + " WHERE " + this.getDynamicWhereClause();
 		}
 		//	Add SQL Access
 		if(!tableName.equals("T_Report")) {
@@ -224,7 +239,7 @@ public class QueryDefinition {
 				// .append(completeQueryCount)
 			;
 
-			if(!Util.isEmpty(getWhereClause(), true)) {
+			if(!Util.isEmpty(this.getDynamicWhereClause(), true)) {
 				limitClause.insert(0, " AND ");
 			} else {
 				limitClause.insert(0, " WHERE ");

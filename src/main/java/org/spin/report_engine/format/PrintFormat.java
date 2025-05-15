@@ -41,6 +41,7 @@ public class PrintFormat {
 	private String name;
 	private String description;
 	private int printFormatId;
+	private int reportViewId;
 	private ReportView reportView;
 	private int tableId;
 	private String tableName;
@@ -51,41 +52,66 @@ public class PrintFormat {
 	private int aliasNumber;
 	
 	private PrintFormat(MPrintFormat printFormat) {
-		name = printFormat.getName();
-		description = printFormat.getDescription();
-		printFormatId = printFormat.getAD_PrintFormat_ID();
+		this.name = printFormat.getName();
+		this.description = printFormat.getDescription();
+		this.printFormatId = printFormat.getAD_PrintFormat_ID();
 		if(printFormat.getAD_ReportView_ID() > 0) {
-			reportView = ReportView.newInstance(new MReportView(Env.getCtx(), printFormat.getAD_ReportView_ID(), null));
+			MReportView reportView = new MReportView(Env.getCtx(), printFormat.getAD_ReportView_ID(), null);
+			this.reportView = ReportView.newInstance(reportView);
 		}
-		tableId = printFormat.getAD_Table_ID();
+		this.tableId = printFormat.getAD_Table_ID();
 		MTable table = MTable.get(printFormat.getCtx(), tableId);
-		tableName = MTable.getTableName(printFormat.getCtx(), printFormat.getAD_Table_ID());
-		isSummary = printFormat.isSummary();
+		this.tableName = MTable.getTableName(printFormat.getCtx(), printFormat.getAD_Table_ID());
+		this.isSummary = printFormat.isSummary();
+
 		//	Get Views
-		reportViews = new ArrayList<ReportView>();
-		new Query(Env.getCtx(), I_AD_ReportView.Table_Name, I_AD_ReportView.COLUMNNAME_AD_Table_ID + " = ?", null)
-		.setParameters(tableId)
-		.getIDsAsList()
-		.forEach(reportViewId -> reportViews.add(ReportView.newInstance(new MReportView(Env.getCtx(), reportViewId, null))));
+		this.reportViews = new ArrayList<ReportView>();
+		new Query(
+				Env.getCtx(),
+				I_AD_ReportView.Table_Name,
+				I_AD_ReportView.COLUMNNAME_AD_Table_ID + " = ?",
+				null
+			)
+			.setParameters(tableId)
+			.getIDsAsList()
+			.forEach(reportViewId -> {
+				MReportView reportView = new MReportView(Env.getCtx(), reportViewId, null);
+				this.reportViews.add(ReportView.newInstance(reportView));
+			})
+		;
+
 		//	Get Items
-		items = new ArrayList<PrintFormatItem>();
-		new Query(Env.getCtx(), I_AD_PrintFormatItem.Table_Name, "AD_PrintFormat_ID = ?", null)
-		.setParameters(printFormatId)
-		.setOrderBy(I_AD_PrintFormatItem.COLUMNNAME_SeqNo)
-		.getIDsAsList()
-		.forEach(printFormatItemId -> items.add(PrintFormatItem.newInstance(new MPrintFormatItem(Env.getCtx(), printFormatItemId, null))));
-		columnsDefinition = table.getColumnsAsList()
-				.stream()
-				.map(column -> {
-			String columnName = column.getColumnName();
-			if(!Util.isEmpty(column.getColumnSQL())) {
-				columnName = "(" + column.getColumnSQL() + ")";
-				return PrintFormatColumn.newInstance(column).withColumnNameAlias(columnName);
-			} else {
-				columnName = getQueryColumnName(column.getColumnName());
-				return PrintFormatColumn.newInstance(column).withColumnNameAlias(columnName);
-			}
-		}).collect(Collectors.toList());
+		this.items = new ArrayList<PrintFormatItem>();
+		new Query(
+			Env.getCtx(),
+			I_AD_PrintFormatItem.Table_Name,
+			"AD_PrintFormat_ID = ?",
+			null
+		)
+			.setParameters(printFormatId)
+			.setOrderBy(I_AD_PrintFormatItem.COLUMNNAME_SeqNo)
+			.getIDsAsList()
+			.forEach(printFormatItemId -> {
+				MPrintFormatItem printFormatItem = new MPrintFormatItem(Env.getCtx(), printFormatItemId, null);
+				this.items.add(PrintFormatItem.newInstance(printFormatItem));
+			})
+		;
+
+		//	Get Columns
+		this.columnsDefinition = table.getColumnsAsList()
+			.stream()
+			.map(column -> {
+				String columnName = column.getColumnName();
+				if(!Util.isEmpty(column.getColumnSQL())) {
+					columnName = "(" + column.getColumnSQL() + ")";
+					return PrintFormatColumn.newInstance(column).withColumnNameAlias(columnName);
+				} else {
+					columnName = getQueryColumnName(column.getColumnName());
+					return PrintFormatColumn.newInstance(column).withColumnNameAlias(columnName);
+				}
+			})
+			.collect(Collectors.toList())
+		;
 	}
 	
 	public static PrintFormat newInstance(MPrintFormat printFormat) {
@@ -106,6 +132,22 @@ public class PrintFormat {
 
 	public ReportView getReportView() {
 		return reportView;
+	}
+
+	public PrintFormat setReportViewId(int newReportViewId) {
+		this.reportViewId = newReportViewId;
+		if(reportViewId > 0) {
+			MReportView reportView = new MReportView(Env.getCtx(), reportViewId, null);
+			this.reportView = ReportView.newInstance(reportView);
+		}
+		return this;
+	}
+
+	public String getReportViewWhereClause() {
+		if (this.getReportView() != null) {
+			return this.getReportView().getWhereClause();
+		}
+		return null;
 	}
 
 	public int getTableId() {
