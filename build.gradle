@@ -5,6 +5,7 @@ plugins {
     id 'application'
     id 'visual-studio'
     id 'maven-publish'
+	id "io.github.uoxx3.project-environment" version "1.0.1"
 }
 
 group 'com.nikhilm'
@@ -16,9 +17,39 @@ java {
 
 def grpcVersion = '1.63.0'
 def protobufVersion = '3.25.3'
+/*
+def baseVersion = '3.9.4'
+def baseGroupId = 'io.github.adempiere'
+def privateDependencyBaseVersion = "adempiere-3.9.4"
+*/
 
-def descriptorFile = "adempiere-report-engine-service.dsc"
 def javaMainClass = "org.spin.report_engine.server.ReportEngineServer"
+def descriptorFile = "adempiere-report-engine-service.dsc"
+
+startScripts.enabled = false
+
+
+application {
+	mainClass.set(javaMainClass)
+}
+jar {
+	manifest {
+		attributes(
+			"Main-Class": javaMainClass
+		)
+	}
+}
+
+run {
+	doFirst {
+		// Set environment variables by .env project file
+		environment "ADEMPIERE_APPS_TYPE", projectEnv.get("ADEMPIERE_APPS_TYPE", null) ?: "wildfly"
+		environment "TZ", projectEnv.get("TZ", null) ?: "America/Caracas"
+	}
+	args = [
+		"resources/env.yaml"
+	]
+}
 
 repositories {
 	mavenLocal()
@@ -26,9 +57,11 @@ repositories {
 	maven {
 		url = 'https://maven.pkg.github.com/solop-develop/adempiere-solop'
 		credentials {
-			// project property, system properrty, enviroment variable
-			username = findProperty("deployUsername") ?: System.properties['deploy.user'] ?: System.getenv("GITHUB_DEPLOY_USER")
-			password = findProperty("deployToken") ?: System.properties['deploy.token'] ?: System.getenv("GITHUB_DEPLOY_TOKEN")
+			// project property, system property, .env project file, system enviroment variable
+			username = findProperty("deployUsername") ?: System.properties['deploy.user'] ?:
+				projectEnv.get("GITHUB_DEPLOY_USER", null) ?: System.getenv("GITHUB_DEPLOY_USER")
+			password = findProperty("deployToken") ?: System.properties['deploy.token'] ?:
+				projectEnv.get("GITHUB_DEPLOY_TOKEN", null) ?: System.getenv("GITHUB_DEPLOY_TOKEN")
 		}
 	}
 	maven {
@@ -145,26 +178,6 @@ sourceSets {
 			include 'org/spin/base/version.properties'
     	}
     }
-}
-
-startScripts.enabled = false
-
-run {
-	args = [
-		"resources/standalone.yaml"
-	]
-}
-
-application {
-	// mainClass = javaMainClass
-	mainClass.set(javaMainClass)
-}
-jar {
-	manifest {
-		attributes(
-			'Main-Class': javaMainClass
-		)
-	}
 }
 
 task AdempiereReportEngineServer(type: CreateStartScripts) {
