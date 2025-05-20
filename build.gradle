@@ -11,11 +11,11 @@ plugins {
 group 'com.nikhilm'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_17
+	sourceCompatibility = JavaVersion.VERSION_11
+	targetCompatibility = JavaVersion.VERSION_17
 }
 
-def grpcVersion = '1.63.0'
+def grpcVersion = '1.65.1'
 def protobufVersion = '3.25.3'
 /*
 def baseVersion = '3.9.4'
@@ -105,7 +105,7 @@ dependencies {
 	implementation "org.apache.poi:poi-ooxml:5.2.5"
 
 	//	ADempiere Core + Patches + Features
-	implementation "com.solop:adempiere.solop_libs:clean-0.3.0"
+	implementation "com.solop:adempiere.solop_libs:clean-0.3.2"
 }
 
 configurations.all {

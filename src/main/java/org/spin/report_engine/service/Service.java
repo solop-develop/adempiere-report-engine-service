@@ -150,7 +150,7 @@ public class Service {
 		;
 
 		// Parameters as filters
-		if(!Util.isEmpty(request.getFilters())) {
+		if(!Util.isEmpty(request.getFilters(), true)) {
 			List<Filter> conditionsList = FilterManager.newInstance(request.getFilters())
 				.getConditions()
 			;
@@ -205,7 +205,7 @@ public class Service {
 		;
 
 		// Parameters as filters
-		if(!Util.isEmpty(request.getFilters())) {
+		if(!Util.isEmpty(request.getFilters(), true)) {
 			List<Filter> conditionsList = FilterManager.newInstance(request.getFilters())
 				.getConditions()
 			;
@@ -244,8 +244,8 @@ public class Service {
 	 * @return
 	 */
 	public static RunExportResponse.Builder getExportReport(RunExportRequest request) {
-		if(request.getReportId() <= 0) {
-			throw new AdempiereException("@FillMandatory@ @AD_Process_ID@");
+		if(request.getReportId() <= 0 && request.getPrintFormatId() <= 0) {
+			throw new AdempiereException("@FillMandatory@ @AD_Process_ID@ / @AD_PrintFormat_ID@");
 		}
 		//	Add to recent Item
 		addToRecentItem(
@@ -271,7 +271,7 @@ public class Service {
 		;
 
 		// Parameters as filters
-		if(!Util.isEmpty(request.getFilters())) {
+		if(!Util.isEmpty(request.getFilters(), true)) {
 			List<Filter> conditionsList = FilterManager.newInstance(request.getFilters())
 				.getConditions()
 			;

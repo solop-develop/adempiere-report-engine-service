@@ -39,6 +39,9 @@ service ReportEngine {
 	rpc RunExport(RunExportRequest) returns (RunExportResponse) {
 		option (google.api.http) = {
 			post: "/v1/report-engine/export/{report_id}/{format}"
+			additional_bindings: {
+				post: "/v1/report-engine/export/print-format/{print_format_id}/{format}"
+			}
 		};
 	}
 }
@@ -53,7 +56,7 @@ message SystemInfo {
 	string implementation_version = 3;
 }
 
-// Run Export Request
+// Run Export
 message RunExportRequest {
 	int32 report_id = 1;
 	string filters = 2;
@@ -68,8 +71,6 @@ message RunExportRequest {
 	string format = 11;
 	int32 instance_id = 12;
 }
-
-//	Export Response
 message RunExportResponse {
 	int32 instance_id = 1;
 	string file_name = 2;
@@ -122,7 +123,7 @@ message ReportColumn {
 }
 
 message ReportRow {
-    google.protobuf.Struct cells = 1;
+	google.protobuf.Struct cells = 1;
 	int32 level = 2;
 	repeated ReportRow children = 3;
 	bool is_parent = 4;
