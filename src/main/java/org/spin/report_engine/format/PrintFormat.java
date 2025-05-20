@@ -139,6 +139,8 @@ public class PrintFormat {
 		if(reportViewId > 0) {
 			MReportView reportView = new MReportView(Env.getCtx(), reportViewId, null);
 			this.reportView = ReportView.newInstance(reportView);
+		} else {
+			this.reportView = null;
 		}
 		return this;
 	}
