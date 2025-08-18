@@ -1,33 +1,46 @@
 plugins {
-    id 'java'
+	id 'java'
 	id 'com.google.protobuf' version '0.9.4'
-    id 'idea'
-    id 'application'
-    id 'visual-studio'
-    id 'maven-publish'
+	id 'idea'
+	// Provide convenience executables for trying out the examples.
+	id 'application'
+	// Generate Visual Studio Code .vscode & .json project files
+	id 'visual-studio'
+	// Publish artifacts to an Apache Maven repository.
+	id 'maven-publish'
+	// Read .env files
 	id "io.github.uoxx3.project-environment" version "1.0.1"
 }
 
-group 'com.nikhilm'
-
-java {
-	sourceCompatibility = JavaVersion.VERSION_11
-}
 
 def grpcVersion = '1.65.1'
 def protobufVersion = '3.25.3'
 def baseVersion = '3.9.4'
 def baseGroupId = 'io.github.adempiere'
 def privateDependencyBaseVersion = "adempiere-3.9.4"
-
-def javaMainClass = "org.spin.report_engine.server.ReportEngineServer"
 def descriptorFile = "adempiere-report-engine-service.dsc"
 
-startScripts.enabled = false
 
+ext {
+	javaMainClass = "org.spin.report_engine.server.ReportEngineServer"
+}
+
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_11
+	targetCompatibility = JavaVersion.VERSION_17
+}
 
 application {
 	mainClass.set(javaMainClass)
+
+	// distribution output
+	distributions {
+		main {
+			contents {
+			}
+		}
+	}
 }
 jar {
 	manifest {
@@ -125,12 +138,41 @@ sourceSets {
 	}
 }
 
+startScripts {
+	applicationName = 'start-backend'
+
+	// default JVM setting
+	defaultJvmOpts = [
+		"-DPropertyFile=Adempiere.properties", 
+		"-Dorg.adempiere.server.embedded=true"
+	]
+	outputDir = new File(project.buildDir, 'tmp')
+	classpath = jar.outputs.files + project.configurations.runtimeClasspath
+
+	// Configure script names with extensions
+	doLast {
+		def unixScript = file(getUnixScript())
+		def windowsScript = file(getWindowsScript())
+
+		// Rename files after generating them
+		unixScript.renameTo("${unixScript.parent}/${applicationName}.sh")
+		windowsScript.renameTo("${windowsScript.parent}/${applicationName}.bat")
+
+		// Configure permissions for generated scripts
+		unixScript.setExecutable(true, false)
+		// windowsScript.setExecutable(true, false)
+	}
+}
+
 // Copy proto descriptor another folder
 allprojects {
 	task copyDescriptor(type: Copy) {
 		from "${projectDir}/build/descriptors/${descriptorFile}"
 		into "${projectDir}/docker-compose/envoy/definitions"
 		// rename { "${descriptorFile}" }
+
+		// task dependency
+		dependsOn "generateTestProto"
 	}
 
 	tasks.matching {
@@ -140,16 +182,12 @@ allprojects {
 	}
 }
 
-task AdempiereReportEngineServer(type: CreateStartScripts) {
-	mainClass = javaMainClass
-	applicationName = 'adempiere-report-engine-service-server'
-	outputDir = new File(project.buildDir, 'tmp')
-	classpath = jar.outputs.files + project.configurations.runtimeClasspath
+// compressed files task
+distTar {
+	dependsOn compileTestJava, copyDescriptor, startScripts
 }
-
-applicationDistribution.into('bin') {
-	from(AdempiereReportEngineServer)
-	fileMode = 0755
+distZip {
+	dependsOn compileTestJava, copyDescriptor, startScripts
 }
 
 //	Create release for project
@@ -165,6 +203,10 @@ task createRelease(type: Copy) {
             ant.checksum file: file
         }
    	}
+}
+
+task cleanBuild(type: GradleBuild) {
+	tasks = ['clean', 'build']
 }
 
 dependencies {
