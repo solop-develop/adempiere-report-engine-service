@@ -143,7 +143,6 @@ jobs:
         with:
           name: release-artifacts
           path: artifacts/
-          pattern: adempiere-report-engine-service.zip
 
       - name: Unzip Asset
         run: |
@@ -197,7 +196,6 @@ jobs:
         with:
           name: release-artifacts
           path: artifacts/
-          pattern: adempiere-report-engine-service.zip
 
       - name: Unzip Asset
         run: |
@@ -282,7 +280,6 @@ jobs:
         with:
           name: release-artifacts
           path: artifacts/
-          pattern: adempiere-report-engine-service.dsc
 
       - name: Move descriptor
         run: |
