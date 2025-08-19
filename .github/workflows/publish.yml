@@ -82,6 +82,10 @@ jobs:
           name: release-artifacts
           path: artifacts/
 
+      - name: List Assets
+        run: |
+          tree artifacts
+
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -143,6 +147,7 @@ jobs:
 
       - name: Unzip Asset
         run: |
+          tree artifacts
           unzip artifacts/adempiere-report-engine-service.zip -d docker/
 
       - name: Login to Container Registry
@@ -196,6 +201,7 @@ jobs:
 
       - name: Unzip Asset
         run: |
+          tree artifacts
           unzip artifacts/adempiere-report-engine-service.zip -d docker/
 
       - name: Setup QEMU
@@ -280,7 +286,7 @@ jobs:
 
       - name: Move descriptor
         run: |
-          tree -d
+          tree artifacts
           cp artifacts/adempiere-report-engine-service.dsc docker/ || echo "Warning: descriptor file not found"
 
       - name: Setup QEMU
