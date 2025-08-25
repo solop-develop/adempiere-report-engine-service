@@ -30,6 +30,7 @@ import org.compiere.model.MColumn;
 import org.compiere.model.MPInstance;
 import org.compiere.model.MProcess;
 import org.compiere.model.MProcessPara;
+import org.compiere.model.MReportView;
 import org.compiere.model.MTable;
 import org.compiere.model.PO;
 import org.compiere.model.Query;
@@ -49,6 +50,7 @@ import org.spin.report_engine.format.QueryDefinition;
 import org.spin.report_engine.mapper.DefaultMapping;
 import org.spin.report_engine.mapper.IColumnMapping;
 import org.spin.report_engine.util.ClassLoaderMapping;
+import org.spin.report_engine.util.RecordUtil;
 import org.spin.service.grpc.util.db.CountUtil;
 import org.spin.service.grpc.util.db.ParameterUtil;
 import org.spin.service.grpc.util.query.Filter;
@@ -66,7 +68,7 @@ public class ReportBuilder {
 	private boolean isSummary;
 	private List<Filter> conditions;
 	private int tableId;
-	private int recordId;
+	private int recordId = -1; // Some records with zero are valid (`*` = all)
 	private int limit;
 	private int offset;
 	private int instanceId;
@@ -85,7 +87,8 @@ public class ReportBuilder {
 		this.conditions = filters;
 		return this;
 	}
-	
+
+
 	public ReportBuilder withParameter(String key, Object value) {
 		Map<String, Object> condition = new HashMap<>();
 		condition.put(Filter.OPERATOR, Filter.EQUAL);
@@ -96,6 +99,7 @@ public class ReportBuilder {
 		return this;
 	}
 
+
 	public int getLimit() {
 		return limit;
 	}
@@ -105,6 +109,7 @@ public class ReportBuilder {
 		return this;
 	}
 
+
 	public int getOffset() {
 		return offset;
 	}
@@ -113,6 +118,7 @@ public class ReportBuilder {
 		this.offset = offset;
 		return this;
 	}
+
 
 	public int getInstanceId() {
 		return instanceId;
@@ -126,14 +132,15 @@ public class ReportBuilder {
 		return this;
 	}
 
+
 	/**
 	 * Static constructor
-	 * @param printFormatId
 	 * @return
 	 */
 	public static ReportBuilder newInstance() {
 		return new ReportBuilder();
 	}
+
 
 	public int getPrintFormatId() {
 		return printFormatId;
@@ -141,8 +148,15 @@ public class ReportBuilder {
 
 	public ReportBuilder withPrintFormatId(int printFormatId) {
 		this.printFormatId = printFormatId;
+		if (printFormatId > 0) {
+			MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), printFormatId, null);
+			if (printFormat == null || printFormat.getAD_PrintFormat_ID() <= 0) {
+				throw new AdempiereException("@AD_PrintFormat_ID@ (" + printFormatId + ") @NotFound@");
+			}
+		}
 		return this;
 	}
+
 
 	public int getReportId() {
 		return reportId;
@@ -150,8 +164,15 @@ public class ReportBuilder {
 
 	public ReportBuilder withReportId(int reportId) {
 		this.reportId = reportId;
+		if (reportId > 0) {
+			MProcess reportDefinition = MProcess.get(Env.getCtx(), reportId);
+			if (reportDefinition == null || reportDefinition.getAD_Process_ID() <= 0) {
+				throw new AdempiereException("@IsReport@ @AD_Process_ID@ (" + reportId + ") @NotFound@");
+			}
+		}
 		return this;
 	}
+
 
 	public int getReportViewId() {
 		return reportViewId;
@@ -159,8 +180,15 @@ public class ReportBuilder {
 
 	public ReportBuilder withReportViewId(int reportViewId) {
 		this.reportViewId = reportViewId;
+		if (reportViewId > 0) {
+			MReportView reportView = MReportView.get(Env.getCtx(), reportViewId);
+			if (reportView == null || reportView.getAD_ReportView_ID() <= 0) {
+				throw new AdempiereException("@AD_ReportView_ID@ (" + reportViewId + ") @NotFound@");
+			}
+		}
 		return this;
 	}
+
 
 	public boolean isSummary() {
 		return isSummary;
@@ -170,7 +198,8 @@ public class ReportBuilder {
 		this.isSummary = isSummary;
 		return this;
 	}
-	
+
+
 	private ReportInfo get(String transactionName) {
 		if(getPrintFormatId() <= 0) {
 			throw new AdempiereException("@FillMandatory@ @AD_PrintFormat_ID@");
@@ -241,6 +270,7 @@ public class ReportBuilder {
 		return reportInfo.completeInfo();
 	}
 
+
 	public ReportInfo run() {
 		if (getReportId() <= 0 && getPrintFormatId() <= 0) {
 			throw new AdempiereException("@AD_Process_ID@ @NotFound@");
@@ -268,6 +298,7 @@ public class ReportBuilder {
 		return reportInfo.get();
 	}
 
+
 	private void validatePrintFormat(String transactionName) {
 		if(getPrintFormatId() <= 0 && getReportViewId() > 0) {
 			final int somePrintFormatId = new Query(
@@ -294,7 +325,8 @@ public class ReportBuilder {
 			}
 		}
 	}
-	
+
+
 	private MPInstance generateProcessInstance() {
 		//	Generate Process here
 		MProcess process = MProcess.get(Env.getCtx(), getReportId());
@@ -321,53 +353,70 @@ public class ReportBuilder {
 		});
 		return processInstance;
 	}
-	
+
+
 	private ProcessInfo generateProcessInfo(String transactionName) {
-		 MPInstance processInstance = generateProcessInstance();
-		 ProcessInfo processInfo;
-		 MProcess process = MProcess.get(Env.getCtx(), reportId);
-		 processInfo = new ProcessInfo(process.get_Translation(I_AD_Process.COLUMNNAME_Name), reportId, tableId, recordId, false);
-		 processInfo.setAD_PInstance_ID(processInstance.getAD_PInstance_ID());
-		 processInfo.setClassName(process.getClassname());
-		 processInfo.setTransactionName(transactionName);
-		 processInfo.setIsSelection(false);
-		 processInfo.setPrintPreview(false);
-		 processInfo.setAD_Client_ID(processInstance.getAD_Client_ID());
-		 processInfo.setAD_User_ID(processInstance.getAD_User_ID());
-		 processInfo.setReportType(processInstance.getReportType());
-		 processInfo.setIsBatch(false);
-		 ProcessInfoUtil.setParameterFromDB(processInfo);
-		 return processInfo;
+		MPInstance processInstance = generateProcessInstance();
+		ProcessInfo processInfo;
+		MProcess process = MProcess.get(Env.getCtx(), reportId);
+		processInfo = new ProcessInfo(process.get_Translation(I_AD_Process.COLUMNNAME_Name), reportId, tableId, recordId, false);
+		processInfo.setAD_PInstance_ID(processInstance.getAD_PInstance_ID());
+		processInfo.setClassName(process.getClassname());
+		processInfo.setTransactionName(transactionName);
+		processInfo.setIsSelection(false);
+		processInfo.setPrintPreview(false);
+		processInfo.setAD_Client_ID(processInstance.getAD_Client_ID());
+		processInfo.setAD_User_ID(processInstance.getAD_User_ID());
+		processInfo.setReportType(processInstance.getReportType());
+		processInfo.setIsBatch(false);
+		ProcessInfoUtil.setParameterFromDB(processInfo);
+		return processInfo;
 	}
-	
+
+
 	/**
-     * Define table and Record id for this process
-     * @param tableId
-     * @param recordId
-     * @return
-     */
-    public ReportBuilder withRecordId(int tableId , int recordId) {
-        this.tableId =  tableId;
-        this.recordId = recordId;
-        if(getPrintFormatId() <= 0) {
-        	MTable table = MTable.get(Env.getCtx(), tableId);
-        	MColumn column = table.getColumn("AD_PrintFormat_ID");
-        	if(column != null) {
-        		PO entity = table.getPO(recordId, null);
-        		if(entity != null
-        				&& entity.get_ID() > 0) {
-        			withPrintFormatId(entity.get_ValueAsInt("AD_PrintFormat_ID"));
-        		}
-        	}
-        	
-        }
-        return this;
-    }
-    
-    public int getRecordId() {
-    	return recordId;
-    }
-    
+	 * Define table and Record id for this process
+	 * @param tableId
+	 * @param recordId
+	 * @return
+	 */
+	public ReportBuilder withRecordId(int tableId, int recordId) {
+		this.tableId = tableId;
+		if (tableId > 0) {
+			MTable table = MTable.get(Env.getCtx(), tableId);
+			if (table == null || table.getAD_Table_ID() <= 0) {
+				throw new AdempiereException("@AD_Table_ID@ (" + tableId + ") @NotFound@");
+			}
+	
+			RecordUtil.validateRecordId(
+				recordId,
+				table.getAccessLevel()
+			);
+			this.recordId = recordId;
+
+			if(getPrintFormatId() <= 0) {
+				MColumn column = table.getColumn("AD_PrintFormat_ID");
+				if(column != null) {
+					PO entity = table.getPO(recordId, null);
+					if(entity != null && entity.get_ID() > 0) {
+						withPrintFormatId(
+							entity.get_ValueAsInt("AD_PrintFormat_ID")
+						);
+					}
+				}
+			}
+		} else {
+			logger.warning("Empty Table_ID, Record_I set to -1 from " + recordId);
+			this.recordId = -1;
+		}
+		return this;
+	}
+
+	public int getRecordId() {
+		return recordId;
+	}
+
+
 	public static void main(String[] args) {
 		//	50132
 		//	Stocktake Line
@@ -379,6 +428,7 @@ public class ReportBuilder {
 			.withParameter("IsSOTrx", true)
 			.withParameter("DocStatus", "CO")
 			.withParameter("SalesRep_ID", 1000263)
-			.get(null);
+			.get(null)
+		;
 	}
 }
