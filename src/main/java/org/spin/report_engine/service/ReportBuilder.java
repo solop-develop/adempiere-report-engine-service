@@ -286,8 +286,9 @@ public class ReportBuilder {
 		//	Run Process before get
 		Trx.run(transactionName -> {
 			if(getReportId() > 0) {
+				ProcessInfo processInfo = generateProcessInfo(transactionName);
 				ReportProcessor.newInstance()
-					.withProcessInfo(generateProcessInfo(transactionName))
+					.withProcessInfo(processInfo)
 					.withTransactionName(transactionName)
 					.run()
 				;

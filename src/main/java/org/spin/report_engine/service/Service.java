@@ -186,7 +186,11 @@ public class Service {
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
 
-		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
+		ReportInfo reportInfo = reportBuilder
+			.withLimit(limit)
+			.withOffset(offset)
+			.run()
+		;
 		return convertReport(reportInfo, limit, offset, pageNumber, request.getShowAsRows());
 	}
 
@@ -246,7 +250,11 @@ public class Service {
 		int limit = LimitUtil.getPageSize(request.getPageSize());
 		int offset = (pageNumber - 1) * limit;
 
-		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
+		ReportInfo reportInfo = reportBuilder
+			.withLimit(limit)
+			.withOffset(offset)
+			.run()
+		;
 		return convertReport(reportInfo, limit, offset, pageNumber, request.getShowAsRows());
 	}
 
@@ -316,7 +324,11 @@ public class Service {
 			offset = (pageNumber - 1) * limit;
 		}
 
-		ReportInfo reportInfo = reportBuilder.withLimit(limit).withOffset(offset).run();
+		ReportInfo reportInfo = reportBuilder
+			.withLimit(limit)
+			.withOffset(offset)
+			.run()
+		;
 		RunExportResponse.Builder builder = RunExportResponse.newBuilder()
 			.setInstanceId(
 				reportInfo.getInstanceId()
@@ -516,20 +528,30 @@ public class Service {
 			cells.putFields("" + column.getPrintFormatItemId(), Value.newBuilder().setStructValue(cellValue.build()).build());
 		});
 		boolean isParent = Optional.ofNullable(row.getChildren()).orElse(new ArrayList<>()).size() > 0;
-		return ReportRow.newBuilder().setCells(cells).setLevel(row.getLevel()).setIsParent(isParent);
+		return ReportRow.newBuilder()
+			.setCells(cells)
+			.setLevel(row.getLevel())
+			.setIsParent(isParent)
+		;
 	}
 
 
 	private static Value convertFunctionDisplayValue(Value.Builder currentValue, String displayValue) {
 		Struct.Builder struct = currentValue.getStructValueBuilder();
-		struct.putFields(DISPLAY_VALUE_KEY, ValueManager.getValueFromString(displayValue).build());
-		return Value.newBuilder().setStructValue(struct).build();
+		Value.Builder value = ValueManager.getValueFromString(displayValue);
+		struct.putFields(DISPLAY_VALUE_KEY, value.build());
+		return Value.newBuilder()
+			.setStructValue(struct)
+			.build()
+		;
 	}
 
 
 	private static ReportRow.Builder processParent(List<ColumnInfo> columns, Row row) {
 		ReportRow.Builder parentRow = convertRow(columns, row);
-		row.getChildren().forEach(child -> processChildren(columns, parentRow, child));
+		row.getChildren().forEach(child -> {
+			processChildren(columns, parentRow, child);
+		});
 		return parentRow;
 	}
 
@@ -538,7 +560,9 @@ public class Service {
 		ReportRow.Builder childValue = convertRow(columns, parent);
 		List<Row> children = parent.getChildren();
 		if(children.size() > 0) {
-			children.forEach(child -> processChildren(columns, childValue, child));
+			children.forEach(child -> {
+				processChildren(columns, childValue, child);
+			});
 		}
 		parentBuilderRow.addChildren(childValue);
 	}

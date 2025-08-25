@@ -32,6 +32,7 @@ import org.spin.report_engine.format.PrintFormatColumn;
 import org.spin.report_engine.format.PrintFormatItem;
 import org.spin.report_engine.util.RecordUtil;
 import org.spin.service.grpc.util.value.BooleanManager;
+import org.spin.service.grpc.util.value.NumberManager;
 
 /**
  * Default just return the same value of cell
@@ -53,9 +54,13 @@ public class DefaultMapping implements IColumnMapping {
 		}
 		try {
 			if(resultSet!= null && column != null) {
-				if(DisplayType.isLookup(column.getReferenceId()) && column.getReferenceId() != DisplayType.List || column.getColumnName().equals(I_AD_ChangeLog.COLUMNNAME_Record_ID)) {
+				final int displayTypeId = column.getReferenceId();
+				if(DisplayType.isID(displayTypeId) || column.getColumnName().equals(I_AD_ChangeLog.COLUMNNAME_Record_ID)) {
 					Object value = resultSet.getObject(column.getColumnName());
-					cell.withValue(value);
+					Integer castValue = NumberManager.getIntegerFromObject(
+						value
+					);
+					cell.withValue(castValue);
 					if(column.getColumnName().equals(I_AD_ChangeLog.COLUMNNAME_Record_ID)) {
 						try {
 							String tableName = resultSet.getString(I_AD_Table.COLUMNNAME_TableName);
