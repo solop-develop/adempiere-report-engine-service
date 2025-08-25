@@ -1,32 +1,46 @@
 plugins {
-    id 'java'
-    id 'com.google.protobuf' version '0.9.4'
-    id 'idea'
-    id 'application'
-    id 'visual-studio'
-    id 'maven-publish'
+	id 'java'
+	id 'com.google.protobuf' version '0.9.4'
+	id 'idea'
+	// Provide convenience executables for trying out the examples.
+	id 'application'
+	// Generate Visual Studio Code .vscode & .json project files
+	id 'visual-studio'
+	// Publish artifacts to an Apache Maven repository.
+	id 'maven-publish'
+	// Read .env files
 	id "io.github.uoxx3.project-environment" version "1.0.1"
 }
 
-group 'com.nikhilm'
+
+def grpcVersion = '1.65.1'
+def protobufVersion = '3.25.3'
+def baseVersion = '3.9.4'
+def adempiereCoreVersion = '1.0.1'
+
+def descriptorFile = "adempiere-report-engine-service.dsc"
+
+
+ext {
+	javaMainClass = "org.spin.report_engine.server.ReportEngineServer"
+}
+
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_11
 	targetCompatibility = JavaVersion.VERSION_17
 }
 
-def grpcVersion = '1.65.1'
-def protobufVersion = '3.25.3'
-def adempiereCoreVersion = '1.0.1'
-
-def javaMainClass = "org.spin.report_engine.server.ReportEngineServer"
-def descriptorFile = "adempiere-report-engine-service.dsc"
-
-startScripts.enabled = false
-
-
 application {
 	mainClass.set(javaMainClass)
+
+	// distribution output
+	distributions {
+		main {
+			contents {
+			}
+		}
+	}
 }
 jar {
 	manifest {
@@ -73,67 +87,6 @@ repositories {
 		url = "https://maven.google.com/"
 	}
 }
-dependencies {
-    implementation fileTree(
-        dir: 'dependencies',
-        include: [
-            '*.jar'
-        ]
-    )
-	implementation "io.netty:netty-handler:4.1.107.Final"
-    implementation "io.grpc:grpc-alts:${grpcVersion}"
-	runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
-    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
-    implementation "io.grpc:grpc-stub:${grpcVersion}"
-    implementation "io.grpc:grpc-netty:${grpcVersion}"
-    // https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java
-	implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
-	implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
-    implementation 'javax.activation:activation:1.1.1'
-	//	Others
-    compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
-	// ADempiere External Libraries
-	implementation 'io.vavr:vavr:0.10.4'
-
-	//	Others
-	compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
-	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.0'
-	implementation "org.apache.poi:poi-ooxml:5.2.5"
-
-	//	ADempiere Core
-	implementation "org.solop.adempiere:adempiere-core:${adempiereCoreVersion}"
-	implementation "com.solop.adempiere.tools:solop-core:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:display-definition:core-1.0.0-1.0.0"
-	// Firebase Connector
-	implementation "com.solop.adempiere.tools:adempiere-firebase-connector:core-1.0.0-1.0.0"
-	// Time Control
-	implementation "com.solop.adempiere.tools:time-control:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:performance-analysis:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.verticals:import-export-management:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.verticals:agency-project:core-1.0.0-1.0.0"
-	// Electronic Invoicing
-	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:shopping-admin-connection:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:cloud-solop-notifier:core-1.0.0-1.0.0"
-	// Payment Processor
-	implementation "com.solop.adempiere.tools:payment-processor:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:warehouse-light:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:distribution-light:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:wms-light:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:additional-reports:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:intercompany-management:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.verticals:delivery-management-service:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:adempiere-webhook:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:external-store:core-1.0.0-1.0.0"
-}
-
-configurations.all {
-	resolutionStrategy {
-		// used by aws-java-sdk-core (storefront is joda-time-2.10.4)
-		force("joda-time:joda-time:2.8.1")
-		// force("io.github.adempiere:adempiere-grpc-utils:local-1.0.0")
-	}
-}
 
 protobuf {
     protoc {
@@ -168,6 +121,47 @@ protobuf {
 		}
 	}
 }
+
+sourceSets {
+	main {
+		java {
+			srcDirs 'build/generated/source/proto/main/grpc'
+			srcDirs 'build/generated/source/proto/main/java'
+			srcDirs 'src/main/proto'
+		}
+		resources {
+			srcDirs 'src/main/java'
+			include 'org/spin/base/version.properties'
+		}
+	}
+}
+
+startScripts {
+	applicationName = 'start-backend'
+
+	// default JVM setting
+	defaultJvmOpts = [
+		"-DPropertyFile=Adempiere.properties", 
+		"-Dorg.adempiere.server.embedded=true"
+	]
+	outputDir = new File(project.buildDir, 'tmp')
+	classpath = jar.outputs.files + project.configurations.runtimeClasspath
+
+	// Configure script names with extensions
+	doLast {
+		def unixScript = file(getUnixScript())
+		def windowsScript = file(getWindowsScript())
+
+		// Rename files after generating them
+		unixScript.renameTo("${unixScript.parent}/${applicationName}.sh")
+		windowsScript.renameTo("${windowsScript.parent}/${applicationName}.bat")
+
+		// Configure permissions for generated scripts
+		unixScript.setExecutable(true, false)
+		// windowsScript.setExecutable(true, false)
+	}
+}
+
 // Copy proto descriptor another folder
 allprojects {
 	task copyDescriptor(type: Copy) {
@@ -175,6 +169,9 @@ allprojects {
 		into "${projectDir}/resources/"
 		// into "${projectDir}/docker-compose/envoy/definitions/"
 		// rename { "${descriptorFile}" }
+
+		// task dependency
+		dependsOn "generateTestProto"
 	}
 
 	tasks.matching {
@@ -184,31 +181,12 @@ allprojects {
 	}
 }
 
-// Inform IDEs like IntelliJ IDEA, Eclipse or NetBeans about the generated code.
-sourceSets {
-    main {
-        java {
-            srcDirs 'build/generated/source/proto/main/grpc'
-            srcDirs 'build/generated/source/proto/main/java'
-            srcDirs 'src/main/proto'
-        }
-        resources {
-    		srcDirs 'src/main/java'
-			include 'org/spin/base/version.properties'
-    	}
-    }
+// compressed files task
+distTar {
+	dependsOn compileTestJava, copyDescriptor, startScripts
 }
-
-task AdempiereReportEngineServer(type: CreateStartScripts) {
-	mainClass = javaMainClass
-    applicationName = 'adempiere-report-engine-service-server'
-    outputDir = new File(project.buildDir, 'tmp')
-    classpath = jar.outputs.files + project.configurations.runtimeClasspath
-}
-
-applicationDistribution.into('bin') {
-	from(AdempiereReportEngineServer)
-    fileMode = 0755
+distZip {
+	dependsOn compileTestJava, copyDescriptor, startScripts
 }
 
 //	Create release for project
@@ -228,4 +206,65 @@ task createRelease(type: Copy) {
 
 task cleanBuild(type: GradleBuild) {
 	tasks = ['clean', 'build']
+}
+
+dependencies {
+	implementation fileTree(
+        dir: 'dependencies',
+        include: [
+            '*.jar'
+        ]
+    )
+	implementation "io.netty:netty-handler:4.1.107.Final"
+    implementation "io.grpc:grpc-alts:${grpcVersion}"
+	runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation "io.grpc:grpc-netty:${grpcVersion}"
+    // https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java
+	implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
+	implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
+    implementation 'javax.activation:activation:1.1.1'
+
+	//	Others
+	compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.0'
+	implementation "org.apache.poi:poi-ooxml:5.2.5"
+
+	// ADempiere External Libraries
+	implementation 'io.vavr:vavr:0.10.4'
+
+	//	ADempiere Core
+	implementation "org.solop.adempiere:adempiere-core:${adempiereCoreVersion}"
+	implementation "com.solop.adempiere.tools:solop-core:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:display-definition:core-1.0.0-1.0.0"
+	// Firebase Connector
+	implementation "com.solop.adempiere.tools:adempiere-firebase-connector:core-1.0.0-1.0.0"
+	// Time Control
+	implementation "com.solop.adempiere.tools:time-control:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:performance-analysis:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.verticals:import-export-management:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.verticals:agency-project:core-1.0.0-1.0.0"
+	// Electronic Invoicing
+	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:shopping-admin-connection:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:cloud-solop-notifier:core-1.0.0-1.0.0"
+	// Payment Processor
+	implementation "com.solop.adempiere.tools:payment-processor:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:warehouse-light:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:distribution-light:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:wms-light:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:additional-reports:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:intercompany-management:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.verticals:delivery-management-service:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:adempiere-webhook:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:external-store:core-1.0.0-1.0.0"
+}
+
+configurations.all {
+	resolutionStrategy {
+		// used by aws-java-sdk-core (storefront is joda-time-2.10.4)
+		force("joda-time:joda-time:2.8.1")
+		// force("io.github.adempiere:adempiere-grpc-utils:local-1.0.0")
+	}
 }

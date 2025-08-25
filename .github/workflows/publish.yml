@@ -5,6 +5,10 @@
 
 name: Publish Project
 
+permissions:
+  contents: write # to upload release assets
+  packages: write # to publish packages
+
 on:
   release:
     types:
@@ -14,13 +18,13 @@ jobs:
 
   # Build dist application adempiere-report-engine-service
   build-app:
-    name: Build dist ADempiere Report Engine
+    name: Build ADempiere Report Engine
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: Set up Java JDK 17
+      - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -28,115 +32,73 @@ jobs:
           java-version: 17
           architecture: x64
 
-      - name: Set Main Version
-        run: echo "MAIN_VERSION=${{ github.event.release.name }}" >> src/main/java/org/spin/base/version.properties
+      - name: Setup Gradle 9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 9.0.0 # current
 
-      - name: Set Release Date
-        run: echo "DATE_VERSION=$(date +'%Y-%m-%d')" >> src/main/java/org/spin/base/version.properties
+      - name: Set Version Properties
+        run: |
+          echo "MAIN_VERSION=${{ github.event.release.name }}" >> src/main/java/org/spin/base/version.properties
+          echo "DATE_VERSION=$(date +'%Y-%m-%d')" >> src/main/java/org/spin/base/version.properties
+          echo "IMPLEMENTATION_VERSION=${{ github.event.release.tag_name }}" >> src/main/java/org/spin/base/version.properties
 
-      - name: Set Implementation Version
-        run: echo "IMPLEMENTATION_VERSION=${{ github.event.release.tag_name }}" >> src/main/java/org/spin/base/version.properties
-
-      - name: Run Create Release
-        run: gradle createRelease
+      - name: Create Release with Gradle
+        run: gradle createRelease --warning-mode all --stacktrace
         env:
-          GITHUB_DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          GITHUB_DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          ORG_GRADLE_PROJECT_deployUsername: ${{ secrets.DEPLOY_USER }}
+          ORG_GRADLE_PROJECT_deployToken: ${{ secrets.DEPLOY_TOKEN }}
+          ORG_GRADLE_PROJECT_deployRepository: ${{ secrets.DEPLOY_REPOSITORY }}
+          GITHUB_DEPLOY_USER: ${{ github.actor }}
+          GITHUB_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_DEPLOY_REPOSITORY: ${{ secrets.DEPLOY_REPOSITORY }}
 
-      - name: Upload descriptor file artifact
+      - name: Prepare flat artifacts
+        run: |
+          mkdir -p flat_artifacts/
+          cp build/descriptors/adempiere-report-engine-service.dsc flat_artifacts/ || echo "Warning: .dsc file not found"
+          cp build/release/adempiere-report-engine-service.* flat_artifacts/ || echo "Warning: release files not found"
+          cp docker-compose/envoy/envoy.yaml flat_artifacts/ || echo "Warning: envoy.yaml not found"
+          cp resources/env.yaml flat_artifacts/ || echo "Warning: env.yaml not found"
+          ls -la flat_artifacts/
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: adempiere-report-engine-service.dsc
-          path: build/descriptors/adempiere-report-engine-service.dsc
+          name: release-artifacts
+          path: flat_artifacts/*
           retention-days: 1
 
-      - name: Upload envoy file artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: envoy.yaml
-          path: resources/envoy.yaml
-          retention-days: 1
-
-      - name: Upload dist app zip artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: adempiere-report-engine-service.zip
-          path: build/release/adempiere-report-engine-service.zip
-          retention-days: 1
-
-      - name: Upload dist app zip.MD5 artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: adempiere-report-engine-service.zip.MD5
-          path: build/release/adempiere-report-engine-service.zip.MD5
-          retention-days: 1
-
-      - name: Upload dist app tar artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: adempiere-report-engine-service.tar
-          path: build/release/adempiere-report-engine-service.tar
-          retention-days: 1
-
-      - name: Upload dist app tar.MD5 artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: adempiere-report-engine-service.tar.MD5
-          path: build/release/adempiere-report-engine-service.tar.MD5
-          retention-days: 1
 
   publish-binaries:
-    name: Upload Binaries adempiere-report-engine-service
+    name: Publish Release Assets
     needs: build-app
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Download all artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: artifacts/
 
-      - name: Upload Descriptor
-        uses: skx/github-action-publish-binaries@master
+      - name: List Assets
+        run: |
+          tree artifacts
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: |
+            artifacts/adempiere-report-engine-service.dsc
+            artifacts/adempiere-report-engine-service.zip
+            artifacts/adempiere-report-engine-service.zip.MD5
+            artifacts/adempiere-report-engine-service.tar
+            artifacts/adempiere-report-engine-service.tar.MD5
+            artifacts/envoy.yaml
+            artifacts/env.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: adempiere-report-engine-service.dsc/adempiere-report-engine-service.dsc
-
-      - name: Upload Envoy config
-        uses: skx/github-action-publish-binaries@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: envoy.yaml/envoy.yaml
-
-      - name: Upload zip
-        uses: skx/github-action-publish-binaries@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: adempiere-report-engine-service.zip/adempiere-report-engine-service.zip
-
-      - name: Upload zip.MD5
-        uses: skx/github-action-publish-binaries@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: adempiere-report-engine-service.zip.MD5/adempiere-report-engine-service.zip.MD5
-
-      - name: Upload tar
-        uses: skx/github-action-publish-binaries@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: adempiere-report-engine-service.tar/adempiere-report-engine-service.tar
-
-      - name: Upload tar.MD5
-        uses: skx/github-action-publish-binaries@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: adempiere-report-engine-service.tar.MD5/adempiere-report-engine-service.tar.MD5
 
 
 
@@ -176,14 +138,18 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: Download build dist app
+      - name: Download dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: adempiere-report-engine-service.zip
+          name: release-artifacts
+          path: artifacts/
+
       - name: Unzip Asset
         run: |
-          unzip adempiere-report-engine-service.zip -d docker/
-      - name: Login to GitHub Container Registry
+          tree artifacts
+          unzip artifacts/adempiere-report-engine-service.zip -d docker/
+
+      - name: Login to Container Registry
         uses: docker/login-action@v3
         with:
           # CONFIGURE DOCKER SECRETS INTO REPOSITORY
@@ -191,20 +157,32 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      - name: Set Docker Alpine Tags
+        id: set_tags_alpine
+        run: |
+          # Get the release type
+          IS_PRE_RELEASE=${{ github.event.release.prerelease }}
+          # Set the base tags, always include the specific version tag
+          TAGS="${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:${{ github.event.release.tag_name }}-alpine"
+          # If it's not a pre-release, add the "latest" tag
+          if [[ "$IS_PRE_RELEASE" == "false" ]]; then
+            TAGS+=",${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:alpine"
+          fi
+          # Set the output variable for the next step to use
+          echo "tags_to_push=$TAGS" >> $GITHUB_OUTPUT
+
       - name: Push alpine image in Docker Hub
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/alpine.Dockerfile
           push: true
-          tags: |
-            ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:alpine
-            ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:alpine-${{ github.event.release.tag_name }}
+          tags: ${{ steps.set_tags_alpine.outputs.tags_to_push }}
 
   # TODO: Download .tar and add docker image without uncompress
   # Publish docker multiplatform image in Docker Hub Registry to application
   push-imame-dhr:
-    name: Push docker multiplatform image to Docker Hub
+    name: Push docker ubuntu multiplatform image to Docker Hub
     needs:
       - check-docker-secrets
     # Skip step based on secret
@@ -214,20 +192,24 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: Download build dist app
+      - name: Download dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: adempiere-report-engine-service.zip
+          name: release-artifacts
+          path: artifacts/
+
       - name: Unzip Asset
         run: |
-          unzip adempiere-report-engine-service.zip -d docker/
-      - name: Set up QEMU
+          tree artifacts
+          unzip artifacts/adempiere-report-engine-service.zip -d docker/
+
+      - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
 
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GitHub Container Registry
+      - name: Login to Container Registry
         uses: docker/login-action@v3
         with:
           # CONFIGURE DOCKER SECRETS INTO REPOSITORY
@@ -235,14 +217,110 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Push focal image in Docker Hub
+      - name: Set Docker Tags
+        id: set_tags
+        run: |
+          # Get the release type
+          IS_PRE_RELEASE=${{ github.event.release.prerelease }}
+          # Set the base tags, always include the specific version tag
+          TAGS="${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:${{ github.event.release.tag_name }}"
+          # If it's not a pre-release, add the "latest" tag
+          if [[ "$IS_PRE_RELEASE" == "false" ]]; then
+            TAGS+=",${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:latest"
+          fi
+          # Set the output variable for the next step to use
+          echo "tags_to_push=$TAGS" >> $GITHUB_OUTPUT
+
+      - name: Push ubuntu image in Docker Hub
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: docker/focal.Dockerfile
-          platforms: linux/amd64,linux/amd64/v2
-          # platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
+          file: docker/ubuntu.Dockerfile
+          platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
           push: true
-          tags: |
-            ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:${{ github.event.release.tag_name }}
-            ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_REPO }}:latest
+          tags: ${{ steps.set_tags.outputs.tags_to_push }}
+
+
+
+  # Check secrets to push image in docker hub registry
+  check-proxy-docker-secrets:
+    name: Check if docker hub registry information was set on secrets
+    needs:
+      - build-app
+    runs-on: ubuntu-latest
+    outputs:
+      is_have_secrets: ${{ steps.check_secret_job.outputs.is_have_secrets }}
+    steps:
+      - id: check_secret_job
+        run: |
+          if [[ "${{ secrets.DOCKER_HUB_PROXY_REPO_NAME }}" != "" && \
+                "${{ secrets.DOCKER_USERNAME }}" != "" && \
+                "${{ secrets.DOCKER_TOKEN }}" != "" ]]; \
+          then
+            echo "Secrets to use a container registry are configured in the repo"
+            echo "is_have_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "Secrets to use a container registry were not configured in the repo"
+            echo "is_have_secrets=false" >> $GITHUB_OUTPUT
+          fi
+
+  # TODO: Download .tar and add docker image without uncompress
+  # Publish docker image multiplatform in Docker Hub Registry to application
+  push-grpc-proxy-imame-dhr:
+    name: Push grpc-proxy docker image to Docker Hub
+    needs:
+      - check-proxy-docker-secrets
+    # Skip step based on secret
+    if: needs.check-proxy-docker-secrets.outputs.is_have_secrets == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: artifacts/
+
+      - name: Move descriptor
+        run: |
+          tree artifacts
+          cp artifacts/adempiere-report-engine-service.dsc docker/ || echo "Warning: descriptor file not found"
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          # CONFIGURE DOCKER SECRETS INTO REPOSITORY
+          registry: ${{ vars.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Set Docker Tags
+        id: set_proxy_tags
+        run: |
+          # Get the release type
+          IS_PRE_RELEASE=${{ github.event.release.prerelease }}
+          # Set the base tags, always include the specific version tag
+          TAGS="${{ secrets.DOCKER_HUB_PROXY_REPO_NAME }}:${{ github.event.release.tag_name }}"
+          # If it's not a pre-release, add the "latest" tag
+          if [[ "$IS_PRE_RELEASE" == "false" ]]; then
+            TAGS+=",${{ secrets.DOCKER_HUB_PROXY_REPO_NAME }}:latest"
+          fi
+          # Set the output variable for the next step to use
+          echo "tags_to_push=$TAGS" >> $GITHUB_OUTPUT
+
+      - name: Push image in Docker Hub
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/proxy.Dockerfile
+          platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
+          push: true
+          tags: ${{ steps.set_proxy_tags.outputs.tags_to_push }}

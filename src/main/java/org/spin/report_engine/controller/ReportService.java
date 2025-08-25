@@ -40,8 +40,10 @@ public class ReportService extends ReportEngineImplBase {
 			responseObserver.onNext(builder.build());
 			responseObserver.onCompleted();
 		} catch (Exception e) {
-			log.severe(e.getLocalizedMessage());
-			responseObserver.onError(Status.INTERNAL
+			log.warning(e.getLocalizedMessage());
+			e.printStackTrace();
+			responseObserver.onError(
+				Status.INTERNAL
 				.withDescription(e.getLocalizedMessage())
 				.withCause(e)
 				.asRuntimeException()
@@ -56,8 +58,10 @@ public class ReportService extends ReportEngineImplBase {
 			responseObserver.onNext(reportBuilder.build());
 			responseObserver.onCompleted();
 		} catch (Exception e) {
-			log.severe(e.getLocalizedMessage());
-			responseObserver.onError(Status.INTERNAL
+			log.warning(e.getLocalizedMessage());
+			e.printStackTrace();
+			responseObserver.onError(
+				Status.INTERNAL
 					.withDescription(e.getLocalizedMessage())
 					.withCause(e)
 					.asRuntimeException()
@@ -72,8 +76,10 @@ public class ReportService extends ReportEngineImplBase {
 			responseObserver.onNext(reportBuilder.build());
 			responseObserver.onCompleted();
 		} catch (Exception e) {
-			log.severe(e.getLocalizedMessage());
-			responseObserver.onError(Status.INTERNAL
+			log.warning(e.getLocalizedMessage());
+			e.printStackTrace();
+			responseObserver.onError(
+				Status.INTERNAL
 					.withDescription(e.getLocalizedMessage())
 					.withCause(e)
 					.asRuntimeException()
@@ -88,7 +94,8 @@ public class ReportService extends ReportEngineImplBase {
 			responseObserver.onNext(reportBuilder.build());
 			responseObserver.onCompleted();
 		} catch (Exception e) {
-			log.severe(e.getLocalizedMessage());
+			log.warning(e.getLocalizedMessage());
+			e.printStackTrace();
 			responseObserver.onError(
 				Status.INTERNAL
 					.withDescription(e.getLocalizedMessage())

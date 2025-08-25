@@ -42,6 +42,7 @@ import org.spin.report_engine.util.ClassLoaderMapping;
  * @author Yamel Senih, ysenih@erpya.com, ERPCyA http://www.erpya.com
  */
 public class ReportInfo {
+
 	private String name;
 	private String description;
 	private List<ColumnInfo> columns;
@@ -61,29 +62,44 @@ public class ReportInfo {
 	private int instanceId;
 	private PrintFormat printFormat;
 	private String tableName;
-	
+
 	private ReportInfo(PrintFormat printFormat, QueryDefinition queryDefinition) {
 		this.printFormat = printFormat;
 		name = printFormat.getName();
 		description = printFormat.getDescription();
-		columns = printFormat.getPrintedItems().stream().map(item -> ColumnInfo.newInstance(item)).collect(Collectors.toList());
+		columns = printFormat.getPrintedItems()
+			.stream()
+			.map(item -> {
+				return ColumnInfo.newInstance(item);
+			})
+			.collect(Collectors.toList())
+		;
 		rows = new ArrayList<Row>();
 		summaryRows = new ArrayList<Row>();
 		groupedRows = new ArrayList<Row>();
 		summaryHandler = SummaryHandler.newInstance(printFormat.getItems());
-		level = printFormat.getGroupItems().stream().mapToInt(item -> item.getSortSequence()).sum() + 1;
+		level = printFormat.getGroupItems()
+			.stream()
+			.mapToInt(item -> {
+				return item.getSortSequence();
+			})
+			.sum() + 1;
 		AtomicInteger counter = new AtomicInteger();
 		groupLevels = new HashMap<Integer, PrintFormatItem>();
-		printFormat.getGroupItems().stream().sorted(Comparator.comparing(PrintFormatItem::getSortSequence)).forEach(group -> {
-			group.withSortSequence(counter.get());
-			groupLevels.put(counter.getAndIncrement(), group);
-		});
+		printFormat.getGroupItems()
+			.stream()
+			.sorted(Comparator.comparing(PrintFormatItem::getSortSequence))
+			.forEach(group -> {
+				group.withSortSequence(counter.get());
+				groupLevels.put(counter.getAndIncrement(), group);
+			})
+		;
 		sortingItems = printFormat.getSortingItems();
 		printFormatId = printFormat.getPrintFormatId();
 		this.queryDefinition = queryDefinition;
 		this.tableName = printFormat.getTableName();
 	}
-	
+
 	public static ReportInfo newInstance(PrintFormat printFormat, QueryDefinition queryDefinition) {
 		return new ReportInfo(printFormat, queryDefinition);
 	}
@@ -135,12 +151,12 @@ public class ReportInfo {
 	public String getName() {
 		return name;
 	}
-	
+
 	public ReportInfo withName(String name) {
 		this.name = name;
 		return this;
 	}
-	
+
 	public String getDescription() {
 		return description;
 	}
@@ -153,7 +169,7 @@ public class ReportInfo {
 	public List<ColumnInfo> getColumns() {
 		return columns;
 	}
-	
+
 	public ReportInfo addRow(Row row) {
 		rows.add(row);
 		return this;
@@ -176,7 +192,6 @@ public class ReportInfo {
 		temporaryRow = Row.newInstance().withLevel(level);
 		return this;
 	}
-	
 	public ReportInfo addRow() {
 		if(temporaryRow != null) {
 			addRow(
@@ -194,7 +209,7 @@ public class ReportInfo {
 		temporaryRow = Row.newInstance().withLevel(getLevel());
 		return this;
 	}
-	
+
 	public ReportInfo addCell(PrintFormatItem printFormatItem, Cell cell) {
 		if(temporaryRow == null) {
 			temporaryRow = Row.newInstance().withLevel(getLevel());
@@ -202,17 +217,18 @@ public class ReportInfo {
 		temporaryRow.withCell(printFormatItem.getPrintFormatItemId(), cell);
 		return this;
 	}
-	
+
 	public List<Row> getRows() {
 		return rows;
 	}
-	
+
 	public List<Row> getCompleteRows() {
 		return rows.stream()
-				.sorted(getSortingValue(true))
-                .collect(Collectors.toList());
+			.sorted(getSortingValue(true))
+			.collect(Collectors.toList())
+		;
 	}
-	
+
 	public List<Row> getSummaryRows() {
 		return summaryRows;
 	}
@@ -246,7 +262,7 @@ public class ReportInfo {
 		}
 		return comparator.get();
 	}
-	
+
 	public PrintFormat getPrintFormat() {
 		return printFormat;
 	}
@@ -304,11 +320,11 @@ public class ReportInfo {
 		;
 		return this;
 	}
-	
+
 	private boolean isFinancialReport() {
 		return getTableName().equals("T_Report");
 	}
-	
+
 	/**
 	 * Get all rows as tree
 	 * @return
@@ -317,9 +333,13 @@ public class ReportInfo {
 		if(isFinancialReport()) {
 			List<Row> tree = new ArrayList<Row>();
 			//	Add parent level
-			rows.stream().filter(row -> {
-				return row.getLevel() == 0;
-			}).forEach(row -> tree.add(row));
+			rows.stream()
+				.filter(row -> {
+					return row.getLevel() == 0;
+				}).forEach(row -> {
+					tree.add(row);
+				})
+			;
 			tree.forEach(treeValue -> {
 				processChildrenFinancialReport(treeValue, 1);
 			});
@@ -329,9 +349,14 @@ public class ReportInfo {
 			if(levelGroup != null) {
 				List<Row> tree = new ArrayList<Row>();
 				//	Add parent level
-				rows.stream().filter(row -> {
-					return row.getLevel() == levelGroup.getSortSequence();
-				}).forEach(row -> tree.add(row));
+				rows.stream()
+					.filter(row -> {
+						return row.getLevel() == levelGroup.getSortSequence();
+					})
+					.forEach(row -> {
+						tree.add(row);
+					})
+				;
 				tree.forEach(treeValue -> {
 					processChildren(treeValue, 1);
 				});
@@ -340,16 +365,23 @@ public class ReportInfo {
 		}
 		return rows;
 	}
-	
+
 	private void processChildrenFinancialReport(Row parent, int levelAsInt) {
 		List<Row> children = parent.getChildren();
-		rows.stream().filter(row -> {
-			return row.getLevel() == levelAsInt && row.getSequence() == parent.getSequence();
-		}).forEach(row -> children.add(row));
+		rows.stream()
+			.filter(row -> {
+				return row.getLevel() == levelAsInt 
+					&& row.getSequence() == parent.getSequence()
+				;
+			})
+			.forEach(row -> {
+				children.add(row);
+			})
+		;
 		int nextLevel = levelAsInt + 1;
 		children.forEach(child -> processChildrenFinancialReport(child, nextLevel));
 	}
-	
+
 	private void processChildren(Row parent, int levelAsInt) {
 		List<Row> children = parent.getChildren();
 		PrintFormatItem previosLevelGroup = groupLevels.get(levelAsInt - 1);
@@ -357,15 +389,20 @@ public class ReportInfo {
 		if((levelGroup == null && groupLevels.size() > 1) || previosLevelGroup == null) {
 			return;
 		}
-		rows.stream().filter(row -> {
-			if(levelGroup == null && row.getLevel() > parent.getLevel() && compareRows(parent, row, levelAsInt)) {
-				return true;
-			}
-			if(levelGroup != null && row.getLevel() == levelGroup.getSortSequence() && compareRows(parent, row, levelAsInt)) {
-				return true;
-			}
-			return false;
-		}).forEach(row -> children.add(row));
+		rows.stream()
+			.filter(row -> {
+				if(levelGroup == null && row.getLevel() > parent.getLevel() && compareRows(parent, row, levelAsInt)) {
+					return true;
+				}
+				if(levelGroup != null && row.getLevel() == levelGroup.getSortSequence() && compareRows(parent, row, levelAsInt)) {
+					return true;
+				}
+				return false;
+			})
+			.forEach(row -> {
+				children.add(row);
+			})
+		;
 		//	No Recursive
 		if(groupLevels.size() == 1) {	
 			return;
@@ -377,20 +414,25 @@ public class ReportInfo {
 			children.forEach(child -> processAllChildren(child));
 		}
 	}
-	
+
 	private void processAllChildren(Row parent) {
 		List<Row> children = parent.getChildren();
 		PrintFormatItem previosLevelGroup = groupLevels.get(groupLevels.size() - 1);
 		if(previosLevelGroup == null) {
 			return;
 		}
-		rows.stream().filter(row -> {
-			return row.getLevel() > parent.getLevel() && compareRows(parent, row, groupLevels.size());
-		}).forEach(row -> {
-			children.add(row);
-		});
+		rows.stream()
+			.filter(row -> {
+				return row.getLevel() > parent.getLevel()
+					&& compareRows(parent, row, groupLevels.size())
+				;
+			})
+			.forEach(row -> {
+				children.add(row);
+			})
+		;
 	}
-	
+
 	private boolean compareRows(Row parent, Row child, int currentLevel) {
 		AtomicBoolean isMatched = new AtomicBoolean(true);
 		IntStream.range(0, currentLevel).forEach(levelIndex -> {
@@ -450,7 +492,10 @@ public class ReportInfo {
 
 	@Override
 	public String toString() {
-		return "ReportInfo [name=" + name + ", columns=" + columns + ", data=" + rows + ", printFormatId="
-				+ printFormatId + ", reportViewId=" + reportViewId + ", isSummary=" + isSummary + "]";
+		return "ReportInfo [name=" + name + ", columns=" + columns
+			+ ", data=" + rows + ", printFormatId=" + printFormatId
+			+ ", reportViewId=" + reportViewId + ", isSummary=" + isSummary + "]"
+		;
 	}
+
 }
