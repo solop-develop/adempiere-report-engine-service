@@ -290,7 +290,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: docker/grpc_proxy.Dockerfile
+          file: docker/proxy.Dockerfile
           platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
           push: true
           tags: ${{ steps.set_envoy_tags.outputs.tags_to_push }}
