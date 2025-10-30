@@ -11,10 +11,11 @@
 			"mainClass": "org.spin.report_engine.server.ReportEngineServer",
 			"projectName": "adempiere-report-engine-service",
 			"env": {
-				"JWT_SECRET_KEY": "2C51599F5B1248F945B93E05EFC43B3A15D8EB0707C0F02FD97028786C40976F",
-				"JWT_EXPIRATION_TIME": 86400000,
 				"TZ": "America/Caracas"
 			},
+			// "args": [
+			// 	"resources/env.yaml"
+			// ]
 			"args": "'resources/env.yaml'"
 		}
 	]

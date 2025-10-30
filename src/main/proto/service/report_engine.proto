@@ -10,7 +10,7 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 // Base URL
-// /report-engine/
+// /v1/report-engine/
 
 package report_engine;
 
@@ -33,6 +33,9 @@ service ReportEngine {
 	rpc GetReport(GetReportRequest) returns (Report) {
 		option (google.api.http) = {
 			get: "/v1/report-engine/reports/{report_id}"
+			additional_bindings: {
+				get: "/v1/report-engine/reports/{report_id}/window/{table_name}/{record_id}"
+			}
 		};
 	}
 	
@@ -66,8 +69,8 @@ message RunExportRequest {
 	int32 report_view_id = 6;
 	int32 print_format_id = 7;
 	bool is_summary = 8;
-	int32 record_id = 9;
-	string table_name = 10;
+	string table_name = 9;
+	int32 record_id = 10;
 	string format = 11;
 	int32 instance_id = 12;
 }
@@ -86,8 +89,8 @@ message GetReportRequest {
 	int32 report_view_id = 6;
 	int32 print_format_id = 7;
 	bool is_summary = 8;
-	int32 record_id = 9;
-	string table_name = 10;
+	string table_name = 9;
+	int32 record_id = 10;
 	bool show_as_rows = 11;
 	int32 instance_id = 12;
 }

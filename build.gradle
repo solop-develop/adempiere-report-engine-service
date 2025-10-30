@@ -51,7 +51,6 @@ jar {
 run {
 	doFirst {
 		// Set environment variables by .env project file
-		environment "ADEMPIERE_APPS_TYPE", projectEnv.get("ADEMPIERE_APPS_TYPE", null) ?: "wildfly"
 		environment "TZ", projectEnv.get("TZ", null) ?: "America/Caracas"
 	}
 	args = [
