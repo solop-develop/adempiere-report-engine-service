@@ -257,7 +257,7 @@ dependencies {
 	implementation "com.solop.adempiere.tools:adempiere-webhook:core-1.2.9-1.0.0"
 	implementation "com.solop.adempiere.tools:external-store:core-1.0.0-1.0.0"
 	implementation "com.solop.adempiere.tools:core-tools:core-1.4.2-1.0.0"
-	implementation "com.solop.adempiere.localization:luy:core-1.4.11-1.0.2"
+	implementation "com.solop.adempiere.localization:luy:core-1.4.11-1.0.5"
 }
 
 configurations.all {
