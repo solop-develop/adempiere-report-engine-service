@@ -14,7 +14,7 @@ plugins {
 def grpcVersion = '1.63.0'
 def protobufVersion = '3.25.3'
 def baseVersion = '3.9.4'
-def adempiereCoreVersion = '1.4.19'
+def adempiereCoreVersion = '1.4.21'
 
 def descriptorFile = "adempiere-report-engine-service.dsc"
 
@@ -233,22 +233,22 @@ dependencies {
 
 	//	ADempiere Core
 	implementation "org.solop.adempiere:adempiere-core:${adempiereCoreVersion}"
-	implementation "com.solop.adempiere.tools:solop-core:core-1.4.16-1.0.1"
+	implementation "com.solop.adempiere.tools:solop-core:core-1.4.16-1.0.2"
 	implementation "com.solop.adempiere.tools:display-definition:core-1.0.0-1.0.0"
 	// Firebase Connector
 	implementation "com.solop.adempiere.tools:adempiere-firebase-connector:core-1.0.0-1.0.0"
 	// Time Control
 	implementation "com.solop.adempiere.tools:time-control:core-1.0.0-1.0.0"
 	implementation "com.solop.adempiere.tools:performance-analysis:core-1.2.6-1.0.0"
-	implementation "com.solop.adempiere.verticals:import-export-management:core-1.4.4-1.0.0"
-	implementation "com.solop.adempiere.verticals:agency-project:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.verticals:import-export-management:core-1.4.21-1.0.1"
+	implementation "com.solop.adempiere.verticals:agency-project:core-1.4.13-1.0.1"
 	// Electronic Invoicing
-	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.4.9-1.0.00"
-	implementation "com.solop.adempiere.tools:shopping-admin-connection:core-1.4.9-1.0.1"
+	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.4.17-1.0.2"
+	implementation "com.solop.adempiere.tools:shopping-admin-connection:core-1.4.9-1.0.2"
 	implementation "com.solop.adempiere.tools:cloud-solop-notifier:core-1.0.0-1.0.0"
 	// Payment Processor
 	implementation "com.solop.adempiere.tools:payment-processor:core-1.4.9-1.0.0"
-	implementation "com.solop.adempiere.tools:warehouse-light:core-1.0.0-1.0.0"
+	implementation "com.solop.adempiere.tools:warehouse-light:core-1.4.20-1.0.1"
 	implementation "com.solop.adempiere.tools:distribution-light:core-1.0.0-1.0.0"
 	implementation "com.solop.adempiere.tools:wms-light:core-1.0.0-1.0.0"
 	implementation "com.solop.adempiere.tools:additional-reports:core-1.0.0-1.0.0"
