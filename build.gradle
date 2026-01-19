@@ -233,7 +233,7 @@ dependencies {
 
 	//	ADempiere Core + Patches + Features
 	implementation "org.solop.adempiere:adempiere-core:${adempiereCoreVersion}"
-	implementation "com.solop.adempiere.tools:solop-core:core-1.4.16-1.0.3"
+	implementation "com.solop.adempiere.tools:solop-core:core-1.4.16-1.0.5"
 	implementation "com.solop.adempiere.tools:display-definition:core-1.0.0-1.0.0"
 	// Firebase Connector
 	implementation "com.solop.adempiere.tools:adempiere-firebase-connector:core-1.0.0-1.0.0"
