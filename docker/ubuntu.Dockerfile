@@ -31,19 +31,26 @@ EXPOSE ${SERVER_PORT}
 
 
 # Add operative system dependencies
-RUN	apt-get update && \
+RUN apt-get update && \
+	echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections && \
 	apt-get install -y --no-install-recommends \
 		bash \
 		ca-certificates \
 		fontconfig \
+		fontconfig-config \
 		fonts-dejavu \
+		libfreetype6 \
+		libfreetype-dev \
+		ttf-mscorefonts-installer \
 		tzdata && \
-	fc-cache -f -v && \
+	echo "Install Microsoft Fonts..." && \
+	dpkg-reconfigure -f noninteractive ttf-mscorefonts-installer && \
+	fc-cache -f && \
 	echo "Set Timezone..." && \
 	ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
 	echo $TZ > /etc/timezone && \
 	# Clean up
-    apt-get autoremove -y && \
+	apt-get autoremove -y && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* \
 	rm -rf /tmp/*

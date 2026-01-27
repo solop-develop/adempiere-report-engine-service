@@ -26,7 +26,7 @@ import org.compiere.util.Util;
 import org.spin.service.grpc.util.db.OperatorUtil;
 import org.spin.service.grpc.util.db.ParameterUtil;
 import org.spin.service.grpc.util.query.Filter;
-import org.spin.service.grpc.util.value.StringManager;
+import org.spin.service.grpc.util.value.TextManager;
 
 /**
  * Query Representation
@@ -360,8 +360,8 @@ public class QueryDefinition {
 			}
 		} else if(operatorValue.equals(OperatorUtil.LIKE) || operatorValue.equals(OperatorUtil.NOT_LIKE)) {
 			columnName = "UPPER(" + columnName + ")";
-			String valueToFilter = StringManager.getValidString(
-				StringManager.getStringFromObject(
+			String valueToFilter = TextManager.getValidString(
+				TextManager.getStringFromObject(
 					condition.getValue()
 				)
 			);

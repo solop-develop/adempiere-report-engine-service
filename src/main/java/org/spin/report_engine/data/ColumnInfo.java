@@ -14,6 +14,7 @@
  ************************************************************************************/
 package org.spin.report_engine.data;
 
+import org.compiere.util.Util;
 import org.spin.report_engine.format.PrintFormatItem;
 
 /**
@@ -46,6 +47,9 @@ public class ColumnInfo {
 	private ColumnInfo(PrintFormatItem item) {
 		this.columnName = item.getColumnName();
 		this.title = item.getPrintText();
+		if (Util.isEmpty(this.title, true)) {
+			this.title = item.getName();
+		}
 		this.printFormatItemId = item.getPrintFormatItemId();
 		this.code = String.valueOf(item.getPrintFormatItemId());
 		this.displayTypeId = item.getReferenceId();

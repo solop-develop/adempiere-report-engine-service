@@ -31,14 +31,18 @@ EXPOSE ${SERVER_PORT}
 
 
 # Add operative system dependencies
-RUN	apk update && \
+RUN apk update && \
 	apk add --no-cache \
 		bash \
 		ca-certificates \
 		fontconfig \
-		ttf-dejavu \
+		font-dejavu \
+		libfreetype \
+		msttcorefonts-installer \
 		tzdata && \
-	fc-cache -f -v && \
+	echo "Install Microsoft Fonts..." && \
+	update-ms-fonts && \
+	fc-cache -f && \
 	echo "Set Timezone..." && \
 	ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
 	echo $TZ > /etc/timezone && \

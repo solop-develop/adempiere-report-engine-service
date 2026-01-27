@@ -49,7 +49,7 @@ import org.spin.service.grpc.util.base.RecordUtil;
 import org.spin.service.grpc.util.db.LimitUtil;
 import org.spin.service.grpc.util.query.Filter;
 import org.spin.service.grpc.util.query.FilterManager;
-import org.spin.service.grpc.util.value.StringManager;
+import org.spin.service.grpc.util.value.TextManager;
 import org.spin.service.grpc.util.value.TimeManager;
 import org.spin.service.grpc.util.value.ValueManager;
 
@@ -107,19 +107,19 @@ public class Service {
 
 		// backend info
 		builder.setDateVersion(
-				ValueManager.getProtoTimestampFromTimestamp(
+				TimeManager.getProtoTimestampFromTimestamp(
 					TimeManager.getTimestampFromString(
 						Version.DATE_VERSION
 					)
 				)
 			)
 			.setMainVersion(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					Version.MAIN_VERSION
 				)
 			)
 			.setImplementationVersion(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					Version.IMPLEMENTATION_VERSION
 				)
 			)
@@ -339,7 +339,7 @@ public class Service {
 		if (!Util.isEmpty(fileName, true)) {
 			builder
 				.setFileName(
-					StringManager.getValidString(fileName)
+					TextManager.getValidString(fileName)
 				)
 			;
 		}
@@ -351,12 +351,12 @@ public class Service {
 		//	
 		Report.Builder builder = Report.newBuilder()
 			.setName(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					reportInfo.getName()
 				)
 			)
 			.setDescription(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					reportInfo.getDescription()
 				)
 			)
@@ -376,7 +376,7 @@ public class Service {
 				reportInfo.getInstanceId()
 			)
 			.setTableName(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					reportInfo.getTableName()
 				)
 			)
@@ -417,6 +417,7 @@ public class Service {
 			});
 		}
 		builder.addAllRows(reportRows);
+
 		builder.setRecordCount(reportInfo.getRecordCount());
 		//	Set page token
 		String nexPageToken = null;
@@ -424,8 +425,9 @@ public class Service {
 			nexPageToken = LimitUtil.getPagePrefix("") + String.valueOf(pageNumber + 1);
 		}
 		builder.setNextPageToken(
-			StringManager.getValidString(nexPageToken)
+			TextManager.getValidString(nexPageToken)
 		);
+
 		builder.setReportViewId(reportInfo.getReportViewId());
 		return builder;
 	}
@@ -434,32 +436,32 @@ public class Service {
 	private static ReportColumn.Builder convertColumn(ColumnInfo column) {
 		ReportColumn.Builder columnBuilder = ReportColumn.newBuilder()
 			.setCode(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					column.getCode()
 				)
 			)
 			.setTitle(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					column.getTitle()
 				)
 			)
 			.setColor(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					column.getColor()
 				)
 			)
 			.setStyle(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					column.getStyle()
 				)
 			)
 			.setFontCode(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					column.getFontCode()
 				)
 			)
 			.setColumnName(
-				StringManager.getValidString(
+				TextManager.getValidString(
 					column.getColumnName()
 				)
 			)
@@ -509,13 +511,18 @@ public class Service {
 			//	Put Display Value
 			cellValue.putFields(
 				DISPLAY_VALUE_KEY,
-				ValueManager.getValueFromString(cell.getDisplayValue()).build()
+				TextManager.getProtoValueFromString(
+					cell.getDisplayValue()
+				).build()
 			);
 			//	Summary Values
 			if(cell.getSum() != null) {
 				cellValue.putFields(
 					SUM_KEY,
-					convertFunctionDisplayValue(ValueManager.getProtoValueFromObject(cell.getSum()), cell.getSumDisplayValue())
+					convertFunctionDisplayValue(
+						ValueManager.getProtoValueFromObject(cell.getSum()),
+						cell.getSumDisplayValue()
+					)
 				);
 			}
 			if(cell.getMean() != null) {
@@ -568,7 +575,7 @@ public class Service {
 
 	private static Value convertFunctionDisplayValue(Value.Builder currentValue, String displayValue) {
 		Struct.Builder struct = currentValue.getStructValueBuilder();
-		Value.Builder value = ValueManager.getValueFromString(displayValue);
+		Value.Builder value = TextManager.getProtoValueFromString(displayValue);
 		struct.putFields(DISPLAY_VALUE_KEY, value.build());
 		return Value.newBuilder()
 			.setStructValue(struct)

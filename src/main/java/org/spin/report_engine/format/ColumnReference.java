@@ -95,10 +95,11 @@ public class ColumnReference {
 	 */
 	public static ColumnReference getColumnReferenceList(Language language) {
 		ColumnReference columnReference = ColumnReference.newInstance()
-				.withDisplayColumn("Name")
-				.withKeyColumn("Value")
-				.withIsValueDisplayed(false)
-				.withTableName("AD_Ref_List");
+			.withDisplayColumn("Name")
+			.withKeyColumn("Value")
+			.withIsValueDisplayed(false)
+			.withTableName("AD_Ref_List")
+		;
 		if(!Env.isBaseLanguage(language, "AD_Ref_List")) {
 			columnReference.withIsTranslated(true);
 		}

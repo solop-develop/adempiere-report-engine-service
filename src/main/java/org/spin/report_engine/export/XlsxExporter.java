@@ -60,6 +60,7 @@ import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.mapper.DefaultMapping;
 import org.spin.report_engine.mapper.IColumnMapping;
 import org.spin.report_engine.util.ClassLoaderMapping;
+import org.spin.service.grpc.util.value.TimeManager;
 import org.spin.util.support.AppSupportHandler;
 import org.spin.util.support.IAppSupport;
 
@@ -168,8 +169,7 @@ public class XlsxExporter implements IReportEngineExporter {
 		//	create header
 		Row headerRow = sheet.createRow(0);
 		List<ColumnInfo> columns = reportInfo.getColumns();
-		IntStream.range(0, columns.size())
-		.forEach(cellNumber -> {
+		IntStream.range(0, columns.size()).forEach(cellNumber -> {
 			Cell sheetCell = headerRow.createCell(cellNumber);
 			ColumnInfo columnInfo = columns.get(cellNumber);
 			String value = Util.stripDiacritics(columnInfo.getTitle());
@@ -179,11 +179,10 @@ public class XlsxExporter implements IReportEngineExporter {
 			sheetCell.setCellStyle(style);
 		});
 		//	Export content
-		List<org.spin.report_engine.data.Row> rows = reportInfo.isSummary()? reportInfo.getSummaryRows(): reportInfo.getCompleteRows();
+		List<org.spin.report_engine.data.Row> rows = reportInfo.isSummary() ? reportInfo.getSummaryRows(): reportInfo.getCompleteRows();
 		IntStream.range(0, rows.size()).forEach(rowNumber -> {
 			Row sheetRow = sheet.createRow(rowNumber + 1);
-			IntStream.range(0, columns.size())
-			.forEach(columnNumber -> {
+			IntStream.range(0, columns.size()).forEach(columnNumber -> {
 				Cell sheetCell = sheetRow.createCell(columnNumber);
 				ColumnInfo columnInfo = columns.get(columnNumber);
 				org.spin.report_engine.data.Row rowValue = rows.get(rowNumber);
@@ -192,16 +191,26 @@ public class XlsxExporter implements IReportEngineExporter {
 				if(!Util.isEmpty(columnInfo.getMappingClassName())) {
 					IColumnMapping customMapping = ClassLoaderMapping.loadClass(columnInfo.getMappingClassName());
 					if(customMapping != null) {
-						customMapping.processValue(columnInfo.getPrintformatItem(), language, cell);
+						customMapping.processValue(
+							columnInfo.getPrintformatItem(),
+							language,
+							cell
+						);
 					}
 				} else {
-					DefaultMapping.newInstance().processValue(columnInfo.getPrintformatItem(), language, cell);
+					DefaultMapping.newInstance()
+						.processValue(
+							columnInfo.getPrintformatItem(),
+							language,
+							cell
+						)
+					;
 				}
 				int displayType = columnInfo.getDisplayTypeId();
 				Object valueasObject = cell.getValue();
 				if(valueasObject != null) {
 					if (DisplayType.isDate(displayType)) {
-						Timestamp value = (Timestamp)valueasObject;
+						Timestamp value = TimeManager.getTimestampFromObject(valueasObject);
 						sheetCell.setCellValue(value);
 					} else if (DisplayType.isNumeric(displayType)) {
 						double value = 0;
@@ -211,19 +220,27 @@ public class XlsxExporter implements IReportEngineExporter {
 						sheetCell.setCellValue(value);
 					} else if (DisplayType.YesNo == displayType) {
 						String value = Util.stripDiacritics(cell.getDisplayValue());
-						sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(value));
+						sheetCell.setCellValue(
+							sheet.getWorkbook().getCreationHelper().createRichTextString(value)
+						);
 					} else {
 						String displayValue = cell.getDisplayValue();
 						if(Util.isEmpty(displayValue)) {
 							if(!DisplayType.isLookup(displayType)) {
 								if(valueasObject instanceof BigDecimal) {
-									sheetCell.setCellValue(((BigDecimal) valueasObject).doubleValue());
+									sheetCell.setCellValue(
+										((BigDecimal) valueasObject).doubleValue()
+									);
 								} else if (valueasObject instanceof Integer) {
-									sheetCell.setCellValue((Integer) valueasObject);
+									sheetCell.setCellValue(
+										(Integer) valueasObject
+									);
 								} else if (valueasObject instanceof String) {
 									displayValue = (String) valueasObject;
 									displayValue = Util.stripDiacritics(displayValue);
-									sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue));
+									sheetCell.setCellValue(
+										sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue)
+									);
 								} else if (valueasObject instanceof Boolean) {
 									sheetCell.setCellValue((Boolean) valueasObject);
 								} else if(valueasObject instanceof Timestamp) {
@@ -233,17 +250,26 @@ public class XlsxExporter implements IReportEngineExporter {
 							}
 						} else {
 							displayValue = Util.stripDiacritics(displayValue);
-							sheetCell.setCellValue(sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue));
+							sheetCell.setCellValue(
+								sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue)
+							);
 						}
 					}
 				}
 				//
-				CellStyle style = getStyle(rowNumber, columnNumber, rowValue.isSummaryRow(), displayType, null);
+				CellStyle style = getStyle(
+					rowNumber,
+					columnNumber,
+					rowValue.isSummaryRow(),
+					displayType,
+					null
+				);
 				sheetCell.setCellStyle(style);
 			});
 		});
 		IntStream.range(0, columns.size())
-		.forEach(columnNumber -> sheet.autoSizeColumn(columnNumber));
+			.forEach(columnNumber -> sheet.autoSizeColumn(columnNumber))
+		;
 		sheet.createFreezePane(0, 1);
 		return writeFile();
 	}
@@ -372,16 +398,16 @@ public class XlsxExporter implements IReportEngineExporter {
 		try {
 			File file = File.createTempFile("Report_Engine_", ".xlsx");
 			FileOutputStream out = new FileOutputStream(file .getAbsolutePath());
-		    workBook.write(out);
-		    out.close();
-		    workBook.dispose();
-		    //	Push to S3
-		    MClientInfo clientInfo = MClientInfo.get(Env.getCtx());
-		    if(clientInfo.getFileHandler_ID() <= 0) {
-		    	throw new AdempiereException("@FileHandler_ID@ @NotFound@");
-		    }
-		    MADAppRegistration genericConnector = MADAppRegistration.getById(Env.getCtx(), clientInfo.getFileHandler_ID(), null);
-		    if(genericConnector == null) {
+			workBook.write(out);
+			out.close();
+			workBook.dispose();
+			//	Push to S3
+			MClientInfo clientInfo = MClientInfo.get(Env.getCtx());
+			if(clientInfo.getFileHandler_ID() <= 0) {
+				throw new AdempiereException("@FileHandler_ID@ @NotFound@");
+			}
+			MADAppRegistration genericConnector = MADAppRegistration.getById(Env.getCtx(), clientInfo.getFileHandler_ID(), null);
+			if(genericConnector == null) {
 				throw new AdempiereException("@AD_AppRegistration_ID@ @NotFound@");
 			}
 			//	Load
@@ -395,15 +421,16 @@ public class XlsxExporter implements IReportEngineExporter {
 			//	Push it
 			IS3 fileHandler = (IS3) supportedApi;
 			ResourceMetadata resourceMetadata = ResourceMetadata.newInstance()
-					.withClientId(Env.getAD_Client_ID(Env.getCtx()))
-					.withUserId(Env.getAD_User_ID(Env.getCtx()))
-					.withContainerType(ResourceMetadata.ContainerType.RESOURCE)
-					.withContainerId("tmp")
-					.withName(file.getName())
-					;
+				.withClientId(clientInfo.getAD_Client_ID())
+				.withUserId(Env.getAD_User_ID(Env.getCtx()))
+				.withContainerType(ResourceMetadata.ContainerType.RESOURCE)
+				.withContainerId("tmp")
+				.withName(file.getName())
+			;
 			return fileHandler.putResource(resourceMetadata, new FileInputStream(file));
 		} catch (Exception e) {
 			throw new AdempiereException(e);
 		}
 	}
+
 }

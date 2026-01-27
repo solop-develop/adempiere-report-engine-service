@@ -33,6 +33,7 @@ import org.spin.report_engine.format.PrintFormatItem;
 import org.spin.service.grpc.util.base.RecordUtil;
 import org.spin.service.grpc.util.value.BooleanManager;
 import org.spin.service.grpc.util.value.NumberManager;
+import org.spin.service.grpc.util.value.TimeManager;
 
 /**
  * Default just return the same value of cell
@@ -87,14 +88,26 @@ public class DefaultMapping implements IColumnMapping {
 			}
 			if(DisplayType.isDate(printFormatLine.getReferenceId())) {
 				if(cell.getValue() != null) {
-					Timestamp date = (Timestamp) cell.getValue();
-					cell.withDisplayValue(DisplayType.getDateFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(date));
+					Timestamp date = TimeManager.getTimestampFromObject(cell.getValue());
+					cell.withDisplayValue(
+						DisplayType.getDateFormat(
+							printFormatLine.getReferenceId(),
+							language,
+							printFormatLine.getFormatPattern()
+						).format(date)
+					);
 				}
 			} else if(DisplayType.isNumeric(printFormatLine.getReferenceId())) {
 				if(cell.getValue() != null) {
 					if(BigDecimal.class.isAssignableFrom(cell.getValue().getClass())) {
 						BigDecimal number = (BigDecimal) cell.getValue();
-						cell.withDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(number));
+						cell.withDisplayValue(
+							DisplayType.getNumberFormat(
+								printFormatLine.getReferenceId(),
+								language,
+								printFormatLine.getFormatPattern()
+							).format(number)
+						);
 					}
 				}
 			} else if(printFormatLine.getReferenceId() == DisplayType.YesNo) {
@@ -108,34 +121,83 @@ public class DefaultMapping implements IColumnMapping {
 					}
 				}
 			}
+
 			//	Set display value to functions
 			BigDecimal value = cell.getSum();
 			if(value != null) {
-				cell.withSumDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+				cell.withSumDisplayValue(
+					DisplayType.getNumberFormat(
+						printFormatLine.getReferenceId(),
+						language,
+						printFormatLine.getFormatPattern()
+					).format(value)
+				);
 			}
+
 			value = cell.getMean();
 			if(value != null) {
-				cell.withMeanDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+				cell.withMeanDisplayValue(
+					DisplayType.getNumberFormat(
+						printFormatLine.getReferenceId(),
+						language,
+						printFormatLine.getFormatPattern()
+					).format(value)
+				);
 			}
+
 			value = cell.getCount();
 			if(value != null) {
-				cell.withCountDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+				cell.withCountDisplayValue(
+					DisplayType.getNumberFormat(
+						printFormatLine.getReferenceId(),
+						language,
+						printFormatLine.getFormatPattern()
+					).format(value)
+				);
 			}
+
 			value = cell.getMinimum();
 			if(value != null) {
-				cell.withMinimumDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+				cell.withMinimumDisplayValue(
+					DisplayType.getNumberFormat(
+						printFormatLine.getReferenceId(),
+						language,
+						printFormatLine.getFormatPattern()
+					).format(value)
+				);
 			}
+
 			value = cell.getMaximum();
 			if(value != null) {
-				cell.withMaximumDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+				cell.withMaximumDisplayValue(
+					DisplayType.getNumberFormat(
+						printFormatLine.getReferenceId(),
+						language,
+						printFormatLine.getFormatPattern()
+					).format(value)
+				);
 			}
+
 			value = cell.getVariance();
 			if(value != null) {
-				cell.withVarianceDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+				cell.withVarianceDisplayValue(
+					DisplayType.getNumberFormat(
+						printFormatLine.getReferenceId(),
+						language,
+						printFormatLine.getFormatPattern()
+					).format(value)
+				);
 			}
+
 			value = cell.getDeviation();
 			if(value != null) {
-				cell.withDeviationDisplayValue(DisplayType.getNumberFormat(printFormatLine.getReferenceId(), language, printFormatLine.getFormatPattern()).format(value));
+				cell.withDeviationDisplayValue(
+					DisplayType.getNumberFormat(
+						printFormatLine.getReferenceId(),
+						language,
+						printFormatLine.getFormatPattern()
+					).format(value)
+				);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

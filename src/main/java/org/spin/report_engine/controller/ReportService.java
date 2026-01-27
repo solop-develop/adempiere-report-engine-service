@@ -51,6 +51,7 @@ public class ReportService extends ReportEngineImplBase {
 		}
 	}
 
+
 	@Override
 	public void getReport(GetReportRequest request, StreamObserver<Report> responseObserver) {
 		try {
@@ -69,6 +70,7 @@ public class ReportService extends ReportEngineImplBase {
 		}
 	}
 
+
 	@Override
 	public void getView(GetReportRequest request, StreamObserver<Report> responseObserver) {
 		try {
@@ -86,6 +88,7 @@ public class ReportService extends ReportEngineImplBase {
 			);
 		}
 	}
+
 
 	@Override
 	public void runExport(RunExportRequest request, StreamObserver<RunExportResponse> responseObserver) {
