@@ -125,6 +125,7 @@ sourceSets {
 			srcDirs 'build/generated/source/proto/main/grpc'
 			srcDirs 'build/generated/source/proto/main/java'
 			srcDirs 'src/main/proto'
+			srcDirs 'src/patches'
 		}
 		resources {
 			srcDirs 'src/main/java'
