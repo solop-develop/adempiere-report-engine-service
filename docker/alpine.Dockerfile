@@ -37,7 +37,7 @@ RUN apk update && \
 		ca-certificates \
 		fontconfig \
 		font-dejavu \
-		libfreetype \
+		freetype \
 		msttcorefonts-installer \
 		tzdata && \
 	echo "Install Microsoft Fonts..." && \
