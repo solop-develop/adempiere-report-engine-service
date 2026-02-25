@@ -244,8 +244,8 @@ dependencies {
 	implementation "com.solop.adempiere.verticals:import-export-management:core-1.4.21-1.0.1"
 	implementation "com.solop.adempiere.verticals:agency-project:core-1.4.22-1.0.0"
 	// Electronic Invoicing
-	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.5.1-1.0.0"
-	implementation "com.solop.adempiere.tools:shopping-admin-connection:core-1.5.0-1.0.1"
+	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.5.2-1.0.0"
+	implementation "com.solop.adempiere.tools:shopping-admin-connection:core-1.5.2-1.0.0"
 	implementation "com.solop.adempiere.tools:cloud-solop-notifier:core-1.0.0-1.0.0"
 	// Payment Processor
 	implementation "com.solop.adempiere.tools:payment-processor:core-1.4.9-1.0.0"
@@ -255,10 +255,11 @@ dependencies {
 	implementation "com.solop.adempiere.tools:additional-reports:core-1.0.0-1.0.0"
 	implementation "com.solop.adempiere.tools:intercompany-management:core-1.0.0-1.0.0"
 	implementation "com.solop.adempiere.verticals:delivery-management-service:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:adempiere-webhook:core-1.4.23-1.0.0"
-	implementation "com.solop.adempiere.tools:external-store:core-1.4.23-1.0.4"
+	implementation "com.solop.adempiere.tools:adempiere-webhook:core-1.5.2-1.0.0"
+	implementation "com.solop.adempiere.tools:external-store:core-1.5.2-1.0.0"
 	implementation "com.solop.adempiere.tools:core-tools:core-1.4.2-1.0.0"
 	implementation "com.solop.adempiere.localization:luy:core-1.4.22-1.0.0"
+	implementation "com.solop.adempiere.tools:payroll-light:core-1.5.2-1.0.0"
 }
 
 configurations.all {
