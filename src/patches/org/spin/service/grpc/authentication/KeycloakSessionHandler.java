@@ -3,11 +3,18 @@ package org.spin.service.grpc.authentication;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.MPreference;
 import org.compiere.model.MSession;
-import org.compiere.util.*;
+import org.compiere.util.CCache;
+import org.compiere.util.CLogger;
+import org.compiere.util.DB;
+import org.compiere.util.Env;
+import org.compiere.util.Util;
+import org.spin.service.grpc.util.base.PreferenceUtil;
 
 import java.sql.Timestamp;
 import java.util.Base64;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -106,14 +113,32 @@ public class KeycloakSessionHandler {
 		Env.setContext(context, "#Date", new Timestamp(System.currentTimeMillis()));
 
 		int orgId = session.getAD_Org_ID();
-		int warehouseId = SessionManager.getDefaultWarehouseId(orgId);
+
+		// Load language and warehouse from saved preferences (written by setSessionAttribute / runChangeRole)
+		// Cannot rely on session.getCtx() because MSession has no AD_Language column —
+		// getCtx() returns the global context, not the session-specific one.
+		int userId = session.getCreatedBy();
+		String language = null;
+		int warehouseId = -1;
+		List<MPreference> preferences = PreferenceUtil.getSessionPreferences(userId);
+		for (MPreference pref : preferences) {
+			if (PreferenceUtil.P_LANGUAGE.equals(pref.getAttribute())) {
+				language = pref.getValue();
+			} else if (PreferenceUtil.P_WAREHOUSE.equals(pref.getAttribute())) {
+				warehouseId = Integer.parseInt(pref.getValue());
+			}
+		}
+		if (Util.isEmpty(language, true)) {
+			language = SessionManager.getDefaultLanguage(null);
+		}
+		if (warehouseId < 0) {
+			warehouseId = SessionManager.getDefaultWarehouseId(orgId);
+		}
 		if (warehouseId < 0) {
 			warehouseId = 0;
 		}
 		Env.setContext(context, "#M_Warehouse_ID", warehouseId);
-
 		// Load preferences and defaults
-		String language = SessionManager.getDefaultLanguage(Env.getAD_Language(session.getCtx()));
 		SessionManager.loadDefaultSessionValues(context, language);
 
 		return context;
@@ -235,22 +260,22 @@ public class KeycloakSessionHandler {
 	 * Priority: email > username (preferred_username).
 	 */
 	private static int findAdempiereUserId(KeycloakClaims claims) {
-		// Priority 1: find by email
+		// Priority 1: find by email (case-insensitive)
 		if (!Util.isEmpty(claims.email, true)) {
 			int userId = DB.getSQLValue(
 				null,
-				"SELECT AD_User_ID FROM AD_User WHERE EMail = ? AND IsActive = 'Y' AND ROWNUM = 1",
+				"SELECT AD_User_ID FROM AD_User WHERE LOWER(EMail) = LOWER(?) AND IsActive = 'Y' LIMIT 1",
 				claims.email
 			);
 			if (userId > 0) {
 				return userId;
 			}
 		}
-		// Priority 2: find by username (Value column in AD_User)
+		// Priority 2: find by username (Value column in AD_User, case-insensitive)
 		if (!Util.isEmpty(claims.preferredUsername, true)) {
 			int userId = DB.getSQLValue(
 				null,
-				"SELECT AD_User_ID FROM AD_User WHERE Value = ? AND IsActive = 'Y' AND ROWNUM = 1",
+				"SELECT AD_User_ID FROM AD_User WHERE LOWER(Value) = LOWER(?) AND IsActive = 'Y' LIMIT 1",
 				claims.preferredUsername
 			);
 			if (userId > 0) {
