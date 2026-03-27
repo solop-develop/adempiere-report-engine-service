@@ -112,8 +112,11 @@ public class Cell {
 	}
 
 	public String getCompareValue() {
-		if(value instanceof Timestamp && value != null) {
-			return new SimpleDateFormat("yyyy-MM-dd").format((Timestamp) value);
+		if(value != null && value instanceof Timestamp) {
+			return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format((Timestamp) value);
+		}
+		if(value != null && value instanceof Number) {
+			return String.format("%040.10f", ((Number) value).doubleValue());
 		}
 		if(Util.isEmpty(displayValue)) {
 			if(value != null) {

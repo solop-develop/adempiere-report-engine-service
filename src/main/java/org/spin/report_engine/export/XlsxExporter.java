@@ -86,6 +86,7 @@ public class XlsxExporter implements IReportEngineExporter {
 	private Font fontDefault = null;
 	private DataFormat dataFormat;
 	private Language language;
+	private String reportName;
 	/** Styles cache */
 	private Map<String, CellStyle> styles = new HashMap<String, CellStyle>();
 	
@@ -108,6 +109,7 @@ public class XlsxExporter implements IReportEngineExporter {
 	private void setReportInfo(ReportInfo reportInfo) {
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), reportInfo.getPrintFormatId(), null);
 		printPaper = MPrintPaper.get(printFormat.getAD_PrintPaper_ID());
+		reportName = reportInfo.getName();
 	}
 	
 	private void formatPage(Sheet sheet) {
@@ -396,7 +398,10 @@ public class XlsxExporter implements IReportEngineExporter {
 	
 	private String writeFile() {
 		try {
-			File file = File.createTempFile("Report_Engine_", ".xlsx");
+			String prefix = Util.isEmpty(reportName) ? "Report_Engine" : reportName.replaceAll("[^a-zA-Z0-9_\\-]", "_");
+			String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new java.util.Date());
+			String tmpDir = System.getProperty("java.io.tmpdir");
+			File file = new File(tmpDir, prefix + "_" + timestamp + ".xlsx");
 			FileOutputStream out = new FileOutputStream(file .getAbsolutePath());
 			workBook.write(out);
 			out.close();

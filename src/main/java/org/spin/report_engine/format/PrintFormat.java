@@ -171,19 +171,29 @@ public class PrintFormat {
 	public List<PrintFormatItem> getItems() {
 		return items;
 	}
-	
+
 	public List<PrintFormatItem> getPrintedItems() {
-		return items.stream().filter(item -> item.isPrinted()).collect(Collectors.toList());
+		return items.stream()
+			.filter(item -> item.isPrinted())
+			.collect(Collectors.toList())
+		;
 	}
-	
+
 	public List<PrintFormatItem> getGroupItems() {
-		return items.stream().filter(item -> item.isGroupBy()).collect(Collectors.toList());
+		return items.stream()
+			.filter(item -> item.isGroupBy())
+			.collect(Collectors.toList())
+		;
 	}
-	
+
 	public List<PrintFormatItem> getSortingItems() {
-		return items.stream().filter(item -> item.isGroupBy() || item.isOrderBy()).sorted(Comparator.comparing(PrintFormatItem::getSortSequence)).collect(Collectors.toList());
+		return items.stream()
+			.filter(item -> item.isGroupBy() || item.isOrderBy())
+			.sorted(Comparator.comparing(PrintFormatItem::getSortSequence))
+			.collect(Collectors.toList())
+		;
 	}
-	
+
 	public List<PrintFormatColumn> getColumnsDefinition() {
 		return columnsDefinition;
 	}
@@ -196,10 +206,13 @@ public class PrintFormat {
 		Language language = Language.getLoginLanguage();
 		List<PrintFormatColumn> columns = new ArrayList<PrintFormatColumn>();
 		getItems().stream()
-		.filter(item -> item.isActive() && item.isPrinted())
-		.sorted(Comparator.comparing(PrintFormatItem::getSequence))
-		.forEach(item -> {
-			if(item.getColumnId() > 0) {
+			.filter(item -> item.isActive() && item.isPrinted())
+			.sorted(Comparator.comparing(PrintFormatItem::getSequence))
+			.forEach(item -> {
+				if(item.getColumnId() <= 0) {
+					// next loop
+					return;
+				}
 				String columnName = null;
 				String alias = null;
 				if(query.length() > 0) {
@@ -217,6 +230,7 @@ public class PrintFormat {
 					alias = columnName;
 					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(columnName));
 				}
+
 				//	Process Display Value
 				if(item.getReferenceId() == DisplayType.TableDir
 						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceValueId() == 0)) {
@@ -355,20 +369,40 @@ public class PrintFormat {
 					tableReferences.append("AD_Table").append(" ").append(getTableAlias()).append(" ON (")
 					.append(getQueryReferenceColumnName("AD_Table_ID")).append("=").append(getQueryColumnName("AD_Table_ID")).append(")");
 				}
-				//	For Order By
-				if(item.isOrderBy()) {
-					if(!Util.isEmpty(alias)) {
-						if(orderBy.length() > 0) {
-							orderBy.append(", ");
-						}
-						orderBy.append(alias);
-						if(item.isDesc()) {
-							orderBy.append(" DESC");
-						}
+			})
+		;
+
+		//	For Order By
+		getItems().stream()
+			.filter(item -> item.isActive() && item.isOrderBy())
+			.sorted(Comparator.comparing(PrintFormatItem::getSortSequence))
+			.forEach(item -> {
+				if(item.getColumnId() <= 0) {
+					// next loop
+					return;
+				}
+
+				String columnName = null;
+				String alias = null;
+				if(item.isVirtualColumn()) {
+					alias = item.getColumnName();
+				} else {
+					columnName = getQueryColumnName(item.getColumnName());
+					alias = columnName;
+				}
+
+				if(!Util.isEmpty(alias)) {
+					if(orderBy.length() > 0) {
+						orderBy.append(", ");
+					}
+					orderBy.append(alias);
+					if(item.isDesc()) {
+						orderBy.append(" DESC");
 					}
 				}
-			}
-		});
+			});
+		;
+
 		if(getTableName().equals("T_Report")) {
 			//	Level No
 			if(query.length() > 0) {
@@ -390,12 +424,14 @@ public class PrintFormat {
 				query.append(tableReferences);
 			}
 		}
+
 		//	Return definition
 		return QueryDefinition.newInstance()
-				.withQuery(query.toString())
-				.withOrderBy(orderBy.toString())
-				.withColumns(getColumnsDefinition())
-				.withQueryColumns(columns);
+			.withQuery(query.toString())
+			.withOrderBy(orderBy.toString())
+			.withColumns(getColumnsDefinition())
+			.withQueryColumns(columns)
+		;
 	}
 	
 	private String getQueryColumnName(String columnName) {

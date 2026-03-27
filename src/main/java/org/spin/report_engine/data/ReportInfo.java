@@ -240,7 +240,14 @@ public class ReportInfo {
 	private Comparator<Row> getSortingValue(boolean summaryAtEnd) {
 		AtomicReference<Comparator<Row>> comparator = new AtomicReference<>();
 		sortingItems.forEach(printFormatItem -> {
-			Comparator<Row> groupComparator = (p, o) -> p.getCompareValue(printFormatItem.getPrintFormatItemId()).compareToIgnoreCase(o.getCompareValue(printFormatItem.getPrintFormatItemId()));
+			Comparator<Row> groupComparator = (p, o) -> {
+				String pValue = p.getCompareValue(printFormatItem.getPrintFormatItemId());
+				String oValue = o.getCompareValue(printFormatItem.getPrintFormatItemId());
+				if(printFormatItem.isDesc()) {
+					return oValue.compareToIgnoreCase(pValue);
+				}
+				return pValue.compareToIgnoreCase(oValue);
+			};
 			if(comparator.get() == null) {
 				comparator.set(groupComparator);
 			} else {
