@@ -258,7 +258,7 @@ dependencies {
 	implementation "com.solop.adempiere.tools:adempiere-webhook:core-1.5.2-1.0.0"
 	implementation "com.solop.adempiere.tools:external-store:core-1.5.2-1.0.0"
 	implementation "com.solop.adempiere.tools:core-tools:core-1.4.2-1.0.0"
-	implementation "com.solop.adempiere.localization:luy:core-1.4.22-1.0.4"
+	implementation "com.solop.adempiere.localization:luy:core-1.4.22-1.0.5"
 	implementation "com.solop.adempiere.tools:payroll-light:core-1.5.2-1.0.0"
 }
 
