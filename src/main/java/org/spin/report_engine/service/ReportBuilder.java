@@ -315,6 +315,9 @@ public class ReportBuilder {
 					.withTransactionName(transactionName)
 					.run()
 				;
+				if (processInfo.isError()) {
+					throw new AdempiereException(processInfo.getSummary());
+				}
 			}
 			validatePrintFormat(transactionName);
 			reportInfo.set(get(transactionName));
