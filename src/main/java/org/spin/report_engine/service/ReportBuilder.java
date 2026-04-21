@@ -331,7 +331,7 @@ public class ReportBuilder {
 			final int somePrintFormatId = new Query(
 				Env.getCtx(),
 				I_AD_PrintFormat.Table_Name,
-				I_AD_PrintFormat.COLUMNNAME_AD_ReportView_ID + " = ?",
+				I_AD_PrintFormat.COLUMNNAME_AD_ReportView_ID + " = ? AND IsActive = 'Y'",
 				transactionName
 			)
 				.setParameters(getReportViewId())
