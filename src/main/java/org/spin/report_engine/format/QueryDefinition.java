@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.compiere.model.MRole;
+import org.compiere.model.MTable;
+import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
@@ -33,6 +35,10 @@ import org.spin.service.grpc.util.value.TextManager;
  * @author Yamel Senih, ysenih@erpya.com, ERPCyA http://www.erpya.com
  */
 public class QueryDefinition {
+
+	/**	Static Logger	*/
+	private static CLogger	log	= CLogger.getCLogger (QueryDefinition.class);
+
 	private String query;
 	private String groupBy;
 	private String orderBy;
@@ -204,6 +210,7 @@ public class QueryDefinition {
 					.findFirst()
 				;
 				if(maybeColumn.isPresent()) {
+					// TODO: Improve add 1=1 to remove `if (whereClause.length() > 0)`
 					if (whereClause.length() > 0) {
 						whereClause.append(" AND ");
 					}
@@ -211,19 +218,47 @@ public class QueryDefinition {
 					condition.setColumnName(column.getColumnNameAlias());
 					String restriction = getRestrictionByOperator(condition, column.getReferenceId());
 					whereClause.append(restriction);
+				} else {
+					log.warning("No column found for condition with column name: " + condition.getColumnName());
 				}
 		});
+
+		// always restrict by the current instance
+		if (getInstanceId() > 0 && !Util.isEmpty(getTableName(), true)) {
+			MTable table = MTable.get(Env.getCtx(), getTableName());
+			if (table != null && table.getColumn("AD_PInstance_ID") != null) {
+				// TODO: Improve add 1=1 to remove `if (whereClause.length() > 0)`
+				if (whereClause.length() > 0) {
+					whereClause.append(" AND ");
+				}
+				whereClause.append(getTableName())
+					.append(".AD_PInstance_ID=")
+					.append(getInstanceId())
+				;
+			} else {
+				log.warning("Table " + getTableName() + " does not have AD_PInstance_ID column, instance-level filtering will not be applied");
+			}
+		}
+
 		withDynamicWhereClause(whereClause.toString());
 		if(!Util.isEmpty(this.getDynamicWhereClause(), true)) {
 			query = query + " WHERE " + this.getDynamicWhereClause();
 		}
 		//	Add SQL Access
 		if(!tableName.equals("T_Report")) {
-			query = MRole.getDefault(Env.getCtx(), false).addAccessSQL(
-					query, getTableName(), MRole.SQL_FULLYQUALIFIED, MRole.SQL_RO);
+			query = MRole.getDefault(Env.getCtx(), false)
+				.addAccessSQL(
+					query,
+					getTableName(),
+					MRole.SQL_FULLYQUALIFIED,
+					MRole.SQL_RO
+				)
+			;
 		}
+
 		StringBuffer completeQuery = new StringBuffer(query);
 		StringBuffer completeQueryWithoutLimit = new StringBuffer(query);
+
 		//	Add Limit records
 		if(this.limit != NO_LIMIT) {
 			if(this.limit == 0) {

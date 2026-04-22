@@ -17,6 +17,7 @@ package org.spin.report_engine.format;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.adempiere.core.domains.models.I_AD_PrintFormatItem;
@@ -49,6 +50,7 @@ public class PrintFormat {
 	private List<ReportView> reportViews;
 	private List<PrintFormatItem> items;
 	private List<PrintFormatColumn> columnsDefinition;
+	private List<String> baseColumnNames;
 	private int aliasNumber;
 	
 	private PrintFormat(MPrintFormat printFormat) {
@@ -98,12 +100,19 @@ public class PrintFormat {
 		;
 
 		//	Get Columns
+		List<String> baseColumnNames = table.getColumnsAsList()
+			.stream()
+			.filter(column -> Util.isEmpty(column.getColumnSQL(), true))
+			.map(column -> column.getColumnName())
+			.collect(Collectors.toList())
+		;
+		this.baseColumnNames = baseColumnNames;
 		this.columnsDefinition = table.getColumnsAsList()
 			.stream()
 			.map(column -> {
 				String columnName = column.getColumnName();
 				if(!Util.isEmpty(column.getColumnSQL())) {
-					columnName = "(" + column.getColumnSQL() + ")";
+					columnName = "(" + qualifyVirtualColumnSql(column.getColumnSQL()) + ")";
 					return PrintFormatColumn.newInstance(column).withColumnNameAlias(columnName);
 				} else {
 					columnName = getQueryColumnName(column.getColumnName());
@@ -219,7 +228,7 @@ public class PrintFormat {
 					query.append(", ");
 				}
 				if(item.isVirtualColumn()) {
-					columnName = "(" + item.getColumnSql() + ")";
+					columnName = "(" + qualifyVirtualColumnSql(item.getColumnSql()) + ")";
 					query.append(columnName);
 					query.append(" AS ").append(item.getColumnName());
 					alias = item.getColumnName();
@@ -238,7 +247,7 @@ public class PrintFormat {
 						query.append(", ");
 					}
 					if(item.isVirtualColumn()) {
-						columnName = MLookupFactory.getLookup_TableDirEmbed(language, item.getColumnName(), getTableName(), "(" + item.getColumnSql() + ")");
+						columnName = MLookupFactory.getLookup_TableDirEmbed(language, item.getColumnName(), getTableName(), "(" + qualifyVirtualColumnSql(item.getColumnSql()) + ")");
 					} else {
 						columnName = MLookupFactory.getLookup_TableDirEmbed(language, item.getColumnName(), getTableName());
 					}
@@ -437,7 +446,33 @@ public class PrintFormat {
 	private String getQueryColumnName(String columnName) {
 		return getTableName() + "." + columnName;
 	}
-	
+
+
+	/**
+	 * Prefix unqualified references to base table columns inside a virtual column SQL
+	 * with the base table name. This avoids ambiguous column references when the
+	 * generated query introduces joins whose tables share column names with the
+	 * base table (e.g. AD_Table aliased as t2 exposing AD_Table_ID alongside
+	 * T_TrialBalance.AD_Table_ID).
+	 */
+	private String qualifyVirtualColumnSql(String columnSql) {
+		if (Util.isEmpty(columnSql, true) || baseColumnNames == null || baseColumnNames.isEmpty()) {
+			return columnSql;
+		}
+		String result = columnSql;
+		String tablePrefix = getTableName() + ".";
+		for (String columnName : baseColumnNames) {
+			if (Util.isEmpty(columnName, true)) {
+				continue;
+			}
+			// match whole word, not preceded by a word char or '.', case insensitive
+			String regex = "(?i)(?<![\\w.])" + Pattern.quote(columnName) + "(?!\\w)";
+			result = result.replaceAll(regex, tablePrefix + columnName);
+		}
+		return result;
+	}
+
+
 	private String getQueryReferenceColumnName(String columnName) {
 		return getTableAlias() + "." + columnName;
 	}

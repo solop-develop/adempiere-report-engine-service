@@ -34,6 +34,7 @@ public class ReportProcessor {
 	
 	/**	Static Logger	*/
 	private static CLogger	log	= CLogger.getCLogger (ReportProcessor.class);
+
 	/** Process Info */
 	private ProcessInfo processInfo;
 	private Trx transaction;
@@ -88,7 +89,7 @@ public class ReportProcessor {
 		//	
 		if(process.getAD_Process_ID() <= 0) {
 			processInfo.setSummary (Msg.parseTranslation(Env.getCtx(), "@AD_Process_ID@ @NotFound@"), true);
-			log.log(Level.SEVERE, "run", "AD_Process_ID=" + processInfo.getAD_Process_ID() + " Not Found");
+			log.log(Level.WARNING, "run", "AD_Process_ID=" + processInfo.getAD_Process_ID() + " Not Found");
 			return;
 		}
 		//	Set values from process
@@ -161,7 +162,7 @@ public class ReportProcessor {
 		
 		if (process.isReport()) {
 			processInfo.setReportingProcess(true);
-			processInfo.setSummary("Report", true);
+			processInfo.setSummary("Report", processInfo.isError());
 		}
 		/**********************************************************************
 		 * 	Process submission
