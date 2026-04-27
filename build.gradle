@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'scala'
 	id 'com.google.protobuf' version '0.9.4'
 	id 'idea'
 	// Provide convenience executables for trying out the examples.
@@ -126,6 +127,10 @@ sourceSets {
 			srcDirs 'build/generated/source/proto/main/java'
 			srcDirs 'src/main/proto'
 			srcDirs 'src/patches'
+			exclude 'scala/**' // TODO: Remove when move patches to src/patches/java
+		}
+		scala {
+			srcDirs "src/patches/scala"
 		}
 		resources {
 			srcDirs 'src/main/java'
@@ -142,7 +147,7 @@ startScripts {
 		"-DPropertyFile=Adempiere.properties", 
 		"-Dorg.adempiere.server.embedded=true"
 	]
-	outputDir = new File(project.buildDir, 'tmp')
+	outputDir = new File(project.buildDir, 'tmp/startScripts')
 	classpath = jar.outputs.files + project.configurations.runtimeClasspath
 
 	// Configure script names with extensions
@@ -213,6 +218,8 @@ dependencies {
             '*.jar'
         ]
     )
+
+	implementation "org.scala-lang:scala3-library_3:3.0.1"
 	implementation "io.netty:netty-handler:4.1.107.Final"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
 	runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
