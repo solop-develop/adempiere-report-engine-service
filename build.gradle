@@ -126,8 +126,7 @@ sourceSets {
 			srcDirs 'build/generated/source/proto/main/grpc'
 			srcDirs 'build/generated/source/proto/main/java'
 			srcDirs 'src/main/proto'
-			srcDirs 'src/patches'
-			exclude 'scala/**' // TODO: Remove when move patches to src/patches/java
+			srcDirs 'src/patches/java'
 		}
 		scala {
 			srcDirs "src/patches/scala"
