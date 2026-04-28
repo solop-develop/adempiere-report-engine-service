@@ -425,6 +425,16 @@ public class PrintFormat {
 			}
 			query.append("(").append("T_Report.SeqNo").append(")");
 			query.append(" AS ").append("SeqNo");
+			// FinReport assigns each detail row the SeqNo of its parent
+			// PA_ReportLine, so to preserve the hierarchical order (parent
+			// followed by its children) the canonical sort is SeqNo, LevelNo
+			// and any user-defined order acts as a tiebreaker.
+			StringBuffer financialOrderBy = new StringBuffer("T_Report.SeqNo, T_Report.LevelNo");
+			if (orderBy.length() > 0) {
+				financialOrderBy.append(", ").append(orderBy);
+			}
+			orderBy.setLength(0);
+			orderBy.append(financialOrderBy);
 		}
 		if(query.length() > 0) {
 			query.insert(0, "SELECT ");

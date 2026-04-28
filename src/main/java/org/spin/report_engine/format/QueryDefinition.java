@@ -206,7 +206,8 @@ public class QueryDefinition {
 						return conditionColumnName.equals(column.getColumnName())
 							|| conditionColumnName.equals(column.getColumnName() + "_To");
 					})
-					.sorted(Comparator.comparing(PrintFormatColumn::getColumnNameAlias).reversed())
+					.sorted(Comparator.comparing(PrintFormatColumn::getColumnNameAlias)
+					.reversed())
 					.findFirst()
 				;
 				if(maybeColumn.isPresent()) {
@@ -219,7 +220,12 @@ public class QueryDefinition {
 					String restriction = getRestrictionByOperator(condition, column.getReferenceId());
 					whereClause.append(restriction);
 				} else {
-					log.warning("No column found for condition with column name: " + condition.getColumnName());
+					log.warning(
+						"No column found for condition with column name: " + condition.getColumnName()
+						+ " , operator: " + condition.getOperator()
+						+ " , and value: " + condition.getValue()
+						+ ". This condition will be ignored."
+					);
 				}
 		});
 

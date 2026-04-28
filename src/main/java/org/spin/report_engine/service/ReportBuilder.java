@@ -335,6 +335,7 @@ public class ReportBuilder {
 				transactionName
 			)
 				.setParameters(getReportViewId())
+				.setOnlyActiveRecords(true)
 				.setOrderBy(I_AD_PrintFormat.COLUMNNAME_AD_Client_ID + " DESC, " + I_AD_PrintFormat.COLUMNNAME_IsDefault + " DESC")
 				.firstId()
 			;

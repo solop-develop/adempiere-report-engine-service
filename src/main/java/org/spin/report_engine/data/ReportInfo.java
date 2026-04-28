@@ -223,10 +223,27 @@ public class ReportInfo {
 	}
 
 	public List<Row> getCompleteRows() {
+		// For T_Report, flatten the already-built hierarchical tree so the
+		// export preserves parent-followed-by-children order regardless of
+		// the print format's sort items (which usually sort by Name and would
+		// otherwise pull all parents to the top).
+		if (isFinancialReport()) {
+			List<Row> flattened = new ArrayList<Row>();
+			getRowsAsTree().forEach(parent -> flattenRow(parent, flattened));
+			return flattened;
+		}
 		return rows.stream()
 			.sorted(getSortingValue(true))
 			.collect(Collectors.toList())
 		;
+	}
+
+	private void flattenRow(Row row, List<Row> out) {
+		out.add(row);
+		List<Row> children = row.getChildren();
+		if (children != null) {
+			children.forEach(child -> flattenRow(child, out));
+		}
 	}
 
 	public List<Row> getSummaryRows() {
@@ -239,6 +256,16 @@ public class ReportInfo {
 
 	private Comparator<Row> getSortingValue(boolean summaryAtEnd) {
 		AtomicReference<Comparator<Row>> comparator = new AtomicReference<>();
+		// For T_Report (financial reports) the canonical order is by SeqNo
+		// (groups each parent line with its detail rows) and then LevelNo
+		// (parent before children). PrintFormat sort items act as tiebreakers
+		// among siblings of the same parent.
+		if (isFinancialReport()) {
+			comparator.set(
+				Comparator.comparing(Row::getSequence)
+					.thenComparing(Row::getLevel)
+			);
+		}
 		sortingItems.forEach(printFormatItem -> {
 			Comparator<Row> groupComparator = (p, o) -> {
 				String pValue = p.getCompareValue(printFormatItem.getPrintFormatItemId());
@@ -329,7 +356,10 @@ public class ReportInfo {
 	}
 
 	private boolean isFinancialReport() {
-		return getTableName().equals("T_Report");
+		return getTableName() != null
+			&& (getTableName().equals("T_Report")
+			|| getTableName().equals("T_ReportStatement"))
+		;
 	}
 
 	/**
