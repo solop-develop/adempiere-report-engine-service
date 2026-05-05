@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import org.adempiere.core.domains.models.I_AD_PInstance;
 import org.compiere.model.MRole;
 import org.compiere.model.MTable;
 import org.compiere.util.CLogger;
@@ -232,13 +233,15 @@ public class QueryDefinition {
 		// always restrict by the current instance
 		if (getInstanceId() > 0 && !Util.isEmpty(getTableName(), true)) {
 			MTable table = MTable.get(Env.getCtx(), getTableName());
-			if (table != null && table.getColumn("AD_PInstance_ID") != null) {
+			if (table != null && table.getColumn(I_AD_PInstance.COLUMNNAME_AD_PInstance_ID) != null) {
 				// TODO: Improve add 1=1 to remove `if (whereClause.length() > 0)`
 				if (whereClause.length() > 0) {
 					whereClause.append(" AND ");
 				}
 				whereClause.append(getTableName())
-					.append(".AD_PInstance_ID=")
+					.append(".")
+					.append(I_AD_PInstance.COLUMNNAME_AD_PInstance_ID)
+					.append("=")
 					.append(getInstanceId())
 				;
 			} else {
@@ -456,7 +459,7 @@ public class QueryDefinition {
 			this.parameters.add(valueToFilter);
 		}
 
-		String rescriction = "(" + columnName + sqlOperator + sqlValue + additionalSQL.toString() + ")";
+		String rescriction = "(" + columnName + " " + sqlOperator + sqlValue + additionalSQL.toString() + ")";
 
 		return rescriction;
 	}

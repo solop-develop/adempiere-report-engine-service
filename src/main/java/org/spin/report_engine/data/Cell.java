@@ -17,6 +17,7 @@ package org.spin.report_engine.data;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.Objects;
 
 import org.compiere.util.Env;
 import org.compiere.util.Util;
@@ -305,24 +306,19 @@ public class Cell {
 
 	@Override
 	public boolean equals(Object object) {
-		if (this.value == object) {
-			// same reference or both null
+		if (this == object) {
 			return true;
-		}
-		if(this.value == null && object == null) {
-			return false;
-		}
-		if(this.value == null && object != null) {
-			return false;
-		}
-		if(this.value != null && object == null) {
-			return false;
 		}
 		if (object == null || this.getClass() != object.getClass()) {
 			return false;
 		}
 		Cell cell = (Cell) object;
-		return this.value.equals(cell.getValue());
+		return Objects.equals(this.value, cell.getValue());
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(this.value);
 	}
 
 }

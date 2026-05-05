@@ -47,6 +47,7 @@ import org.compiere.util.Util;
 import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.data.ReportInfo;
 import org.spin.report_engine.format.PrintFormat;
+import org.spin.report_engine.format.PrintFormatItem;
 import org.spin.report_engine.format.QueryDefinition;
 import org.spin.report_engine.mapper.DefaultMapping;
 import org.spin.report_engine.mapper.IColumnMapping;
@@ -142,7 +143,7 @@ public class ReportBuilder {
 	public ReportBuilder withInstanceId(int instanceId) {
 		this.instanceId = instanceId;
 		if(instanceId > 0) {
-			withParameter(I_AD_PInstance.COLUMNNAME_AD_PInstance_ID, instanceId);
+			// withParameter(I_AD_PInstance.COLUMNNAME_AD_PInstance_ID, instanceId);
 		}
 		return this;
 	}
@@ -229,6 +230,35 @@ public class ReportBuilder {
 		}
 		Language language = Language.getLoginLanguage();
 		MPrintFormat printFormat = new MPrintFormat(Env.getCtx(), getPrintFormatId(), null);
+		if (printFormat == null || printFormat.getAD_PrintFormat_ID() <= 0) {
+			throw new AdempiereException("@AD_PrintFormat_ID@ (" + getPrintFormatId() + ") @NotFound@");
+		}
+
+		//	Mirror ReportEngine.get() logic: if the print format has no items, delete it and recreate
+		//	from the report view (preferred) or from the table.
+		if(printFormat.getItemCount() == 0) {
+			logger.warning("No Items - recreating: " + printFormat);
+			int reportViewId = printFormat.getAD_ReportView_ID();
+			int tableId = printFormat.getAD_Table_ID();
+			String printFormatName = printFormat.getName();
+			printFormat.delete(true); // Delete old print format
+			MPrintFormat recreatedPrintFormat = null;
+			if(reportViewId > 0) {
+				recreatedPrintFormat = MPrintFormat.createFromReportView(
+					Env.getCtx(),
+					reportViewId,
+					printFormatName
+				);
+			} else if(tableId > 0) {
+				recreatedPrintFormat = MPrintFormat.createFromTable(Env.getCtx(), tableId);
+			}
+			if (recreatedPrintFormat == null || recreatedPrintFormat.getAD_PrintFormat_ID() <= 0) {
+				throw new AdempiereException("@AD_PrintFormat_ID@ @NotFound@");
+			}
+			printFormat = recreatedPrintFormat;
+			withPrintFormatId(printFormat.getAD_PrintFormat_ID());
+		}
+
 		PrintFormat format = PrintFormat.newInstance(printFormat);
 		if (this.getReportViewId() > 0) {
 			format.setReportViewId(this.getReportViewId());
@@ -250,35 +280,39 @@ public class ReportBuilder {
 			.withSummary(isSummary())
 		;
 		DB.runResultSet(transactionName, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
+			final List<PrintFormatItem> printFormatsList = format.getItems();
 			while (resulset.next()) {
-				format.getItems().forEach(item -> {
+				printFormatsList.forEach(item -> {
 					Map<String, Cell> cells = new HashMap<String, Cell>();
 					queryDefinition.getQueryColumns()
-					.stream()
-					.filter(column -> column.getColumnName().equals(item.getColumnName()))
-					.forEach(column -> {
-						Cell cell = Optional.ofNullable(cells.get(column.getColumnName())).orElse(Cell.newInstance());
-						try {
-							if(column.isDisplayValue()) {
-								cell.withDisplayValue(resulset.getString(column.getColumnNameAlias()));
-							} else {
-								Object value = resulset.getObject(column.getColumnName());
-								cell.withValue(value);
-								//	Apply Default Mask
-								if(!Util.isEmpty(item.getMappingClassName())) {
-									IColumnMapping customMapping = ClassLoaderMapping.loadClass(item.getMappingClassName());
-									if(customMapping != null) {
-										customMapping.processValue(item, column, language, resulset, cell);
-									}
+						.stream()
+						.filter(column -> {
+							return column.getColumnName().equals(item.getColumnName());
+						})
+						.forEach(column -> {
+							Cell cell = Optional.ofNullable(cells.get(column.getColumnName())).orElse(Cell.newInstance());
+							try {
+								if(column.isDisplayValue()) {
+									cell.withDisplayValue(resulset.getString(column.getColumnNameAlias()));
 								} else {
-									DefaultMapping.newInstance().processValue(item, column, language, resulset, cell);
+									Object value = resulset.getObject(column.getColumnName());
+									cell.withValue(value);
+									//	Apply Default Mask
+									if(!Util.isEmpty(item.getMappingClassName())) {
+										IColumnMapping customMapping = ClassLoaderMapping.loadClass(item.getMappingClassName());
+										if(customMapping != null) {
+											customMapping.processValue(item, column, language, resulset, cell);
+										}
+									} else {
+										DefaultMapping.newInstance().processValue(item, column, language, resulset, cell);
+									}
 								}
+							} catch (Exception e) {
+								logger.warning(e.getLocalizedMessage());
 							}
-						} catch (Exception e) {
-							logger.warning(e.getLocalizedMessage());
-						}
-						cells.put(item.getColumnName(), cell);
-					});
+							cells.put(item.getColumnName(), cell);
+						})
+					;
 					reportInfo.addCell(item, cells.get(item.getColumnName()));
 				});
 				if(format.getTableName().equals("T_Report")) {

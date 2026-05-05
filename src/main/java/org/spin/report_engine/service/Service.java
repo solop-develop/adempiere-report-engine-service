@@ -290,7 +290,7 @@ public class Service {
 			.withPrintFormatId(request.getPrintFormatId())
 			.withReportViewId(request.getReportViewId())
 			.withSummary(request.getIsSummary())
-			.withInstanceId(request.getInstanceId())
+			// .withInstanceId(request.getInstanceId())
 		;
 
 		// Parameters as filters
