@@ -426,12 +426,7 @@ public class SessionManager {
 	public static String createSessionAndGetToken(String clientVersion, String language, int roleId, int userId, int organizationId, int warehouseId, boolean isOpenID) {
 		MSession session = createSession(clientVersion, language, roleId, userId, organizationId, warehouseId);
 
-		String bearerToken = null;
-		if (isOpenID) {
-			bearerToken = getOpenIDToken(session);
-		} else {
-			bearerToken = createAndGetBearerToken(session, warehouseId, Env.getAD_Language(session.getCtx()));
-		}
+		String bearerToken = createTokenFromSession(session, isOpenID);
 
 		// Update session preferences
 		PreferenceUtil.saveSessionPreferences(
@@ -444,6 +439,29 @@ public class SessionManager {
 		);
 
 		return bearerToken;
+	}
+
+	/**
+	 * Issue a bearer token for an already-existing {@link MSession}. Useful for
+	 * callers that need to control session creation separately from token
+	 * issuance (e.g. change-role / change-organization flows that hold the
+	 * MSession reference before minting the JWT).
+	 *
+	 * @param session  the persisted session
+	 * @param isOpenID if {@code true}, returns the persisted OpenID access
+	 *                 token; otherwise issues a fresh HMAC-signed JWT
+	 * @return the bearer token string
+	 */
+	public static String createTokenFromSession(MSession session, boolean isOpenID) {
+		if (session == null || session.getAD_Session_ID() <= 0) {
+			throw new AdempiereException("@AD_Session_ID@ @NotFound@");
+		}
+		if (isOpenID) {
+			return getOpenIDToken(session);
+		}
+		int warehouseId = Env.getContextAsInt(session.getCtx(), "#M_Warehouse_ID");
+		String language = Env.getAD_Language(session.getCtx());
+		return createAndGetBearerToken(session, warehouseId, language);
 	}
 
 
