@@ -30,6 +30,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import javax.crypto.Mac;
@@ -562,10 +563,45 @@ public class SessionManager {
 	}
 
 	/**
-	 * Get a stable, per-installation identifier (the configured database name)
-	 * used to bind the JWT signing key to the current database.
+	 * Pluggable resolver for the current database name, used to bind the JWT
+	 * signing key to the right per-request tenant in multi-tenant deployments
+	 * (e.g. Sabana). Single-tenant services (grpc-server, report-engine) leave
+	 * this {@code null} and fall back to {@link CConnection#getDbName()}.
+	 * <p>
+	 * Integrators register their tenant-aware resolver once at startup, for
+	 * example by reading {@code Connection.getCatalog()} of the current
+	 * {@code DataSource} bound to the request thread.
+	 */
+	private static volatile Supplier<String> databaseNameResolver = null;
+
+	/**
+	 * Register a tenant-aware database name resolver. Must be called once at
+	 * application startup. Passing {@code null} restores the default
+	 * {@code CConnection} fallback.
+	 */
+	public static void setDatabaseNameResolver(Supplier<String> resolver) {
+		databaseNameResolver = resolver;
+	}
+
+	/**
+	 * Get a stable, per-installation identifier (the database name) used to
+	 * bind the JWT signing key to the database the request is targeting.
 	 */
 	private static String getDatabaseFingerprint() {
+		// Prefer the pluggable resolver — multi-tenant integrators rely on it
+		// to return the per-request tenant DB name, which the JVM-wide
+		// CConnection singleton cannot provide reliably.
+		Supplier<String> resolver = databaseNameResolver;
+		if (resolver != null) {
+			try {
+				String name = resolver.get();
+				if (!Util.isEmpty(name, true)) {
+					return name;
+				}
+			} catch (Exception e) {
+				log.log(Level.WARNING, "Custom databaseNameResolver failed; falling back to CConnection", e);
+			}
+		}
 		String dbName = null;
 		try {
 			CConnection connection = CConnection.get();
