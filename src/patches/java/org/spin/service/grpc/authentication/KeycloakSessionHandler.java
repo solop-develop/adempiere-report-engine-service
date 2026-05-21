@@ -17,6 +17,8 @@ import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Resolves an ADempiere session from a pre-validated Keycloak JWT.
@@ -42,6 +44,15 @@ public class KeycloakSessionHandler {
 		new CCache<>("KeycloakSidMapping", 100, 60); // 60 min timeout
 
 	/**
+	 * Per-sid lock used to serialize the slow path (DB-fallback + create) so that
+	 * two concurrent requests for the same Keycloak sid do not both miss cache,
+	 * both miss DB, and each insert a brand-new AD_Session with the same
+	 * {@code WebSession="keycloak:<sid>"}. Entries are kept for the lifetime of
+	 * the JVM — the per-sid memory footprint is negligible.
+	 */
+	private static final ConcurrentMap<String, Object> sidLocks = new ConcurrentHashMap<>();
+
+	/**
 	 * Resolves an ADempiere session context from a Keycloak JWT.
 	 * <p>
 	 * 1. Decode JWT payload (Base64, no signature validation)
@@ -63,7 +74,7 @@ public class KeycloakSessionHandler {
 			throw new AdempiereException("Keycloak JWT missing 'sid' claim");
 		}
 
-		// 1. Fast path: in-memory cache
+		// 1. Fast path: in-memory cache (no lock — cache reads are thread-safe).
 		Integer existingSessionId = keycloakSessionCache.get(claims.sessionId);
 		if (existingSessionId != null && existingSessionId > 0) {
 			Properties context = loadExistingSessionContext(existingSessionId);
@@ -75,20 +86,41 @@ public class KeycloakSessionHandler {
 			keycloakSessionCache.remove(claims.sessionId);
 		}
 
-		// 2. DB fallback: recover session after restart or cache eviction
-		int dbSessionId = findSessionIdByKeycloakSid(claims.sessionId);
-		if (dbSessionId > 0) {
-			Properties context = loadExistingSessionContext(dbSessionId);
-			if (context != null) {
-				keycloakSessionCache.put(claims.sessionId, dbSessionId); // re-warm cache
-				log.fine("Recovered ADempiere session " + dbSessionId
-					+ " from DB for Keycloak sid: " + claims.sessionId);
-				return context;
+		// Slow path: serialize per-sid so two concurrent requests that both
+		// miss the cache do not both reach createNewSessionContext and produce
+		// duplicate AD_Session rows for the same Keycloak sid.
+		Object lock = sidLocks.computeIfAbsent(claims.sessionId, k -> new Object());
+		synchronized (lock) {
+			// Re-check the cache: a parallel thread that won the race may have
+			// already populated it while we waited.
+			Integer cached = keycloakSessionCache.get(claims.sessionId);
+			if (cached != null && cached > 0) {
+				Properties context = loadExistingSessionContext(cached);
+				if (context != null) {
+					log.fine("Reusing ADempiere session " + cached
+						+ " populated by parallel thread for sid: " + claims.sessionId);
+					return context;
+				}
+				keycloakSessionCache.remove(claims.sessionId);
 			}
-		}
 
-		// 3. No valid session anywhere — create a new one
-		return createNewSessionContext(claims);
+			// 2. DB fallback: recover session after restart or cache eviction.
+			// Inside the lock so a parallel thread that already inserted the row
+			// is observed instead of duplicated.
+			int dbSessionId = findSessionIdByKeycloakSid(claims.sessionId);
+			if (dbSessionId > 0) {
+				Properties context = loadExistingSessionContext(dbSessionId);
+				if (context != null) {
+					keycloakSessionCache.put(claims.sessionId, dbSessionId); // re-warm cache
+					log.fine("Recovered ADempiere session " + dbSessionId
+						+ " from DB for Keycloak sid: " + claims.sessionId);
+					return context;
+				}
+			}
+
+			// 3. No valid session anywhere — create a new one.
+			return createNewSessionContext(claims);
+		}
 	}
 
 	/**
