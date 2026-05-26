@@ -13,7 +13,19 @@
 	"files.insertFinalNewline": true,
 	"java.autobuild.enabled": true,
 	"java.compile.nullAnalysis.mode": "interactive",
+	"java.configuration.runtimes": [
+		{
+			"name": "JavaSE-11",
+			"path": "/usr/lib/jvm/temurin-11-jdk-amd64"
+		},
+		{
+			"name": "JavaSE-17",
+			"path": "/usr/lib/jvm/temurin-17-jdk-amd64",
+			"default": true
+		}
+	],
 	"java.configuration.updateBuildConfiguration": "interactive",
+	"java.jdt.ls.java.home": "/usr/lib/jvm/temurin-17-jdk-amd64",
 	"java.debug.settings.hotCodeReplace": "auto",
 	"java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx8G -Xms100m -Xlog:disable",
 	"java.debug.settings.onBuildFailureProceed": true,
