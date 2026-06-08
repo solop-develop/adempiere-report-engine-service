@@ -23,6 +23,7 @@ import org.adempiere.core.domains.models.I_AD_PInstance;
 import org.compiere.model.MRole;
 import org.compiere.model.MTable;
 import org.compiere.util.CLogger;
+import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
@@ -265,16 +266,14 @@ public class QueryDefinition {
 			;
 		}
 
-		StringBuffer completeQuery = new StringBuffer(query);
-		StringBuffer completeQueryWithoutLimit = new StringBuffer(query);
-
 		//	Add Limit records
-		if(this.limit != NO_LIMIT) {
+		StringBuffer limitClause = new StringBuffer();
+		if(this.limit != NO_LIMIT && DB.getDatabase().isPagingSupported()) {
 			if(this.limit == 0) {
 				withLimit(100, 0);
 			}
 
-			StringBuffer limitClause = new StringBuffer()
+			// limitClause
 				// TODO: Implement with use https://github.com/adempiere/adempiere/pull/4142
 				// .append(" LIMIT ")
 				// .append(this.limit)
@@ -283,6 +282,18 @@ public class QueryDefinition {
 				// .append(completeQueryCount)
 			;
 
+			// Apply pagination AFTER ordering using the database-specific paging
+			// syntax (PostgreSQL LIMIT/OFFSET, Oracle ROWNUM wrapper). Doing it at
+			// the database level guarantees the limit is applied to the already
+			// ordered result set, so paging is consistent with the native
+			// ReportEngine. addPagingSQL uses 1-based row numbers: the first row is
+			// offset + 1 and the last row is offset + limit.
+			// int start = this.offset + 1;
+			// int end = this.offset + this.limit;
+			// completeQuery = new StringBuffer(
+			// 	DB.getDatabase().addPagingSQL(baseQuery.toString(), start, end)
+			// );
+
 			if(!Util.isEmpty(this.getDynamicWhereClause(), true)) {
 				limitClause.insert(0, " AND ");
 			} else {
@@ -290,24 +301,25 @@ public class QueryDefinition {
 			}
 			limitClause.append("ROWNUM <= ").append(this.limit);
 			limitClause.append(" AND ROWNUM >= ").append(this.offset);
-
-			completeQuery.append(limitClause.toString());
 		}
 
 		// Add Group By
+		String groupByClause = "";
 		if(!Util.isEmpty(getGroupBy(), true)) {
-			completeQuery.append(" GROUP BY ").append(getGroupBy());
-			completeQueryWithoutLimit.append(" GROUP BY ").append(getGroupBy());
+			groupByClause = " GROUP BY " + getGroupBy();
 		}
+
 
 		// Add Order By
+		String orderByClause = "";
 		if(!Util.isEmpty(getOrderBy(), true)) {
-			completeQuery.append(" ORDER BY ").append(getOrderBy());
-			completeQueryWithoutLimit.append(" ORDER BY ").append(getOrderBy());
+			orderByClause = " ORDER BY " + getOrderBy();
 		}
 
-		withCompleteQueryCount(completeQueryWithoutLimit.toString());
-		withCompleteQuery(completeQuery.toString());
+		String completeSql = query.toString() + groupByClause + orderByClause;
+		String completeSqlWithLimit = query.toString() + limitClause + groupByClause + orderByClause;
+		withCompleteQueryCount(completeSql);
+		withCompleteQuery(completeSqlWithLimit);
 
 		return this;
 	}

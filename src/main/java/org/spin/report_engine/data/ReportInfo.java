@@ -268,8 +268,8 @@ public class ReportInfo {
 		}
 		sortingItems.forEach(printFormatItem -> {
 			Comparator<Row> groupComparator = (p, o) -> {
-				String pValue = p.getCompareValue(printFormatItem.getPrintFormatItemId());
-				String oValue = o.getCompareValue(printFormatItem.getPrintFormatItemId());
+				String pValue = p.getSortValue(printFormatItem);
+				String oValue = o.getSortValue(printFormatItem);
 				if(printFormatItem.isDesc()) {
 					return oValue.compareToIgnoreCase(pValue);
 				}

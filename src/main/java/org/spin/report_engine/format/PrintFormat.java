@@ -391,14 +391,7 @@ public class PrintFormat {
 					return;
 				}
 
-				String columnName = null;
-				String alias = null;
-				if(item.isVirtualColumn()) {
-					alias = item.getColumnName();
-				} else {
-					columnName = getQueryColumnName(item.getColumnName());
-					alias = columnName;
-				}
+				String alias = getOrderByColumnName(item);
 
 				if(!Util.isEmpty(alias)) {
 					if(orderBy.length() > 0) {
@@ -518,10 +511,31 @@ public class PrintFormat {
 		return item.getColumnName() + "_" + item.getPrintFormatItemId() + "_DisplayValue";
 	}
 
+	/**
+	 * Resolve the column to use in the ORDER BY clause for a print format item.
+	 *
+	 * Mirrors the ADempiere {@code DataEngine} (Swing/ZK ReportEngine) behaviour: a
+	 * lookup/reference column is ordered by its display value (the text shown to the
+	 * user, e.g. the invoice document number) rather than by the raw foreign-key id.
+	 * This keeps the report ordering consistent between this engine and the native
+	 * ReportEngine output. The display alias only exists in the SELECT when the item
+	 * is printed, so for non-printed sort columns we fall back to the raw column.
+	 */
+	private String getOrderByColumnName(PrintFormatItem item) {
+		if(item.isPrinted() && item.isDisplayType()) {
+			return getDisplayColumnName(item);
+		}
+		if(item.isVirtualColumn()) {
+			return item.getColumnName();
+		}
+		return getQueryColumnName(item.getColumnName());
+	}
+
 	@Override
 	public String toString() {
 		return "PrintFormat [name=" + name + ", description=" + description + ", printFormatId=" + printFormatId
 				+ ", reportView=" + reportView + ", tableId=" + tableId + ", isSummary=" + isSummary + ", items="
 				+ items + "]";
 	}
+
 }

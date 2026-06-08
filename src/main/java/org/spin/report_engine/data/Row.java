@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.compiere.util.Util;
+import org.spin.report_engine.format.PrintFormatItem;
+
 /**
  * Row information or representation for Row
  * @author Yamel Senih, ysenih@erpya.com, ERPCyA http://www.erpya.com
@@ -94,6 +97,22 @@ public class Row {
 	
 	public String getCompareValue(int itemId) {
 		return Optional.ofNullable(getCell(itemId).getCompareValue()).orElse("");
+	}
+
+	/**
+	 * Sort key for an item. For lookup/reference columns sort by the display text
+	 * (matching the SQL ORDER BY and the native ReportEngine) instead of the raw
+	 * foreign-key id; for measures and dates fall back to the numeric/chronological
+	 * compare value.
+	 */
+	public String getSortValue(PrintFormatItem item) {
+		if (item.isDisplayType()) {
+			String displayValue = getCell(item.getPrintFormatItemId()).getDisplayValue();
+			if (!Util.isEmpty(displayValue)) {
+				return displayValue;
+			}
+		}
+		return getCompareValue(item.getPrintFormatItemId());
 	}
 
 	public int getLevel() {

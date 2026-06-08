@@ -368,6 +368,36 @@ public class PrintFormatItem {
 		return referenceValueId;
 	}
 
+	/**
+	 * Whether this column is a lookup/reference that is rendered with a separate
+	 * text display value (the SELECT generates a {@code ..._DisplayValue} alias and
+	 * the ORDER BY sorts by that text). Used both to build the SQL ORDER BY and so
+	 * the in-memory row sorting matches it (sort by the shown text, not by the raw
+	 * foreign-key id). Keep the reference-type conditions in sync with the SELECT
+	 * building in PrintFormat.getQuery().
+	 */
+	public boolean isDisplayType() {
+		if(referenceId == DisplayType.TableDir
+				|| (referenceId == DisplayType.Search && referenceValueId == 0)) {
+			return true;
+		}
+		if(referenceId == DisplayType.Table
+				|| (referenceId == DisplayType.Search && referenceValueId != 0)) {
+			return true;
+		}
+		if(referenceId == DisplayType.List
+				|| (referenceId == DisplayType.Button && referenceValueId != 0)) {
+			return true;
+		}
+		if(referenceId == DisplayType.Location
+				|| referenceId == DisplayType.Account
+				|| referenceId == DisplayType.Locator
+				|| referenceId == DisplayType.PAttribute) {
+			return true;
+		}
+		return false;
+	}
+
 	public boolean isKey() {
 		return isKey;
 	}
