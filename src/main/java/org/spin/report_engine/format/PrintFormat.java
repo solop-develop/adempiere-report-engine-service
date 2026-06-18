@@ -241,8 +241,9 @@ public class PrintFormat {
 				}
 
 				//	Process Display Value
-				if(item.getReferenceId() == DisplayType.TableDir
-						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceValueId() == 0)) {
+				if(!item.getColumnName().equals("Record_ID")
+						&& (item.getReferenceId() == DisplayType.TableDir
+						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceValueId() <= 0))) {
 					if(query.length() > 0) {
 						query.append(", ");
 					}
@@ -256,7 +257,7 @@ public class PrintFormat {
 					query.append(" AS ").append(alias);
 					columns.add(PrintFormatColumn.newInstance(item).withDisplayValue(true).withColumnNameAlias(getDisplayColumnName(item)));
 				} else if(item.getReferenceId() == DisplayType.Table
-						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceValueId() != 0)) {
+						|| (item.getReferenceId() == DisplayType.Search && item.getReferenceValueId() > 0)) {
 					addTableAlias();
 					ColumnReference columnReference = ColumnReference.getColumnReference(item.getReferenceValueId());
 					StringBuffer displayColumnValue = new StringBuffer();
@@ -291,7 +292,7 @@ public class PrintFormat {
 						.append(getLanguageCriteria(language)).append(")");
 					}
 				} else if(item.getReferenceId() == DisplayType.List 
-						|| (item.getReferenceId() == DisplayType.Button && item.getReferenceValueId() != 0)) {
+						|| (item.getReferenceId() == DisplayType.Button && item.getReferenceValueId() > 0)) {
 					addTableAlias();
 					ColumnReference columnReference = ColumnReference.getColumnReferenceList(language);
 					StringBuffer displayColumnValue = new StringBuffer();
