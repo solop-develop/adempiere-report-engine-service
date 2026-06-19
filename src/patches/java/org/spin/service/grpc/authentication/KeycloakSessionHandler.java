@@ -255,6 +255,21 @@ public class KeycloakSessionHandler {
 		// Cache the mapping: Keycloak sid -> ADempiere session ID
 		keycloakSessionCache.put(claims.sessionId, session.getAD_Session_ID());
 
+		// Seed AD_Preference for first-time Keycloak users so the next
+		// login restores the same language/role/warehouse without waiting
+		// for a manual role change. Mirrors the ZK UI flow, where the
+		// first successful role-selection persists all five attributes.
+		if (PreferenceUtil.getSessionPreferences(userId).isEmpty()) {
+			PreferenceUtil.saveSessionPreferences(
+				userId,
+				language,
+				session.getAD_Role_ID(),
+				session.getAD_Client_ID(),
+				orgId,
+				warehouseId
+			);
+		}
+
 		// Build context following getSessionFromToken pattern
 		Properties context = session.getCtx();
 		Env.setContext(context, "#AD_Session_ID", session.getAD_Session_ID());
