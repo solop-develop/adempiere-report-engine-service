@@ -62,6 +62,7 @@ public class ReportInfo {
 	private int instanceId;
 	private PrintFormat printFormat;
 	private String tableName;
+	private String exportFileName;
 
 	private ReportInfo(PrintFormat printFormat, QueryDefinition queryDefinition) {
 		this.printFormat = printFormat;
@@ -216,6 +217,33 @@ public class ReportInfo {
 		}
 		temporaryRow.withCell(printFormatItem.getPrintFormatItemId(), cell);
 		return this;
+	}
+
+	/**
+	 * Materialize the currently accumulated row as a flat detail row and reset the
+	 * accumulator WITHOUT retaining it in the rows list. Used by the streaming export
+	 * path so the whole result set is never held in memory. Only valid for flat
+	 * reports (no group-by / summary, where subtotals would need the full dataset).
+	 */
+	public Row drainRow() {
+		Row row = null;
+		if(temporaryRow != null) {
+			row = Row.newInstance()
+				.withLevel(getLevel())
+				.withCells(temporaryRow.getData())
+			;
+		}
+		temporaryRow = Row.newInstance().withLevel(getLevel());
+		return row;
+	}
+
+	public ReportInfo withExportFileName(String exportFileName) {
+		this.exportFileName = exportFileName;
+		return this;
+	}
+
+	public String getExportFileName() {
+		return exportFileName;
 	}
 
 	public List<Row> getRows() {

@@ -14,6 +14,8 @@
  ************************************************************************************/
 package org.spin.report_engine.service;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +41,7 @@ import org.compiere.print.MPrintFormat;
 import org.compiere.process.ProcessInfo;
 import org.compiere.process.ProcessInfoUtil;
 import org.compiere.util.CLogger;
+import org.compiere.util.CPreparedStatement;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Language;
@@ -46,6 +49,7 @@ import org.compiere.util.Trx;
 import org.compiere.util.Util;
 import org.spin.report_engine.data.Cell;
 import org.spin.report_engine.data.ReportInfo;
+import org.spin.report_engine.export.XlsxExporter;
 import org.spin.report_engine.format.PrintFormat;
 import org.spin.report_engine.format.PrintFormatItem;
 import org.spin.report_engine.format.QueryDefinition;
@@ -74,11 +78,22 @@ public class ReportBuilder {
 	private int limit;
 	private int offset;
 	private int instanceId;
-	
+	private XlsxExporter streamingExporter;
+
 	private static final CLogger logger = CLogger.getCLogger(ReportBuilder.class);
-	
+
 	private ReportBuilder() {
 		conditions = new ArrayList<Filter>();
+	}
+
+	/**
+	 * Provide an exporter so a full (non-paginated) export of a flat report can be
+	 * streamed row by row instead of materializing the whole result set in memory.
+	 * When null (or for paginated / summary / grouped reports) the buffered path is used.
+	 */
+	public ReportBuilder withStreamingExporter(XlsxExporter streamingExporter) {
+		this.streamingExporter = streamingExporter;
+		return this;
 	}
 
 	public List<Filter> getFilters() {
@@ -271,50 +286,36 @@ public class ReportBuilder {
 			.withLimit(limit, offset)
 			.buildQuery()
 		;
-		//	Count
-		int count = CountUtil.countRecords(queryDefinition.getCompleteQueryCount(), format.getTableName(), queryDefinition.getParameters(), transactionName);
+		boolean paginated = (limit != QueryDefinition.NO_LIMIT);
 		ReportInfo reportInfo = ReportInfo.newInstance(format, queryDefinition)
 			.withReportViewId(getReportViewId())
 			.withInstanceId(getInstanceId())
-			.withRecordCount(count)
 			.withSummary(isSummary())
 		;
+		final List<PrintFormatItem> printFormatsList = format.getItems();
+		//	Streaming export: for a full (non-paginated) export of a flat report we can write
+		//	each row straight to the file and discard it, instead of materializing the whole
+		//	result set in memory. Grouped / summary / financial (T_Report) reports still need
+		//	the full set in memory to build their subtotals, so they keep the buffered path.
+		boolean streamingExport = streamingExporter != null
+			&& !paginated
+			&& !isSummary()
+			&& !"T_Report".equals(format.getTableName())
+			&& format.getGroupItems().isEmpty();
+		if (streamingExport) {
+			runStreamingExport(format, queryDefinition, reportInfo, transactionName, language);
+			return reportInfo.completeInfo();
+		}
+		//	Count: COUNT(*) has no early termination, so over a heavy report view it is the
+		//	most expensive pass. When there is no limit (export) every row is read anyway, so
+		//	the total equals the number of rows read; a separate COUNT would just re-evaluate
+		//	the whole view a second time. Only count separately when paginating.
+		reportInfo.withRecordCount(paginated
+			? CountUtil.countRecords(queryDefinition.getCompleteQueryCount(), format.getTableName(), queryDefinition.getParameters(), transactionName)
+			: 0);
 		DB.runResultSet(transactionName, queryDefinition.getCompleteQuery(), queryDefinition.getParameters(), resulset -> {
-			final List<PrintFormatItem> printFormatsList = format.getItems();
 			while (resulset.next()) {
-				printFormatsList.forEach(item -> {
-					Map<String, Cell> cells = new HashMap<String, Cell>();
-					queryDefinition.getQueryColumns()
-						.stream()
-						.filter(column -> {
-							return column.getColumnName().equals(item.getColumnName());
-						})
-						.forEach(column -> {
-							Cell cell = Optional.ofNullable(cells.get(column.getColumnName())).orElse(Cell.newInstance());
-							try {
-								if(column.isDisplayValue()) {
-									cell.withDisplayValue(resulset.getString(column.getColumnNameAlias()));
-								} else {
-									Object value = resulset.getObject(column.getColumnName());
-									cell.withValue(value);
-									//	Apply Default Mask
-									if(!Util.isEmpty(item.getMappingClassName())) {
-										IColumnMapping customMapping = ClassLoaderMapping.loadClass(item.getMappingClassName());
-										if(customMapping != null) {
-											customMapping.processValue(item, column, language, resulset, cell);
-										}
-									} else {
-										DefaultMapping.newInstance().processValue(item, column, language, resulset, cell);
-									}
-								}
-							} catch (Exception e) {
-								logger.warning(e.getLocalizedMessage());
-							}
-							cells.put(item.getColumnName(), cell);
-						})
-					;
-					reportInfo.addCell(item, cells.get(item.getColumnName()));
-				});
+				readRow(resulset, printFormatsList, queryDefinition, reportInfo, language);
 				if(format.getTableName().equals("T_Report")) {
 					reportInfo.addRow(resulset.getInt("LevelNo"), resulset.getInt("SeqNo"));
 				} else {
@@ -324,7 +325,83 @@ public class ReportBuilder {
 		}).onFailure(throwable -> {
 			throw new AdempiereException(throwable);
 		});
+		if (!paginated) {
+			//	Export read every row: the real total is what was materialized, which avoids
+			//	a second full pass over the view just to compute the record count.
+			reportInfo.withRecordCount(reportInfo.getRows().size());
+		}
 		return reportInfo.completeInfo();
+	}
+
+	/**
+	 * Build the cells for the current {@link ResultSet} row into the report's row
+	 * accumulator. Shared by the buffered and the streaming read paths.
+	 */
+	private void readRow(ResultSet resulset, List<PrintFormatItem> printFormatsList, QueryDefinition queryDefinition, ReportInfo reportInfo, Language language) {
+		printFormatsList.forEach(item -> {
+			Map<String, Cell> cells = new HashMap<String, Cell>();
+			queryDefinition.getQueryColumns()
+				.stream()
+				.filter(column -> {
+					return column.getColumnName().equals(item.getColumnName());
+				})
+				.forEach(column -> {
+					Cell cell = Optional.ofNullable(cells.get(column.getColumnName())).orElse(Cell.newInstance());
+					try {
+						if(column.isDisplayValue()) {
+							cell.withDisplayValue(resulset.getString(column.getColumnNameAlias()));
+						} else {
+							Object value = resulset.getObject(column.getColumnName());
+							cell.withValue(value);
+							//	Apply Default Mask
+							if(!Util.isEmpty(item.getMappingClassName())) {
+								IColumnMapping customMapping = ClassLoaderMapping.loadClass(item.getMappingClassName());
+								if(customMapping != null) {
+									customMapping.processValue(item, column, language, resulset, cell);
+								}
+							} else {
+								DefaultMapping.newInstance().processValue(item, column, language, resulset, cell);
+							}
+						}
+					} catch (Exception e) {
+						logger.warning(e.getLocalizedMessage());
+					}
+					cells.put(item.getColumnName(), cell);
+				})
+			;
+			reportInfo.addCell(item, cells.get(item.getColumnName()));
+		});
+	}
+
+	/**
+	 * Streaming export path: cursor-read the result set with a bounded JDBC fetch size and
+	 * write each row directly to the exporter, draining it from the accumulator so the full
+	 * result set is never held in memory at once.
+	 */
+	private void runStreamingExport(PrintFormat format, QueryDefinition queryDefinition, ReportInfo reportInfo, String transactionName, Language language) {
+		streamingExporter.beginStream(reportInfo);
+		final List<PrintFormatItem> printFormatsList = format.getItems();
+		CPreparedStatement pstmt = null;
+		ResultSet resultSet = null;
+		int count = 0;
+		try {
+			pstmt = DB.prepareStatement(queryDefinition.getCompleteQuery(), transactionName);
+			//	Cursor-based fetch so the JDBC driver streams instead of buffering every row.
+			pstmt.setFetchSize(1000);
+			DB.setParameters(pstmt, queryDefinition.getParameters());
+			resultSet = pstmt.executeQuery();
+			while (resultSet.next()) {
+				readRow(resultSet, printFormatsList, queryDefinition, reportInfo, language);
+				streamingExporter.writeStreamRow(reportInfo.drainRow());
+				count++;
+			}
+		} catch (SQLException e) {
+			throw new AdempiereException(e);
+		} finally {
+			DB.close(resultSet, pstmt);
+		}
+		reportInfo.withRecordCount(count);
+		reportInfo.withExportFileName(streamingExporter.finishStream());
 	}
 
 

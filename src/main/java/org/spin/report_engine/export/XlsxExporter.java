@@ -94,10 +94,14 @@ public class XlsxExporter implements IReportEngineExporter {
 		return language;
 	}
 	
-	private Sheet createSheet() {
+	private Sheet createSheet(boolean trackForAutoSize) {
 		SXSSFSheet sheet = (SXSSFSheet) workBook.createSheet();
 		formatPage(sheet);
-		sheet.trackAllColumnsForAutoSizing();
+		//	Auto-size tracking keeps every row's rendered data in memory, which defeats the
+		//	streaming export; only enable it for the buffered path.
+		if(trackForAutoSize) {
+			sheet.trackAllColumnsForAutoSizing();
+		}
 		createHeaderFooter(sheet);
 		return sheet;
 	}
@@ -167,10 +171,71 @@ public class XlsxExporter implements IReportEngineExporter {
 	public String export(ReportInfo reportInfo) {
 		setReportInfo(reportInfo);
 		//	Create Sheet with report info name
-		Sheet sheet = createSheet();
-		//	create header
-		Row headerRow = sheet.createRow(0);
+		Sheet sheet = createSheet(true);
 		List<ColumnInfo> columns = reportInfo.getColumns();
+		//	create header
+		writeHeader(sheet, columns);
+		//	Export content
+		List<org.spin.report_engine.data.Row> rows = reportInfo.isSummary()
+			? reportInfo.getSummaryRows()
+			: reportInfo.getCompleteRows()
+		;
+		IntStream.range(0, rows.size()).forEach(rowNumber ->
+			writeDataRow(sheet, columns, rows.get(rowNumber), rowNumber + 1)
+		);
+		IntStream.range(0, columns.size())
+			.forEach(columnNumber -> sheet.autoSizeColumn(columnNumber))
+		;
+		sheet.createFreezePane(0, 1);
+		return writeFile();
+	}
+
+	//	==== Streaming export ====
+	//	Writes the file row by row (header, then each data row) so the full result set
+	//	is never held in memory. The caller pushes rows via writeStreamRow().
+	private Sheet streamSheet;
+	private List<ColumnInfo> streamColumns;
+	private int streamRowCount;
+
+	/**
+	 * Begin a streaming export: prepare the sheet and write the header. Column auto-sizing
+	 * is disabled (it would require keeping every row in memory); a fixed width is applied
+	 * on {@link #finishStream()}.
+	 */
+	public XlsxExporter beginStream(ReportInfo reportInfo) {
+		setReportInfo(reportInfo);
+		streamSheet = createSheet(false);
+		streamColumns = reportInfo.getColumns();
+		streamRowCount = 0;
+		writeHeader(streamSheet, streamColumns);
+		return this;
+	}
+
+	/**
+	 * Write a single data row to the streaming sheet. SXSSF flushes older rows to disk
+	 * automatically, so memory stays bounded.
+	 */
+	public void writeStreamRow(org.spin.report_engine.data.Row row) {
+		if(row == null) {
+			return;
+		}
+		writeDataRow(streamSheet, streamColumns, row, ++streamRowCount);
+	}
+
+	/**
+	 * Finish the streaming export: apply a fixed column width (auto-size is unavailable once
+	 * rows have been flushed), freeze the header and write the file.
+	 */
+	public String finishStream() {
+		IntStream.range(0, streamColumns.size())
+			.forEach(columnNumber -> streamSheet.setColumnWidth(columnNumber, 20 * 256))
+		;
+		streamSheet.createFreezePane(0, 1);
+		return writeFile();
+	}
+
+	private void writeHeader(Sheet sheet, List<ColumnInfo> columns) {
+		Row headerRow = sheet.createRow(0);
 		IntStream.range(0, columns.size())
 			.forEach(cellNumber -> {
 				Cell sheetCell = headerRow.createCell(cellNumber);
@@ -182,100 +247,93 @@ public class XlsxExporter implements IReportEngineExporter {
 				sheetCell.setCellStyle(style);
 			})
 		;
-		//	Export content
-		List<org.spin.report_engine.data.Row> rows = reportInfo.isSummary() ? reportInfo.getSummaryRows(): reportInfo.getCompleteRows();
-		IntStream.range(0, rows.size()).forEach(rowNumber -> {
-			Row sheetRow = sheet.createRow(rowNumber + 1);
-			IntStream.range(0, columns.size()).forEach(columnNumber -> {
-				Cell sheetCell = sheetRow.createCell(columnNumber);
-				ColumnInfo columnInfo = columns.get(columnNumber);
-				org.spin.report_engine.data.Row rowValue = rows.get(rowNumber);
-				org.spin.report_engine.data.Cell cell = rowValue.getCell(columnInfo.getPrintFormatItemId());
-				//	Apply Default Mask
-				if(!Util.isEmpty(columnInfo.getMappingClassName())) {
-					IColumnMapping customMapping = ClassLoaderMapping.loadClass(columnInfo.getMappingClassName());
-					if(customMapping != null) {
-						customMapping.processValue(
-							columnInfo.getPrintformatItem(),
-							language,
-							cell
-						);
+	}
+
+	private void writeDataRow(Sheet sheet, List<ColumnInfo> columns, org.spin.report_engine.data.Row rowValue, int sheetRowIndex) {
+		Row sheetRow = sheet.createRow(sheetRowIndex);
+		IntStream.range(0, columns.size()).forEach(columnNumber -> {
+			Cell sheetCell = sheetRow.createCell(columnNumber);
+			ColumnInfo columnInfo = columns.get(columnNumber);
+			org.spin.report_engine.data.Cell cell = rowValue.getCell(columnInfo.getPrintFormatItemId());
+			//	Apply Default Mask
+			if(!Util.isEmpty(columnInfo.getMappingClassName())) {
+				IColumnMapping customMapping = ClassLoaderMapping.loadClass(columnInfo.getMappingClassName());
+				if(customMapping != null) {
+					customMapping.processValue(
+						columnInfo.getPrintformatItem(),
+						language,
+						cell
+					);
+				}
+			} else {
+				DefaultMapping.newInstance()
+					.processValue(
+						columnInfo.getPrintformatItem(),
+						language,
+						cell
+					)
+				;
+			}
+			int displayType = columnInfo.getDisplayTypeId();
+			Object valueasObject = cell.getValue();
+			if(valueasObject != null) {
+				if (DisplayType.isDate(displayType)) {
+					Timestamp value = TimeManager.getTimestampFromObject(valueasObject);
+					sheetCell.setCellValue(value);
+				} else if (DisplayType.isNumeric(displayType)) {
+					double value = 0;
+					if (valueasObject instanceof Number) {
+						value = ((Number) valueasObject).doubleValue();
 					}
+					sheetCell.setCellValue(value);
+				} else if (DisplayType.YesNo == displayType) {
+					String value = Util.stripDiacritics(cell.getDisplayValue());
+					sheetCell.setCellValue(
+						sheet.getWorkbook().getCreationHelper().createRichTextString(value)
+					);
 				} else {
-					DefaultMapping.newInstance()
-						.processValue(
-							columnInfo.getPrintformatItem(),
-							language,
-							cell
-						)
-					;
-				}
-				int displayType = columnInfo.getDisplayTypeId();
-				Object valueasObject = cell.getValue();
-				if(valueasObject != null) {
-					if (DisplayType.isDate(displayType)) {
-						Timestamp value = TimeManager.getTimestampFromObject(valueasObject);
-						sheetCell.setCellValue(value);
-					} else if (DisplayType.isNumeric(displayType)) {
-						double value = 0;
-						if (valueasObject instanceof Number) {
-							value = ((Number) valueasObject).doubleValue();
-						}
-						sheetCell.setCellValue(value);
-					} else if (DisplayType.YesNo == displayType) {
-						String value = Util.stripDiacritics(cell.getDisplayValue());
-						sheetCell.setCellValue(
-							sheet.getWorkbook().getCreationHelper().createRichTextString(value)
-						);
-					} else {
-						String displayValue = cell.getDisplayValue();
-						if(Util.isEmpty(displayValue)) {
-							if(!DisplayType.isLookup(displayType)) {
-								if(valueasObject instanceof BigDecimal) {
-									sheetCell.setCellValue(
-										((BigDecimal) valueasObject).doubleValue()
-									);
-								} else if (valueasObject instanceof Integer) {
-									sheetCell.setCellValue(
-										(Integer) valueasObject
-									);
-								} else if (valueasObject instanceof String) {
-									displayValue = (String) valueasObject;
-									displayValue = Util.stripDiacritics(displayValue);
-									sheetCell.setCellValue(
-										sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue)
-									);
-								} else if (valueasObject instanceof Boolean) {
-									sheetCell.setCellValue((Boolean) valueasObject);
-								} else if(valueasObject instanceof Timestamp) {
-									Timestamp value = (Timestamp) valueasObject;
-									sheetCell.setCellValue(value);
-								}
+					String displayValue = cell.getDisplayValue();
+					if(Util.isEmpty(displayValue)) {
+						if(!DisplayType.isLookup(displayType)) {
+							if(valueasObject instanceof BigDecimal) {
+								sheetCell.setCellValue(
+									((BigDecimal) valueasObject).doubleValue()
+								);
+							} else if (valueasObject instanceof Integer) {
+								sheetCell.setCellValue(
+									(Integer) valueasObject
+								);
+							} else if (valueasObject instanceof String) {
+								displayValue = (String) valueasObject;
+								displayValue = Util.stripDiacritics(displayValue);
+								sheetCell.setCellValue(
+									sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue)
+								);
+							} else if (valueasObject instanceof Boolean) {
+								sheetCell.setCellValue((Boolean) valueasObject);
+							} else if(valueasObject instanceof Timestamp) {
+								Timestamp value = (Timestamp) valueasObject;
+								sheetCell.setCellValue(value);
 							}
-						} else {
-							displayValue = Util.stripDiacritics(displayValue);
-							sheetCell.setCellValue(
-								sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue)
-							);
 						}
+					} else {
+						displayValue = Util.stripDiacritics(displayValue);
+						sheetCell.setCellValue(
+							sheet.getWorkbook().getCreationHelper().createRichTextString(displayValue)
+						);
 					}
 				}
-				//
-				CellStyle style = getStyle(
-					rowNumber,
-					columnNumber,
-					rowValue.isSummaryRow(),
-					displayType,
-					null
-				);
-				sheetCell.setCellStyle(style);
-			});
+			}
+			//
+			CellStyle style = getStyle(
+				sheetRowIndex,
+				columnNumber,
+				rowValue.isSummaryRow(),
+				displayType,
+				null
+			);
+			sheetCell.setCellStyle(style);
 		});
-		IntStream.range(0, columns.size())
-			.forEach(columnNumber -> sheet.autoSizeColumn(columnNumber))
-		;
-		sheet.createFreezePane(0, 1);
-		return writeFile();
 	}
 	
 	private CellStyle getHeaderStyle(int col) {
