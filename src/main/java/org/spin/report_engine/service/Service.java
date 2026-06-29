@@ -325,9 +325,11 @@ public class Service {
 			offset = (pageNumber - 1) * limit;
 		}
 
+		XlsxExporter exporter = XlsxExporter.newInstance();
 		ReportInfo reportInfo = reportBuilder
 			.withLimit(limit)
 			.withOffset(offset)
+			.withStreamingExporter(exporter)
 			.run()
 		;
 		RunExportResponse.Builder builder = RunExportResponse.newBuilder()
@@ -336,7 +338,12 @@ public class Service {
 			)
 		;
 
-		String fileName = XlsxExporter.newInstance().export(reportInfo);
+		//	When the report was streamed to disk the file is already written; otherwise export
+		//	the buffered result (summary / grouped / financial) with the same exporter.
+		String fileName = reportInfo.getExportFileName() != null
+			? reportInfo.getExportFileName()
+			: exporter.export(reportInfo)
+		;
 		if (!Util.isEmpty(fileName, true)) {
 			builder
 				.setFileName(
