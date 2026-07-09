@@ -15,7 +15,7 @@ plugins {
 def grpcVersion = '1.65.1'
 def protobufVersion = '3.25.3'
 def baseVersion = '3.9.4'
-def adempiereCoreVersion = '1.5.11'
+def adempiereCoreVersion = '1.5.12'
 
 def descriptorFile = "adempiere-report-engine-service.dsc"
 
