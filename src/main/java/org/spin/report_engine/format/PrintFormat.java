@@ -419,6 +419,15 @@ public class PrintFormat {
 			}
 			query.append("(").append("T_Report.SeqNo").append(")");
 			query.append(" AS ").append("SeqNo");
+			//	Report line and its parent line. Lets the viewer nest a summary
+			//	account under its parent account instead of leaving every line at
+			//	the root. Line sets without Parent_ID resolve to 0 and keep the
+			//	previous flat behaviour.
+			query.append(", (").append("COALESCE(T_Report.PA_ReportLine_ID, 0)").append(")");
+			query.append(" AS ").append("LineId");
+			query.append(", COALESCE((SELECT pl.Parent_ID FROM PA_ReportLine pl")
+				.append(" WHERE pl.PA_ReportLine_ID = T_Report.PA_ReportLine_ID), 0)");
+			query.append(" AS ").append("ParentLineId");
 			// FinReport assigns each detail row the SeqNo of its parent
 			// PA_ReportLine, so to preserve the hierarchical order (parent
 			// followed by its children) the canonical sort is SeqNo, LevelNo
