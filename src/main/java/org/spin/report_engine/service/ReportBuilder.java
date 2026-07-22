@@ -317,7 +317,12 @@ public class ReportBuilder {
 			while (resulset.next()) {
 				readRow(resulset, printFormatsList, queryDefinition, reportInfo, language);
 				if(format.getTableName().equals("T_Report")) {
-					reportInfo.addRow(resulset.getInt("LevelNo"), resulset.getInt("SeqNo"));
+					reportInfo.addRow(
+						resulset.getInt("LevelNo"),
+						resulset.getInt("SeqNo"),
+						resulset.getInt("LineId"),
+						resulset.getInt("ParentLineId")
+					);
 				} else {
 					reportInfo.addRow();
 				}

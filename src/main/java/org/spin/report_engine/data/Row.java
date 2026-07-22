@@ -34,6 +34,10 @@ public class Row {
 	private int sequence;
 	private List<Row> children;
 	private boolean isSummaryRow;
+	/**	Report line this row belongs to, only for financial reports (T_Report)	*/
+	private int lineId;
+	/**	Parent report line, used to nest summary accounts	*/
+	private int parentLineId;
 	
 	public Row() {
 		data = new HashMap<>();
@@ -56,15 +60,35 @@ public class Row {
 	public Row withSourceRowDefinition(Row sourceRow) {
 		return withLevel(sourceRow.getLevel())
 		.withSummaryRow(sourceRow.isSummaryRow())
-		.withSequence(sourceRow.getSequence());
+		.withSequence(sourceRow.getSequence())
+		.withLineId(sourceRow.getLineId())
+		.withParentLineId(sourceRow.getParentLineId());
 	}
-	
+
 	public int getSequence() {
 		return sequence;
 	}
 
 	public Row withSequence(int sequence) {
 		this.sequence = sequence;
+		return this;
+	}
+
+	public int getLineId() {
+		return lineId;
+	}
+
+	public Row withLineId(int lineId) {
+		this.lineId = lineId;
+		return this;
+	}
+
+	public int getParentLineId() {
+		return parentLineId;
+	}
+
+	public Row withParentLineId(int parentLineId) {
+		this.parentLineId = parentLineId;
 		return this;
 	}
 

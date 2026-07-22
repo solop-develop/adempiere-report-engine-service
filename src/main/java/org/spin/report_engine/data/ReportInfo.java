@@ -176,12 +176,17 @@ public class ReportInfo {
 		return this;
 	}
 	public ReportInfo addRow(int level, int sequence) {
+		return addRow(level, sequence, 0, 0);
+	}
+	public ReportInfo addRow(int level, int sequence, int lineId, int parentLineId) {
 		if(temporaryRow != null) {
 			addRow(
 				Row.newInstance()
 					.withLevel(level)
 					.withCells(temporaryRow.getData())
 					.withSequence(sequence)
+					.withLineId(lineId)
+					.withParentLineId(parentLineId)
 			);
 			summaryHandler.addRow(
 				Row.newInstance()
@@ -396,17 +401,41 @@ public class ReportInfo {
 	 */
 	public List<Row> getRowsAsTree() {
 		if(isFinancialReport()) {
-			List<Row> tree = new ArrayList<Row>();
-			//	Add parent level
-			rows.stream()
+			//	Report lines (LevelNo = 0). Their detail rows carry LevelNo >= 1.
+			List<Row> lineRows = rows.stream()
 				.filter(row -> {
 					return row.getLevel() == 0;
-				}).forEach(row -> {
-					tree.add(row);
 				})
+				.collect(Collectors.toList())
 			;
-			tree.forEach(treeValue -> {
-				processChildrenFinancialReport(treeValue, 1);
+			//	Building the tree fills the children lists, so start from a clean state
+			//	to stay idempotent if the tree is requested more than once.
+			rows.forEach(row -> row.getChildren().clear());
+			//	Attach the rows listed under each line (accounts, and transactions
+			//	below them), matched by SeqNo since FinReport stamps every detail row
+			//	with the SeqNo of its report line.
+			lineRows.forEach(lineRow -> {
+				processChildrenFinancialReport(lineRow, 1);
+			});
+			//	Nest the lines themselves following PA_ReportLine.Parent_ID, so a
+			//	summary account collapses the accounts below it. Line sets without
+			//	Parent_ID leave every line at the root, as before.
+			Map<Integer, Row> lineRowsById = new HashMap<Integer, Row>();
+			lineRows.forEach(lineRow -> {
+				if(lineRow.getLineId() > 0) {
+					lineRowsById.put(lineRow.getLineId(), lineRow);
+				}
+			});
+			List<Row> tree = new ArrayList<Row>();
+			lineRows.forEach(lineRow -> {
+				Row parentRow = lineRowsById.get(lineRow.getParentLineId());
+				//	A line whose parent is missing from this run, or that would close a
+				//	cycle, stays at the root instead of disappearing from the report.
+				if(parentRow != null && !wouldCreateCycle(lineRow, parentRow, lineRowsById)) {
+					parentRow.addChildren(lineRow);
+				} else {
+					tree.add(lineRow);
+				}
 			});
 			return tree;
 		} else {
@@ -429,6 +458,23 @@ public class ReportInfo {
 			}
 		}
 		return rows;
+	}
+
+	/**
+	 * Whether nesting a line under the given parent would close a loop, either because
+	 * the parent is the line itself or because it already hangs from it. Protects the
+	 * tree walk from a self referencing or circular Parent_ID in the line set.
+	 */
+	private boolean wouldCreateCycle(Row lineRow, Row parentRow, Map<Integer, Row> lineRowsById) {
+		Row current = parentRow;
+		int guard = 0;
+		while(current != null && guard++ <= lineRowsById.size()) {
+			if(current.getLineId() == lineRow.getLineId()) {
+				return true;
+			}
+			current = lineRowsById.get(current.getParentLineId());
+		}
+		return false;
 	}
 
 	private void processChildrenFinancialReport(Row parent, int levelAsInt) {
