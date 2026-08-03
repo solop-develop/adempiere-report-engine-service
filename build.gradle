@@ -247,7 +247,7 @@ dependencies {
 	// Time Control
 	implementation "com.solop.adempiere.tools:time-control:core-1.5.13-1.0.0"
 	implementation "com.solop.adempiere.tools:performance-analysis:core-1.5.9-1.0.0"
-	implementation "com.solop.adempiere.verticals:import-export-management:core-1.4.21-1.0.1"
+	implementation "com.solop.adempiere.verticals:import-export-management:core-1.5.13-1.0.1"
 	implementation "com.solop.adempiere.verticals:agency-project:core-1.5.13-1.0.0"
 	// Electronic Invoicing
 	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.5.13-1.0.0"
