@@ -49,6 +49,10 @@ public abstract class CostReportAbstract extends SvrProcess {
 	public static final String M_PRODUCT_CLASSIFICATION_ID = "M_Product_Classification_ID";
 	/**	Parameter Name for Date To	*/
 	public static final String DATETO = "DateTo";
+	/**	Parameter Name for Accounting Schema	*/
+	public static final String C_ACCTSCHEMA_ID = "C_AcctSchema_ID";
+	/**	Parameter Name for Currency	*/
+	public static final String C_CURRENCY_ID = "C_Currency_ID";
 	/**	Parameter Value for Organization	*/
 	private int orgId;
 	/**	Parameter Value for Product	*/
@@ -65,6 +69,10 @@ public abstract class CostReportAbstract extends SvrProcess {
 	private int productClassificationId;
 	/**	Parameter Value for Date To	*/
 	private Timestamp dateTo;
+	/**	Parameter Value for Accounting Schema	*/
+	private int acctSchemaId;
+	/**	Parameter Value for Currency	*/
+	private int currencyId;
 
 	@Override
 	protected void prepare() {
@@ -76,6 +84,8 @@ public abstract class CostReportAbstract extends SvrProcess {
 		productClassId = getParameterAsInt(M_PRODUCT_CLASS_ID);
 		productClassificationId = getParameterAsInt(M_PRODUCT_CLASSIFICATION_ID);
 		dateTo = getParameterAsTimestamp(DATETO);
+		acctSchemaId = getParameterAsInt(C_ACCTSCHEMA_ID);
+		currencyId = getParameterAsInt(C_CURRENCY_ID);
 	}
 
 	/**	 Getter Parameter Value for Organization	*/
@@ -156,6 +166,26 @@ public abstract class CostReportAbstract extends SvrProcess {
 	/**	 Setter Parameter Value for Date To	*/
 	protected void setDateTo(Timestamp dateTo) {
 		this.dateTo = dateTo;
+	}
+
+	/**	 Getter Parameter Value for Accounting Schema	*/
+	protected int getAcctSchemaId() {
+		return acctSchemaId;
+	}
+
+	/**	 Setter Parameter Value for Accounting Schema	*/
+	protected void setAcctSchemaId(int acctSchemaId) {
+		this.acctSchemaId = acctSchemaId;
+	}
+
+	/**	 Getter Parameter Value for Currency	*/
+	protected int getCurrencyId() {
+		return currencyId;
+	}
+
+	/**	 Setter Parameter Value for Currency	*/
+	protected void setCurrencyId(int currencyId) {
+		this.currencyId = currencyId;
 	}
 
 	/**	 Getter Parameter Value for Process ID	*/

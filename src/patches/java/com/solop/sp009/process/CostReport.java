@@ -45,6 +45,10 @@ public class CostReport extends CostReportAbstract
 	{
 		if (getOrgId() <= 0)
 			throw new AdempiereUserError("@FillMandatory@ @AD_Org_ID@");
+		if (getAcctSchemaId() <= 0)
+			throw new AdempiereUserError("@FillMandatory@ @C_AcctSchema_ID@");
+
+		boolean doConvert = getCurrencyId() > 0;
 
 		int pInstanceId = getAD_PInstance_ID();
 		int clientId = getAD_Client_ID();
@@ -57,7 +61,29 @@ public class CostReport extends CostReportAbstract
 				new Object[] {pInstanceId}, get_TrxName());
 
 		StringBuilder sql = new StringBuilder();
-		sql.append("WITH last_expedient AS ( ")
+		sql.append("WITH ");
+		if (doConvert)
+		{
+			// Pre-compute the conversion factor once per source currency (default/spot conversion type)
+			// instead of calling currencyConvert() per output row. Includes an identity row so amounts
+			// already in the target currency stay unchanged.
+			sql.append("rates AS ( ")
+				.append("    SELECT ").append(getCurrencyId()).append(" AS c_currency_id, 1::numeric AS multiplyrate ")
+				.append("    UNION ALL ")
+				.append("    SELECT c_currency_id, multiplyrate FROM ( ")
+				.append("        SELECT DISTINCT ON (cr.c_currency_id) cr.c_currency_id, cr.multiplyrate ")
+				.append("        FROM c_conversion_rate cr ")
+				.append("        JOIN c_conversiontype ct ON ct.c_conversiontype_id = cr.c_conversiontype_id AND ct.isdefault = 'Y' ")
+				.append("        WHERE cr.c_currency_id_to = ").append(getCurrencyId()).append(" ")
+				.append("          AND cr.c_currency_id <> ").append(getCurrencyId()).append(" ")
+				.append("          AND cr.isactive = 'Y' ")
+				.append("          AND ?::timestamp BETWEEN cr.validfrom AND cr.validto ")
+				.append("          AND cr.ad_client_id IN (0, ").append(clientId).append(") ")
+				.append("        ORDER BY cr.c_currency_id, cr.ad_client_id DESC, cr.validfrom DESC ")
+				.append("    ) latest ")
+				.append("), ");
+		}
+		sql.append("last_expedient AS ( ")
 			.append("    SELECT DISTINCT ON (pe.m_product_id) ")
 			.append("        pe.m_product_id, e.sp009_expedient_id, e.datedoc ")
 			.append("    FROM sp009_productexpedient pe ")
@@ -67,13 +93,17 @@ public class CostReport extends CostReportAbstract
 			.append("), ")
 			.append("origin_cost AS ( ")
 			.append("    SELECT DISTINCT ON (le.m_product_id) ")
-			.append("        le.m_product_id, cd.currentcostprice AS cost ")
+			.append("        le.m_product_id, i.c_bpartner_id AS vendor_id, cd.currentcostprice AS cost ")
 			.append("    FROM last_expedient le ")
 			.append("    JOIN c_invoice i      ON i.sp009_expedient_id = le.sp009_expedient_id ")
 			.append("    JOIN c_invoiceline il ON il.c_invoice_id = i.c_invoice_id AND il.m_product_id = le.m_product_id ")
 			.append("    JOIN m_costdetail cd  ON cd.c_invoiceline_id = il.c_invoiceline_id ")
 			.append("    JOIN m_costelement ce ON ce.m_costelement_id = cd.m_costelement_id AND ce.costelementtype = 'M' ")
+			// Filter cost always by accounting schema, organization and invoice line (via c_invoiceline_id join).
+			// Exclude reversal cost details so the value comes from the invoice and not from a reverse entry.
 			.append("    WHERE i.docstatus IN ('CO', 'CL') AND cd.dateacct <= ? ")
+			.append("      AND cd.c_acctschema_id = ? AND cd.ad_org_id = ? ")
+			.append("      AND cd.isreversal = 'N' ")
 			.append("    ORDER BY le.m_product_id, cd.dateacct DESC, cd.m_costdetail_id DESC ")
 			.append("), ")
 			.append("landed_cost AS ( ")
@@ -83,16 +113,17 @@ public class CostReport extends CostReportAbstract
 			.append("        SELECT DISTINCT ON (cd.m_product_id, cd.ad_org_id, cd.m_costelement_id) ")
 			.append("            cd.m_product_id, cd.ad_org_id, cd.m_costelement_id, cd.currentcostprice ")
 			.append("        FROM m_costdetail cd ")
-			.append("        WHERE cd.dateacct <= ? ")
+			.append("        WHERE cd.dateacct <= ? AND cd.c_acctschema_id = ? AND cd.isreversal = 'N' ")
 			.append("        ORDER BY cd.m_product_id, cd.ad_org_id, cd.m_costelement_id, cd.dateacct DESC, cd.m_costdetail_id DESC ")
 			.append("    ) last_by_element ")
 			.append("    GROUP BY last_by_element.m_product_id, last_by_element.ad_org_id ")
 			.append("), ")
 			.append("current_price AS NOT MATERIALIZED ( ")
 			.append("    SELECT DISTINCT ON (pp.m_product_id, plv.m_pricelist_id) ")
-			.append("        pp.m_product_id, plv.m_pricelist_id, pp.pricelist ")
+			.append("        pp.m_product_id, plv.m_pricelist_id, pp.pricelist, pl.c_currency_id ")
 			.append("    FROM m_productprice pp ")
 			.append("    JOIN m_pricelist_version plv ON plv.m_pricelist_version_id = pp.m_pricelist_version_id ")
+			.append("    JOIN m_pricelist pl          ON pl.m_pricelist_id = plv.m_pricelist_id ")
 			.append("    WHERE pp.isactive = 'Y' AND plv.isactive = 'Y' AND plv.validfrom <= ? ")
 			.append("    ORDER BY pp.m_product_id, plv.m_pricelist_id, plv.validfrom DESC ")
 			.append("), ")
@@ -139,20 +170,20 @@ public class CostReport extends CostReportAbstract
 			.append("INSERT INTO ").append(TABLE_NAME).append(" (")
 			.append("T_SP009_CostReport_ID, AD_Client_ID, AD_Org_ID, AD_PInstance_ID, ")
 			.append("Created, CreatedBy, Updated, UpdatedBy, IsActive, ")
-			.append("M_Product_ID, DefaultVendor_ID, SP009_LastImportDate, SP009_OriginCost, SP009_ActualCost, ")
+			.append("M_Product_ID, DefaultVendor_ID, Vendor_ID, SP009_LastImportDate, SP009_OriginCost, SP009_ActualCost, ")
 			.append("SP009_DistributorPrice, SP009_WholesalePrice, SP009_RetailPrice, ")
 			.append("QtyOnHand, SP009_SalesQtyTotal, SP009_SalesQty30d, SP009_SalesQty60d, SP009_LastSaleDate) ")
 			.append("SELECT ")
 			.append("    nextval('").append(SEQUENCE_NAME).append("'), ")
 			.append("    ").append(clientId).append(", ").append(getOrgId()).append(", ").append(pInstanceId).append(", ")
 			.append("    ?, ").append(userId).append(", ?, ").append(userId).append(", 'Y', ")
-			.append("    p.m_product_id, p.defaultvendor_id, ")
+			.append("    p.m_product_id, p.defaultvendor_id, oc.vendor_id, ")
 			.append("    le.datedoc, ")
-			.append("    oc.cost, ")
-			.append("    lc.costamt, ")
-			.append("    distributor_price.pricelist, ")
-			.append("    wholesale_price.pricelist, ")
-			.append("    retail_price.pricelist, ")
+			.append("    ").append(convertCost("oc.cost")).append(", ")
+			.append("    ").append(convertCost("lc.costamt")).append(", ")
+			.append("    ").append(convertPrice("distributor_price.pricelist", "dist_rate")).append(", ")
+			.append("    ").append(convertPrice("wholesale_price.pricelist", "whol_rate")).append(", ")
+			.append("    ").append(convertPrice("retail_price.pricelist", "ret_rate")).append(", ")
 			.append("    COALESCE(st.qtyonhand, 0), ")
 			.append("    COALESCE(s.qtyinvoiced, 0), ")
 			.append("    COALESCE(s.qtyinvoiced_30, 0), ")
@@ -160,20 +191,34 @@ public class CostReport extends CostReportAbstract
 			.append("    s.dateinvoiced ")
 			.append("FROM m_product p ")
 			.append("JOIN ad_orginfo oi ON oi.ad_org_id = ? ")
+			.append("JOIN c_acctschema acs ON acs.c_acctschema_id = ? ")
 			.append("LEFT JOIN last_expedient le ON le.m_product_id = p.m_product_id ")
 			.append("LEFT JOIN origin_cost oc    ON oc.m_product_id = p.m_product_id ")
 			.append("LEFT JOIN landed_cost lc    ON lc.m_product_id = p.m_product_id AND lc.ad_org_id = ? ")
 			.append("LEFT JOIN current_price distributor_price ON distributor_price.m_product_id = p.m_product_id AND distributor_price.m_pricelist_id = oi.distributorpricelist_id ")
 			.append("LEFT JOIN current_price wholesale_price   ON wholesale_price.m_product_id = p.m_product_id AND wholesale_price.m_pricelist_id = oi.wholesalepricelist_id ")
-			.append("LEFT JOIN current_price retail_price      ON retail_price.m_product_id = p.m_product_id AND retail_price.m_pricelist_id = oi.retailpricelist_id ")
-			.append("LEFT JOIN stock st ON st.m_product_id = p.m_product_id ")
+			.append("LEFT JOIN current_price retail_price      ON retail_price.m_product_id = p.m_product_id AND retail_price.m_pricelist_id = oi.retailpricelist_id ");
+		if (doConvert)
+		{
+			// One row per product, so each rate join resolves to a single pre-computed factor.
+			sql.append("LEFT JOIN rates cost_rate ON cost_rate.c_currency_id = acs.c_currency_id ")
+				.append("LEFT JOIN rates dist_rate ON dist_rate.c_currency_id = distributor_price.c_currency_id ")
+				.append("LEFT JOIN rates whol_rate ON whol_rate.c_currency_id = wholesale_price.c_currency_id ")
+				.append("LEFT JOIN rates ret_rate  ON ret_rate.c_currency_id  = retail_price.c_currency_id ");
+		}
+		sql.append("LEFT JOIN stock st ON st.m_product_id = p.m_product_id ")
 			.append("LEFT JOIN sales s  ON s.m_product_id = p.m_product_id ")
 			.append("WHERE p.isactive = 'Y' AND p.ad_client_id = ? ");
 
 		List<Object> params = new ArrayList<Object>();
+		if (doConvert)
+			params.add(asOf);      // rates: conversion rate validity date
 		params.add(asOf);          // last_expedient.datedoc <=
 		params.add(asOf);          // origin_cost.dateacct <=
+		params.add(getAcctSchemaId()); // origin_cost.c_acctschema_id =
+		params.add(getOrgId());   // origin_cost.ad_org_id =
 		params.add(asOf);          // landed_cost.dateacct <=
+		params.add(getAcctSchemaId()); // landed_cost.c_acctschema_id =
 		params.add(asOf);          // current_price.validfrom <=
 		params.add(asOf);          // last_snapshot_run.datelastrun <=
 		params.add(asOf);          // snapshot_movement.movementdate <=
@@ -183,6 +228,7 @@ public class CostReport extends CostReportAbstract
 		params.add(now);           // Created
 		params.add(now);           // Updated
 		params.add(getOrgId());   // ad_orginfo.ad_org_id =
+		params.add(getAcctSchemaId()); // c_acctschema.c_acctschema_id =
 		params.add(getOrgId());   // landed_cost.ad_org_id =
 		params.add(clientId);     // p.ad_client_id =
 
@@ -220,5 +266,29 @@ public class CostReport extends CostReportAbstract
 		int rows = DB.executeUpdateEx(sql.toString(), params.toArray(), get_TrxName());
 
 		return "@Created@ = " + rows;
+	}
+
+	/**
+	 * Wrap a cost amount expression with the pre-computed currency conversion factor.
+	 * Costs are stored in the accounting schema currency (joined via cost_rate). When no target
+	 * currency is selected the amount is returned unchanged.
+	 */
+	private String convertCost(String amountExpr)
+	{
+		if (getCurrencyId() <= 0)
+			return amountExpr;
+		return "(" + amountExpr + " * cost_rate.multiplyrate)";
+	}
+
+	/**
+	 * Wrap a price amount expression with the pre-computed currency conversion factor.
+	 * Prices are stored in the price list currency (joined via the given rate alias). When no
+	 * target currency is selected the amount is returned unchanged.
+	 */
+	private String convertPrice(String amountExpr, String rateAlias)
+	{
+		if (getCurrencyId() <= 0)
+			return amountExpr;
+		return "(" + amountExpr + " * " + rateAlias + ".multiplyrate)";
 	}
 }
