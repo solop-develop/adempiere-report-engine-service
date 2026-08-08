@@ -73,7 +73,7 @@ public class CostReport extends CostReportAbstract
 		{
 			// Pre-compute the conversion factor once per source currency (default/spot conversion type)
 			// instead of calling currencyConvert() per output row. Includes an identity row so amounts
-			// already in the target currency stay unchanged.
+			// already in the target currency stay unchanged. 
 			sql.append("rates AS ( ")
 				.append("    SELECT ").append(getCurrencyId()).append(" AS c_currency_id, 1::numeric AS multiplyrate ")
 				.append("    UNION ALL ")
