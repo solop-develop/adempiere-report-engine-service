@@ -60,6 +60,13 @@ public class CostReport extends CostReportAbstract
 		DB.executeUpdateEx("DELETE FROM " + TABLE_NAME + " WHERE AD_PInstance_ID=?",
 				new Object[] {pInstanceId}, get_TrxName());
 
+		// Amount expressions (already converted to the target currency when a currency is selected).
+		// Reused for both the price/cost columns and the margin columns so everything stays consistent.
+		String actualCostExpr = convertCost("lc.costamt");
+		String distPriceExpr  = convertPrice("distributor_price.pricelist", "dist_rate");
+		String wholPriceExpr  = convertPrice("wholesale_price.pricelist", "whol_rate");
+		String retPriceExpr   = convertPrice("retail_price.pricelist", "ret_rate");
+
 		StringBuilder sql = new StringBuilder();
 		sql.append("WITH ");
 		if (doConvert)
@@ -172,6 +179,9 @@ public class CostReport extends CostReportAbstract
 			.append("Created, CreatedBy, Updated, UpdatedBy, IsActive, ")
 			.append("M_Product_ID, DefaultVendor_ID, Vendor_ID, SP009_LastImportDate, SP009_OriginCost, SP009_ActualCost, ")
 			.append("SP009_DistributorPrice, SP009_WholesalePrice, SP009_RetailPrice, ")
+			.append("SP009_DistributorMargin, SP009_DistributorMarginAmt, ")
+			.append("SP009_WholesaleMargin, SP009_WholesaleMarginAmt, ")
+			.append("Margin, MarginAmt, ")
 			.append("QtyOnHand, SP009_SalesQtyTotal, SP009_SalesQty30d, SP009_SalesQty60d, SP009_LastSaleDate) ")
 			.append("SELECT ")
 			.append("    nextval('").append(SEQUENCE_NAME).append("'), ")
@@ -180,10 +190,16 @@ public class CostReport extends CostReportAbstract
 			.append("    p.m_product_id, p.defaultvendor_id, oc.vendor_id, ")
 			.append("    le.datedoc, ")
 			.append("    ").append(convertCost("oc.cost")).append(", ")
-			.append("    ").append(convertCost("lc.costamt")).append(", ")
-			.append("    ").append(convertPrice("distributor_price.pricelist", "dist_rate")).append(", ")
-			.append("    ").append(convertPrice("wholesale_price.pricelist", "whol_rate")).append(", ")
-			.append("    ").append(convertPrice("retail_price.pricelist", "ret_rate")).append(", ")
+			.append("    ").append(actualCostExpr).append(", ")
+			.append("    ").append(distPriceExpr).append(", ")
+			.append("    ").append(wholPriceExpr).append(", ")
+			.append("    ").append(retPriceExpr).append(", ")
+			.append("    ").append(marginPct(actualCostExpr, distPriceExpr)).append(", ")
+			.append("    ").append(marginAmt(distPriceExpr, actualCostExpr)).append(", ")
+			.append("    ").append(marginPct(actualCostExpr, wholPriceExpr)).append(", ")
+			.append("    ").append(marginAmt(wholPriceExpr, actualCostExpr)).append(", ")
+			.append("    ").append(marginPct(actualCostExpr, retPriceExpr)).append(", ")
+			.append("    ").append(marginAmt(retPriceExpr, actualCostExpr)).append(", ")
 			.append("    COALESCE(st.qtyonhand, 0), ")
 			.append("    COALESCE(s.qtyinvoiced, 0), ")
 			.append("    COALESCE(s.qtyinvoiced_30, 0), ")
@@ -290,5 +306,27 @@ public class CostReport extends CostReportAbstract
 		if (getCurrencyId() <= 0)
 			return amountExpr;
 		return "(" + amountExpr + " * " + rateAlias + ".multiplyrate)";
+	}
+
+	/**
+	 * Sales margin percentage between a price list price and the actual cost, replicating the
+	 * rv_c_invoiceline view: margin = round((priceactual - pricelimit) / pricelimit * 100, 2),
+	 * where priceactual = the list price and pricelimit = the cost (the base/denominator).
+	 * Example: cost 5, price 10 -> round((10 - 5) / 5 * 100, 2) = 100%. Guards a zero cost with 0.
+	 */
+	private String marginPct(String costExpr, String priceExpr)
+	{
+		return "CASE WHEN (" + costExpr + ") = 0 THEN 0"
+			+ " ELSE round(((" + priceExpr + ") - (" + costExpr + ")) / (" + costExpr + ") * 100, 2) END";
+	}
+
+	/**
+	 * Sales margin amount, replicating the rv_c_invoiceline view (marginamt): the list price minus
+	 * the actual cost, with a zero-cost guard returning 0.
+	 */
+	private String marginAmt(String priceExpr, String costExpr)
+	{
+		return "CASE WHEN (" + costExpr + ") = 0 THEN 0"
+			+ " ELSE ((" + priceExpr + ") - (" + costExpr + ")) END";
 	}
 }
