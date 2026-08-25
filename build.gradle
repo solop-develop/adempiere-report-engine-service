@@ -240,19 +240,19 @@ dependencies {
 
 	//	ADempiere Core + Patches + Features
 	implementation "org.solop.adempiere:adempiere-core:${adempiereCoreVersion}"
-	implementation "com.solop.adempiere.tools:solop-core:core-1.5.14-1.0.0"
+	implementation "com.solop.adempiere.tools:solop-core:core-1.5.15-1.0.0"
 	implementation "com.solop.adempiere.tools:display-definition:core-1.5.5-1.0.0"
 	// Firebase Connector
 	implementation "com.solop.adempiere.tools:adempiere-firebase-connector:core-1.0.0-1.0.0"
 	// Time Control
-	implementation "com.solop.adempiere.tools:time-control:core-1.5.14-1.0.0"
-	implementation "com.solop.adempiere.tools:performance-analysis:core-1.5.14-1.0.0"
-	implementation "com.solop.adempiere.verticals:import-export-management:core-1.5.14-1.0.0"
+	implementation "com.solop.adempiere.tools:time-control:core-1.5.15-1.0.0"
+	implementation "com.solop.adempiere.tools:performance-analysis:core-1.5.15-1.0.0"
+	implementation "com.solop.adempiere.verticals:import-export-management:core-1.5.15-1.0.0"
 	implementation "com.solop.adempiere.verticals:agency-project:core-1.5.13-1.0.0"
 	// Electronic Invoicing
-	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.5.14-1.0.0"
+	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.5.15-1.0.0"
 	implementation "com.solop.adempiere.tools:shopping-admin-connection:core-1.5.2-1.0.0"
-	implementation "com.solop.adempiere.tools:cloud-solop-notifier:core-1.5.12-1.0.0"
+	implementation "com.solop.adempiere.tools:cloud-solop-notifier:core-1.5.15-1.0.0"
 	// Payment Processor
 	implementation "com.solop.adempiere.tools:payment-processor:core-1.4.9-1.0.0"
 	implementation "com.solop.adempiere.tools:warehouse-light:core-1.4.20-1.0.1"
