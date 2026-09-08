@@ -246,7 +246,7 @@ dependencies {
 	implementation "com.solop.adempiere.tools:adempiere-firebase-connector:core-1.0.0-1.0.0"
 	// Time Control
 	implementation "com.solop.adempiere.tools:time-control:core-1.5.15-1.0.0"
-	implementation "com.solop.adempiere.tools:performance-analysis:core-1.5.15-1.0.0"
+	implementation "com.solop.adempiere.tools:performance-analysis:core-4.1.0-rc-2"
 	implementation "com.solop.adempiere.verticals:import-export-management:core-1.5.15-1.0.0"
 	implementation "com.solop.adempiere.verticals:agency-project:core-1.5.13-1.0.0"
 	// Electronic Invoicing
