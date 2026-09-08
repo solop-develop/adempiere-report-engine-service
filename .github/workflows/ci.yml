@@ -193,6 +193,12 @@ jobs:
       (
         github.ref_name == 'main' ||
         github.ref_name == 'master' ||
+        github.ref_name == 'bugfix' ||
+        github.ref_name == 'bugfix-*' ||
+        github.ref_name == 'feature' ||
+        github.ref_name == 'feat-*' ||
+        github.ref_name == 'develop' ||
+        github.ref_name == 'feature/adempiere-base' ||
         github.event_name == 'workflow_dispatch'
       )
     runs-on: ubuntu-latest
@@ -253,6 +259,12 @@ jobs:
       (
         github.ref_name == 'main' ||
         github.ref_name == 'master' ||
+        github.ref_name == 'bugfix' ||
+        github.ref_name == 'bugfix-*' ||
+        github.ref_name == 'feature' ||
+        github.ref_name == 'feat-*' ||
+        github.ref_name == 'develop' ||
+        github.ref_name == 'feature/adempiere-base' ||
         github.event_name == 'workflow_dispatch'
       )
     runs-on: ubuntu-latest
