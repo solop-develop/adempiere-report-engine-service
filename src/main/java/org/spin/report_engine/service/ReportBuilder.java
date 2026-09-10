@@ -418,9 +418,6 @@ public class ReportBuilder {
 		if(getReportViewId() <= 0) {
 			withReportViewId(report.getAD_ReportView_ID());
 		}
-		if(getPrintFormatId() <= 0 && report.getAD_PrintFormat_ID() > 0) {
-			withPrintFormatId(report.getAD_PrintFormat_ID());
-		}
 		AtomicReference<ReportInfo> reportInfo = new AtomicReference<ReportInfo>();
 		//	Run Process before get
 		Trx.run(transactionName -> {
@@ -434,6 +431,17 @@ public class ReportBuilder {
 				if (processInfo.isError()) {
 					throw new AdempiereException(processInfo.getSummary());
 				}
+				//	The report process (e.g. FinReport) may create/assign a print format
+				//	on the record when it had none. Re-read it within the process
+				//	transaction before falling back to the process default print format,
+				//	otherwise the first run renders with the wrong (default) format.
+				if(getPrintFormatId() <= 0) {
+					resolvePrintFormatFromRecord(transactionName);
+				}
+			}
+			//	Fallback to the process default print format only when still unresolved
+			if(getPrintFormatId() <= 0 && report.getAD_PrintFormat_ID() > 0) {
+				withPrintFormatId(report.getAD_PrintFormat_ID());
 			}
 			validatePrintFormat(transactionName);
 			reportInfo.set(get(transactionName));
@@ -441,6 +449,32 @@ public class ReportBuilder {
 		return reportInfo.get();
 	}
 
+
+	/**
+	 * Resolve the print format from the report record (e.g. PA_Report.AD_PrintFormat_ID),
+	 * reading within the given transaction so a value just assigned by the report process
+	 * is visible. Does nothing when there is no valid record or the record has no format.
+	 * @param transactionName process transaction
+	 */
+	private void resolvePrintFormatFromRecord(String transactionName) {
+		if(tableId <= 0 || recordId <= 0) {
+			return;
+		}
+		MTable table = MTable.get(Env.getCtx(), tableId);
+		if(table == null || table.getAD_Table_ID() <= 0) {
+			return;
+		}
+		MColumn column = table.getColumn(I_AD_PrintFormat.COLUMNNAME_AD_PrintFormat_ID);
+		if(column == null) {
+			return;
+		}
+		PO entity = table.getPO(recordId, transactionName);
+		if(entity != null && entity.get_ID() > 0) {
+			withPrintFormatId(
+				entity.get_ValueAsInt(I_AD_PrintFormat.COLUMNNAME_AD_PrintFormat_ID)
+			);
+		}
+	}
 
 	private void validatePrintFormat(String transactionName) {
 		if(getPrintFormatId() <= 0 && getReportViewId() > 0) {
