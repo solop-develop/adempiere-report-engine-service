@@ -198,6 +198,7 @@ jobs:
         github.ref_name == 'feature' ||
         github.ref_name == 'feat-*' ||
         github.ref_name == 'develop' ||
+        github.ref_name == 'updates' ||
         github.ref_name == 'feature/adempiere-base' ||
         github.event_name == 'workflow_dispatch'
       )
@@ -264,6 +265,7 @@ jobs:
         github.ref_name == 'feature' ||
         github.ref_name == 'feat-*' ||
         github.ref_name == 'develop' ||
+        github.ref_name == 'updates' ||
         github.ref_name == 'feature/adempiere-base' ||
         github.event_name == 'workflow_dispatch'
       )
