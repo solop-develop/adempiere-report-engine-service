@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup Java JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-package: 'jdk'
@@ -64,7 +64,7 @@ jobs:
           ls -la flat_artifacts/
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: release-artifacts
           path: flat_artifacts/*
@@ -87,20 +87,20 @@ jobs:
         run: |
           tree artifacts
 
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.release.tag_name }}
-          files: |
-            artifacts/adempiere-report-engine-service.dsc
-            artifacts/env.yaml
-            artifacts/envoy.yaml
-            artifacts/adempiere-report-engine-service.zip.MD5
-            artifacts/adempiere-report-engine-service.zip
-            artifacts/adempiere-report-engine-service.tar.MD5
-            artifacts/adempiere-report-engine-service.tar
+      - name: Upload binaries
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            artifacts/adempiere-report-engine-service.dsc \
+            artifacts/env.yaml \
+            artifacts/envoy.yaml \
+            artifacts/adempiere-report-engine-service.zip.MD5 \
+            artifacts/adempiere-report-engine-service.zip \
+            artifacts/adempiere-report-engine-service.tar.MD5 \
+            artifacts/adempiere-report-engine-service.tar \
+            --clobber \
+            --repo "${{ github.repository }}"
 
 
 
