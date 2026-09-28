@@ -15,7 +15,7 @@ plugins {
 def grpcVersion = '1.65.1'
 def protobufVersion = '3.25.3'
 def baseVersion = '3.9.4'
-def adempiereCoreVersion = '1.6.0-rc-2'
+def adempiereCoreVersion = '1.6.0-rc-3'
 
 def descriptorFile = "adempiere-report-engine-service.dsc"
 
@@ -250,7 +250,7 @@ dependencies {
 	implementation "com.solop.adempiere.verticals:import-export-management:core-1.5.15-1.0.0"
 	implementation "com.solop.adempiere.verticals:agency-project:core-1.5.13-1.0.0"
 	// Electronic Invoicing
-	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.5.15-1.0.0"
+	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.5.16-1.0.0"
 	implementation "com.solop.adempiere.tools:shopping-admin-connection:core-1.5.2-1.0.0"
 	implementation "com.solop.adempiere.tools:cloud-solop-notifier:core-1.5.15-1.0.0"
 	// Payment Processor
