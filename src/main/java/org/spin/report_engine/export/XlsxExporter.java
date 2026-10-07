@@ -466,8 +466,33 @@ public class XlsxExporter implements IReportEngineExporter {
 			workBook.write(out);
 			out.close();
 			workBook.dispose();
-			//	Return the file already written to disk (local development, no S3 upload).
-			return file.getAbsolutePath();
+			//	Push to S3
+			MClientInfo clientInfo = MClientInfo.get(Env.getCtx());
+			if(clientInfo.getFileHandler_ID() <= 0) {
+				throw new AdempiereException("@FileHandler_ID@ @NotFound@");
+			}
+			MADAppRegistration genericConnector = MADAppRegistration.getById(Env.getCtx(), clientInfo.getFileHandler_ID(), null);
+			if(genericConnector == null) {
+				throw new AdempiereException("@AD_AppRegistration_ID@ @NotFound@");
+			}
+			//	Load
+			IAppSupport supportedApi = AppSupportHandler.getInstance().getAppSupport(genericConnector);
+			if(supportedApi == null) {
+				throw new AdempiereException("@AD_AppSupport_ID@ @NotFound@");
+			}
+			if(!IS3.class.isAssignableFrom(supportedApi.getClass())) {
+				throw new AdempiereException("@AD_AppSupport_ID@ @Unsupported@");
+			}
+			//	Push it
+			IS3 fileHandler = (IS3) supportedApi;
+			ResourceMetadata resourceMetadata = ResourceMetadata.newInstance()
+				.withClientId(clientInfo.getAD_Client_ID())
+				.withUserId(Env.getAD_User_ID(Env.getCtx()))
+				.withContainerType(ResourceMetadata.ContainerType.RESOURCE)
+				.withContainerId("tmp")
+				.withName(file.getName())
+			;
+			return fileHandler.putResource(resourceMetadata, new FileInputStream(file));
 		} catch (Exception e) {
 			throw new AdempiereException(e);
 		}
