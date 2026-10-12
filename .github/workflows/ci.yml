@@ -200,6 +200,8 @@ jobs:
         github.ref_name == 'develop' ||
         startsWith(github.ref_name, 'release/') ||
         startsWith(github.ref_name, 'releases/') ||
+        github.ref_name == 'updates' ||
+        github.ref_name == 'feature/adempiere-base' ||
         github.event_name == 'workflow_dispatch'
       )
     runs-on: ubuntu-latest
@@ -274,6 +276,8 @@ jobs:
         github.ref_name == 'develop' ||
         startsWith(github.ref_name, 'release/') ||
         startsWith(github.ref_name, 'releases/') ||
+        github.ref_name == 'updates' ||
+        github.ref_name == 'feature/adempiere-base' ||
         github.event_name == 'workflow_dispatch'
       )
     runs-on: ubuntu-latest
