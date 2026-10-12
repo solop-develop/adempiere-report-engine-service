@@ -14,8 +14,10 @@
  ************************************************************************************/
 package org.spin.report_engine.service;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +35,7 @@ import org.compiere.model.MColumn;
 import org.compiere.model.MPInstance;
 import org.compiere.model.MProcess;
 import org.compiere.model.MProcessPara;
+import org.compiere.model.ConversionUtil;
 import org.compiere.model.MReportView;
 import org.compiere.model.MTable;
 import org.compiere.model.PO;
@@ -348,7 +351,9 @@ public class ReportBuilder {
 			queryDefinition.getQueryColumns()
 				.stream()
 				.filter(column -> {
-					return column.getColumnName().equals(item.getColumnName());
+					//	Match the item's own columns by id (not by name) so a column used by more
+					//	than one item does not cross-match to its siblings.
+					return column.getPrintFormatItemId() == item.getPrintFormatItemId();
 				})
 				.forEach(column -> {
 					Cell cell = Optional.ofNullable(cells.get(column.getColumnName())).orElse(Cell.newInstance());
@@ -356,7 +361,13 @@ public class ReportBuilder {
 						if(column.isDisplayValue()) {
 							cell.withDisplayValue(resulset.getString(column.getColumnNameAlias()));
 						} else {
-							Object value = resulset.getObject(column.getColumnName());
+							//	Read the raw value by its (possibly unique) value alias.
+							Object value = resulset.getObject(column.getValueAlias());
+							//	Currency conversion: replace the raw amount with its value in the
+							//	target currency before formatting (a missing rate yields an empty cell).
+							if(item.isCurrencyConvertedEffective()) {
+								value = getConvertedAmount(item, value, resulset);
+							}
 							cell.withValue(value);
 							//	Apply Default Mask
 							if(!Util.isEmpty(item.getMappingClassName())) {
@@ -376,6 +387,32 @@ public class ReportBuilder {
 			;
 			reportInfo.addCell(item, cells.get(item.getColumnName()));
 		});
+	}
+
+	/**
+	 * Computes the amount of a currency-converted item in its target currency. Reads the source
+	 * metadata (currency, date, conversion type, client, org) projected by
+	 * {@code PrintFormat.getQuery()} under the item's {@code Conv<id>_} alias prefix, and delegates
+	 * to {@link ConversionUtil}. Returns {@code null} (empty cell) when the raw amount is null or no
+	 * rate is available.
+	 */
+	private BigDecimal getConvertedAmount(PrintFormatItem item, Object rawAmount, ResultSet resulset) throws SQLException {
+		if(rawAmount == null) {
+			return null;
+		}
+		BigDecimal amount = (rawAmount instanceof BigDecimal)
+			? (BigDecimal) rawAmount
+			: new BigDecimal(rawAmount.toString());
+		String prefix = item.getConversionAliasPrefix();
+		int fromCurrencyId = resulset.getInt(prefix + "C_Currency_ID");
+		Timestamp conversionDate = resulset.getTimestamp(prefix + "ConversionDate");
+		int conversionTypeId = item.getTargetConversionTypeId() > 0
+			? item.getTargetConversionTypeId()
+			: resulset.getInt(prefix + "C_ConversionType_ID");
+		int clientId = resulset.getInt(prefix + "AD_Client_ID");
+		int organizationId = resulset.getInt(prefix + "AD_Org_ID");
+		return ConversionUtil.get().getConvertedAmount(Env.getCtx(), conversionTypeId, fromCurrencyId,
+			item.getTargetCurrencyId(), conversionDate, clientId, organizationId, amount);
 	}
 
 	/**

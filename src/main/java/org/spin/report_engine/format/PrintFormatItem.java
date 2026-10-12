@@ -69,6 +69,16 @@ public class PrintFormatItem {
 	private boolean isFixedWidth;
 	private String fontCode;
 	private String color;
+	//	Currency conversion
+	private boolean isCurrencyConverted;
+	private int sourceDocumentColumnId;
+	private int sourceDateColumnId;
+	private int targetConversionTypeId;
+	private int targetCurrencyId;
+	private String sourceDocumentColumnName;
+	private String sourceDocumentTableName;
+	private String sourceDocumentKeyColumn;
+	private String sourceDateColumnName;
 	
 	private static final CLogger logger = CLogger.getCLogger(PrintFormatItem.class);
 	
@@ -184,6 +194,35 @@ public class PrintFormatItem {
 			isMandatory = column.isMandatory();
 			columnSql = column.getColumnSQL();
 			isVirtualColumn = !Util.isEmpty(column.getColumnSQL());
+			//	Currency conversion configuration
+			isCurrencyConverted = printFormatItem.isCurrencyConverted();
+			sourceDocumentColumnId = printFormatItem.getSourceDocumentColumn_ID();
+			sourceDateColumnId = printFormatItem.getSourceDateColumn_ID();
+			targetConversionTypeId = printFormatItem.getTargetConversionType_ID();
+			targetCurrencyId = printFormatItem.getTargetCurrency_ID();
+			if(sourceDocumentColumnId > 0) {
+				MColumn sourceColumn = MColumn.get(printFormatItem.getCtx(), sourceDocumentColumnId);
+				sourceDocumentColumnName = sourceColumn.getColumnName();
+				//	Resolve the referenced source document table like the field's validation rule:
+				//	a Table/Search reference with a reference value resolves via AD_Ref_Table (the column
+				//	name may not match the table, e.g. SalesInvoice_ID -> C_Invoice); ID/TableDir (or no
+				//	reference value) strips the trailing "_ID". The JOIN uses the referenced key column.
+				int sourceRef = sourceColumn.getAD_Reference_ID();
+				int sourceRefValue = sourceColumn.getAD_Reference_Value_ID();
+				if((sourceRef == DisplayType.Table || sourceRef == DisplayType.Search) && sourceRefValue > 0) {
+					ColumnReference columnReference = ColumnReference.getColumnReference(sourceRefValue);
+					sourceDocumentTableName = columnReference.getTableName();
+					sourceDocumentKeyColumn = columnReference.getKeyColumn();
+				} else {
+					sourceDocumentTableName = sourceDocumentColumnName.endsWith("_ID")
+						? sourceDocumentColumnName.substring(0, sourceDocumentColumnName.length() - 3)
+						: sourceDocumentColumnName;
+					sourceDocumentKeyColumn = sourceDocumentColumnName;
+				}
+			}
+			if(sourceDateColumnId > 0) {
+				sourceDateColumnName = MColumn.get(printFormatItem.getCtx(), sourceDateColumnId).getColumnName();
+			}
 		} else {
 			referenceId = DisplayType.String;
 		}
@@ -416,6 +455,61 @@ public class PrintFormatItem {
 
 	public boolean isMandatory() {
 		return isMandatory;
+	}
+
+	public boolean isCurrencyConverted() {
+		return isCurrencyConverted;
+	}
+
+	public int getSourceDocumentColumnId() {
+		return sourceDocumentColumnId;
+	}
+
+	public int getSourceDateColumnId() {
+		return sourceDateColumnId;
+	}
+
+	public int getTargetConversionTypeId() {
+		return targetConversionTypeId;
+	}
+
+	public int getTargetCurrencyId() {
+		return targetCurrencyId;
+	}
+
+	public String getSourceDocumentColumnName() {
+		return sourceDocumentColumnName;
+	}
+
+	public String getSourceDocumentTableName() {
+		return sourceDocumentTableName;
+	}
+
+	public String getSourceDocumentKeyColumn() {
+		return sourceDocumentKeyColumn;
+	}
+
+	public String getSourceDateColumnName() {
+		return sourceDateColumnName;
+	}
+
+	/**
+	 * Whether this item is a fully-configured, numeric currency-converted column. Both the query
+	 * building and the row reading gate on this, so an incomplete configuration degrades to a plain
+	 * numeric column instead of breaking the report.
+	 */
+	public boolean isCurrencyConvertedEffective() {
+		return isCurrencyConverted
+				&& (referenceId == DisplayType.Amount || referenceId == DisplayType.Number
+					|| referenceId == DisplayType.Quantity || referenceId == DisplayType.CostPrice)
+				&& !Util.isEmpty(sourceDocumentColumnName, true)
+				&& !Util.isEmpty(sourceDateColumnName, true)
+				&& targetCurrencyId > 0;
+	}
+
+	/** Alias prefix ("Conv&lt;itemId&gt;_") of the conversion metadata columns in the query. */
+	public String getConversionAliasPrefix() {
+		return "Conv" + printFormatItemId + "_";
 	}
 
 	@Override

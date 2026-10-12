@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup Java JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-package: 'jdk'
@@ -99,7 +99,7 @@ jobs:
           ls -la flat_artifacts/
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: release-artifacts
           path: flat_artifacts/*
@@ -194,7 +194,14 @@ jobs:
         github.ref_name == 'main' ||
         github.ref_name == 'master' ||
         github.ref_name == 'bugfix' ||
+        github.ref_name == 'bugfix-*' ||
+        github.ref_name == 'feature' ||
+        github.ref_name == 'feat-*' ||
         github.ref_name == 'develop' ||
+        startsWith(github.ref_name, 'release/') ||
+        startsWith(github.ref_name, 'releases/') ||
+        github.ref_name == 'updates' ||
+        github.ref_name == 'feature/adempiere-base' ||
         github.event_name == 'workflow_dispatch'
       )
     runs-on: ubuntu-latest
@@ -213,6 +220,11 @@ jobs:
         run: |
           tree artifacts
           unzip artifacts/adempiere-report-engine-service.zip -d docker/
+
+      # Required for cache-to: type=gha — the default "docker" buildx driver
+      # can't export cache, only the "docker-container" driver this sets up.
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to Container Registry
         uses: docker/login-action@v4
@@ -243,6 +255,8 @@ jobs:
           file: docker/alpine.Dockerfile
           push: true
           tags: ${{ steps.set_tags_alpine.outputs.tags_to_push }}
+          cache-from: type=gha,scope=ci-alpine-branch
+          cache-to: type=gha,mode=min,scope=ci-alpine-branch
 
   # Publish docker image multiplatform in Docker Hub Registry to application
   push-ubuntu-image-ci:
@@ -256,7 +270,14 @@ jobs:
         github.ref_name == 'main' ||
         github.ref_name == 'master' ||
         github.ref_name == 'bugfix' ||
+        github.ref_name == 'bugfix-*' ||
+        github.ref_name == 'feature' ||
+        github.ref_name == 'feat-*' ||
         github.ref_name == 'develop' ||
+        startsWith(github.ref_name, 'release/') ||
+        startsWith(github.ref_name, 'releases/') ||
+        github.ref_name == 'updates' ||
+        github.ref_name == 'feature/adempiere-base' ||
         github.event_name == 'workflow_dispatch'
       )
     runs-on: ubuntu-latest
@@ -313,6 +334,8 @@ jobs:
           # platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
           push: true
           tags: ${{ steps.set_tags.outputs.tags_to_push }}
+          cache-from: type=gha,scope=ci-ubuntu-branch
+          cache-to: type=gha,mode=min,scope=ci-ubuntu-branch
 
   # Check secrets to push image in docker hub registry
   check-proxy-docker-secrets:
@@ -348,6 +371,8 @@ jobs:
       (
         github.ref_name == 'main' ||
         github.ref_name == 'master' ||
+        startsWith(github.ref_name, 'release/') ||
+        startsWith(github.ref_name, 'releases/') ||
         github.event_name == 'workflow_dispatch'
       )
     runs-on: ubuntu-latest
@@ -403,3 +428,5 @@ jobs:
           platforms: linux/amd64,linux/amd64/v2,linux/arm64/v8
           push: true
           tags: ${{ steps.set_envoy_tags.outputs.tags_to_push }}
+          cache-from: type=gha,scope=ci-proxy-branch
+          cache-to: type=gha,mode=min,scope=ci-proxy-branch
