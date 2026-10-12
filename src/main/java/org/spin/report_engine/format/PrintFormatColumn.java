@@ -27,6 +27,7 @@ public class PrintFormatColumn {
 	//	Column attributes
 	private String columnName;
 	private String columnNameAlias;
+	private String valueAlias;
 	private int columnId;
 	private int referenceId;
 	private int referenceValueId;
@@ -121,6 +122,20 @@ public class PrintFormatColumn {
 
 	public PrintFormatColumn withColumnNameAlias(String columnNameAlias) {
 		this.columnNameAlias = columnNameAlias;
+		return this;
+	}
+
+	/**
+	 * Result-set label used to read this column's raw value. Defaults to the column name (existing
+	 * behaviour); set to a unique alias when the same base column appears more than once (raw + raw,
+	 * or raw + converted) so each item reads its own projected value instead of the first homonym.
+	 */
+	public String getValueAlias() {
+		return Util.isEmpty(valueAlias) ? columnName : valueAlias;
+	}
+
+	public PrintFormatColumn withValueAlias(String valueAlias) {
+		this.valueAlias = valueAlias;
 		return this;
 	}
 
