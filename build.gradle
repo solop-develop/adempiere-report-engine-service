@@ -272,6 +272,8 @@ configurations.all {
 	resolutionStrategy {
 		// used by aws-java-sdk-core (storefront is joda-time-2.10.4)
 		force("joda-time:joda-time:2.8.1")
+		// Always check for a newer version of SNAPSHOT dependencies (e.g. adempiere-core x.y.z-SNAPSHOT)
+		cacheChangingModulesFor 0, 'seconds'
 		// force("io.github.adempiere:adempiere-grpc-utils:local-1.0.0")
 	}
 }
