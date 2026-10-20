@@ -243,10 +243,9 @@ dependencies {
 	//	Solop Core: consolidates display-definition, time-control, performance-analysis, import-export-management,
 	//	agency-project, electronic-invoicing, shopping-admin-connection, cloud-solop-notifier, payment-processor,
 	//	warehouse-light, distribution-light, wms-light, additional-reports, intercompany-management,
-	//	delivery-management-service, adempiere-webhook, external-store, core-tools, luy and payroll-light
+	//	delivery-management-service, adempiere-webhook, external-store, core-tools, luy, payroll-light
+	//	and adempiere-firebase-connector
 	implementation "com.solop.adempiere.tools:solop-core:4.2.0-SNAPSHOT"
-	// Firebase Connector
-	implementation "com.solop.adempiere.tools:adempiere-firebase-connector:core-1.0.0-1.0.0"
 }
 
 configurations.all {
