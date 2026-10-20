@@ -15,7 +15,7 @@ plugins {
 def grpcVersion = '1.65.1'
 def protobufVersion = '3.25.3'
 def baseVersion = '3.9.4'
-def adempiereCoreVersion = '1.6.1'
+def adempiereCoreVersion = '1.7.0-SNAPSHOT'
 
 def descriptorFile = "adempiere-report-engine-service.dsc"
 
@@ -240,32 +240,12 @@ dependencies {
 
 	//	ADempiere Core + Patches + Features
 	implementation "org.solop.adempiere:adempiere-core:${adempiereCoreVersion}"
-	implementation "com.solop.adempiere.tools:solop-core:core-1.5.16-1.0.0"
-	implementation "com.solop.adempiere.tools:display-definition:core-1.5.5-1.0.0"
-	// Firebase Connector
-	implementation "com.solop.adempiere.tools:adempiere-firebase-connector:core-1.0.0-1.0.0"
-	// Time Control
-	implementation "com.solop.adempiere.tools:time-control:core-1.5.15-1.0.0"
-	implementation "com.solop.adempiere.tools:performance-analysis:core-1.6.0-4.1.0"
-	implementation "com.solop.adempiere.verticals:import-export-management:core-1.5.15-1.0.0"
-	implementation "com.solop.adempiere.verticals:agency-project:core-1.5.13-1.0.0"
-	// Electronic Invoicing
-	implementation "com.solop.adempiere.tools:electronic-invoicing:core-1.6.0-4.1.0"
-	implementation "com.solop.adempiere.tools:shopping-admin-connection:core-1.5.2-1.0.0"
-	implementation "com.solop.adempiere.tools:cloud-solop-notifier:core-1.5.15-1.0.0"
-	// Payment Processor
-	implementation "com.solop.adempiere.tools:payment-processor:core-1.4.9-1.0.0"
-	implementation "com.solop.adempiere.tools:warehouse-light:core-1.6.0-4.1.0"
-	implementation "com.solop.adempiere.tools:distribution-light:core-1.6.0-4.1.0"
-	implementation "com.solop.adempiere.tools:wms-light:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:additional-reports:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:intercompany-management:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.verticals:delivery-management-service:core-1.0.0-1.0.0"
-	implementation "com.solop.adempiere.tools:adempiere-webhook:core-1.5.2-1.0.0"
-	implementation "com.solop.adempiere.tools:external-store:core-1.5.12-1.0.0"
-	implementation "com.solop.adempiere.tools:core-tools:core-1.4.2-1.0.0"
-	implementation "com.solop.adempiere.localization:luy:core-1.4.22-1.0.5"
-	implementation "com.solop.adempiere.tools:payroll-light:core-1.5.2-1.0.0"
+	//	Solop Core: consolidates display-definition, time-control, performance-analysis, import-export-management,
+	//	agency-project, electronic-invoicing, shopping-admin-connection, cloud-solop-notifier, payment-processor,
+	//	warehouse-light, distribution-light, wms-light, additional-reports, intercompany-management,
+	//	delivery-management-service, adempiere-webhook, external-store, core-tools, luy, payroll-light
+	//	and adempiere-firebase-connector
+	implementation "com.solop.adempiere.tools:solop-core:4.2.0-SNAPSHOT"
 }
 
 configurations.all {
