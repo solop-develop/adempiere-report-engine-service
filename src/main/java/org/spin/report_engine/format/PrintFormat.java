@@ -16,7 +16,11 @@ package org.spin.report_engine.format;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -214,6 +218,7 @@ public class PrintFormat {
 		StringBuffer tableReferences = new StringBuffer();
 		Language language = Language.getLoginLanguage();
 		List<PrintFormatColumn> columns = new ArrayList<PrintFormatColumn>();
+		final Set<Integer> duplicatedColumnIds = getDuplicatedColumnIds();
 		getItems().stream()
 			.filter(item -> item.isActive() && item.isPrinted())
 			.sorted(Comparator.comparing(PrintFormatItem::getSequence))
@@ -227,17 +232,50 @@ public class PrintFormat {
 				if(query.length() > 0) {
 					query.append(", ");
 				}
+				//	Items get a unique value alias when the same base column appears more than once
+				//	(raw + raw, or raw + converted); single-use columns keep their plain name.
+				boolean needsUnique = item.isCurrencyConvertedEffective()
+						|| duplicatedColumnIds.contains(item.getColumnId());
+				String uniqueValueAlias = needsUnique
+						? item.getColumnName() + "_" + item.getPrintFormatItemId() : item.getColumnName();
 				if(item.isVirtualColumn()) {
 					columnName = "(" + qualifyVirtualColumnSql(item.getColumnSql()) + ")";
 					query.append(columnName);
-					query.append(" AS ").append(item.getColumnName());
+					query.append(" AS ").append(uniqueValueAlias);
 					alias = item.getColumnName();
-					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(item.getColumnName()));
+					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(item.getColumnName()).withValueAlias(uniqueValueAlias));
 				} else {
 					columnName = getQueryColumnName(item.getColumnName());
 					query.append(columnName);
+					if(needsUnique) {
+						query.append(" AS ").append(uniqueValueAlias);
+					}
 					alias = columnName;
-					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(columnName));
+					columns.add(PrintFormatColumn.newInstance(item).withColumnNameAlias(columnName).withValueAlias(uniqueValueAlias));
+				}
+				//	Currency conversion: project the source document metadata (currency, date, type,
+				//	client, org) and join the source document. Numeric-only and gated on a complete
+				//	configuration, so a misconfigured item just prints the raw value.
+				if(item.isCurrencyConvertedEffective()) {
+					String prefix = item.getConversionAliasPrefix();
+					String sourceDocumentColumnName = item.getSourceDocumentColumnName();
+					String sourceTable = item.getSourceDocumentTableName();
+					String sourceKeyColumn = item.getSourceDocumentKeyColumn();
+					String synonym = "conv" + item.getPrintFormatItemId();
+					//	The source conversion type is optional; project NULL when the source table has
+					//	no C_ConversionType_ID so the query never references a missing column (the reader
+					//	then falls back to the item's type or the client default).
+					if(org.compiere.model.MColumn.getColumn_ID(sourceTable, "C_ConversionType_ID") > 0) {
+						query.append(", ").append(synonym).append(".C_ConversionType_ID AS ").append(prefix).append("C_ConversionType_ID");
+					} else {
+						query.append(", NULL AS ").append(prefix).append("C_ConversionType_ID");
+					}
+					query.append(", ").append(synonym).append(".").append(item.getSourceDateColumnName()).append(" AS ").append(prefix).append("ConversionDate");
+					query.append(", ").append(synonym).append(".C_Currency_ID AS ").append(prefix).append("C_Currency_ID");
+					query.append(", ").append(synonym).append(".AD_Client_ID AS ").append(prefix).append("AD_Client_ID");
+					query.append(", ").append(synonym).append(".AD_Org_ID AS ").append(prefix).append("AD_Org_ID");
+					tableReferences.append(" LEFT OUTER JOIN ").append(sourceTable).append(" ").append(synonym).append(" ON (")
+						.append(getQueryColumnName(sourceDocumentColumnName)).append(" = ").append(synonym).append(".").append(sourceKeyColumn).append(")");
 				}
 
 				//	Process Display Value
@@ -456,6 +494,25 @@ public class PrintFormat {
 		;
 	}
 	
+	/**
+	 * Column IDs referenced by more than one active, printed item. Such columns need a unique
+	 * per-item value alias so the same base column can appear more than once without the result set
+	 * carrying duplicate labels (which would make every item read the first homonym).
+	 */
+	private Set<Integer> getDuplicatedColumnIds() {
+		Map<Integer, Integer> counts = new HashMap<Integer, Integer>();
+		getItems().stream()
+			.filter(item -> item.isActive() && item.isPrinted() && item.getColumnId() > 0)
+			.forEach(item -> counts.merge(item.getColumnId(), 1, Integer::sum));
+		Set<Integer> duplicated = new HashSet<Integer>();
+		counts.forEach((columnId, count) -> {
+			if(count > 1) {
+				duplicated.add(columnId);
+			}
+		});
+		return duplicated;
+	}
+
 	private String getQueryColumnName(String columnName) {
 		return getTableName() + "." + columnName;
 	}
