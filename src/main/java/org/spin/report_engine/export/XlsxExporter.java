@@ -324,13 +324,21 @@ public class XlsxExporter implements IReportEngineExporter {
 					}
 				}
 			}
-			//
+
+			//	Honor the format pattern configured on the column / print format item
+			String formatPattern = columnInfo.getPrintformatItem() != null
+				? columnInfo.getPrintformatItem().getFormatPattern()
+				: null
+			;
+			if(Util.isEmpty(formatPattern, true)) {
+				formatPattern = null;
+			}
 			CellStyle style = getStyle(
 				sheetRowIndex,
 				columnNumber,
 				rowValue.isSummaryRow(),
 				displayType,
-				null
+				formatPattern
 			);
 			sheetCell.setCellStyle(style);
 		});
@@ -355,7 +363,7 @@ public class XlsxExporter implements IReportEngineExporter {
 	}
 	
 	private CellStyle getStyle(int row, int col, boolean summaryRow, int displayType, String formatPattern) {
-		String key = "cell-" + col + "-" + displayType + "-" + summaryRow;
+		String key = "cell-" + col + "-" + displayType + "-" + summaryRow + "-" + (formatPattern != null ? formatPattern : "");
 		CellStyle cs = styles.get(key);
 		if (cs == null) {
 			boolean isHighlightNegativeNumbers = true;
