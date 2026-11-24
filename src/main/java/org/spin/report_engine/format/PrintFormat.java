@@ -411,7 +411,11 @@ public class PrintFormat {
 					columnName = getQueryReferenceColumnName("TableName");
 					query.append("(").append(columnName).append(")");
 					query.append(" AS ").append("TableName");
-					columns.add(PrintFormatColumn.newInstance(item).withColumnName("TableName").withColumnNameAlias(columnName));
+					//	TableName is only projected so DefaultMapping can read it from the result set
+					//	(zoom target + display value). It must NOT be registered as a column of the
+					//	Record_ID item: readRow matches columns by print format item id, so a second
+					//	value column would overwrite the record id with the table name and every
+					//	group by Record_ID would collapse into one group per table.
 					//	Add JOIN
 					tableReferences.append(" LEFT OUTER JOIN ");
 					tableReferences.append("AD_Table").append(" ").append(getTableAlias()).append(" ON (")

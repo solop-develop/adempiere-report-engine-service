@@ -117,7 +117,12 @@ public class Cell {
 			return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format((Timestamp) value);
 		}
 		if(value != null && value instanceof Number) {
-			return String.format("%040.10f", ((Number) value).doubleValue());
+			String numberValue = String.format("%040.10f", ((Number) value).doubleValue());
+			//	Record_ID cells: the same id can exist in different tables, so sort by table first
+			if(!Util.isEmpty(tableName, true)) {
+				return tableName + "|" + numberValue;
+			}
+			return numberValue;
 		}
 		if(Util.isEmpty(displayValue)) {
 			if(value != null) {
@@ -301,7 +306,7 @@ public class Cell {
 
 	@Override
 	public String toString() {
-		return "Cell [value=" + value + ", displayValue=" + displayValue + "]";
+		return "Cell [value=" + value + ", tableName=" + tableName + ", displayValue=" + displayValue + "]";
 	}
 
 	@Override
@@ -313,12 +318,14 @@ public class Cell {
 			return false;
 		}
 		Cell cell = (Cell) object;
-		return Objects.equals(this.value, cell.getValue());
+		//	tableName is only set on Record_ID cells: the same id in two tables is a different record
+		return Objects.equals(this.value, cell.getValue())
+			&& Objects.equals(this.tableName, cell.getTableName());
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(this.value);
+		return Objects.hash(this.value, this.tableName);
 	}
 
 }

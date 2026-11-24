@@ -188,6 +188,17 @@ public class PrintFormatItem {
 			columnId = column.getAD_Column_ID();
 			referenceId = column.getAD_Reference_ID();
 			referenceValueId = column.getAD_Reference_Value_ID();
+			//	A Table reference needs its AD_Reference_Value_ID (AD_Ref_Table) to know the
+			//	referenced table. When the dictionary is missing it, resolve the column as Table
+			//	Direct (by column name), the same way a Search without reference value is handled,
+			//	instead of failing the whole report. Same rule as adempiere-grpc-server
+			//	ReferenceUtil.getReferenceInfo (Table/Search without reference value on an *_ID column).
+			if(referenceId == DisplayType.Table && referenceValueId <= 0
+					&& columnName != null && columnName.endsWith("_ID")) {
+				logger.warning("Column " + column.getAD_Column_ID() + " (" + columnName
+					+ ") has Table reference without AD_Reference_Value_ID, resolved as Table Direct");
+				referenceId = DisplayType.TableDir;
+			}
 			formatPattern = column.getFormatPattern();
 			isKey = column.isKey();
 			isParent = column.isParent();

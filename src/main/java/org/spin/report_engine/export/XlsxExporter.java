@@ -48,6 +48,7 @@ import org.compiere.Adempiere;
 import org.compiere.model.MClientInfo;
 import org.compiere.print.MPrintFormat;
 import org.compiere.print.MPrintPaper;
+import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Language;
@@ -80,6 +81,13 @@ public class XlsxExporter implements IReportEngineExporter {
 		dataFormat = workBook.createDataFormat();
 	}
 	
+	/** Logger */
+	private static final CLogger log = CLogger.getCLogger(XlsxExporter.class);
+	/** Retries of a failed upload to the file handler (in addition to the first attempt) */
+	private static final int UPLOAD_RETRIES = 1;
+	/** Wait between upload attempts: 60 seconds */
+	private static final long UPLOAD_RETRY_WAIT_MILLIS = 60_000L;
+
 	private SXSSFWorkbook workBook;
 	private MPrintPaper printPaper;
 	private Font fontHeader = null;
@@ -324,13 +332,21 @@ public class XlsxExporter implements IReportEngineExporter {
 					}
 				}
 			}
-			//
+
+			//	Honor the format pattern configured on the column / print format item
+			String formatPattern = columnInfo.getPrintformatItem() != null
+				? columnInfo.getPrintformatItem().getFormatPattern()
+				: null
+			;
+			if(Util.isEmpty(formatPattern, true)) {
+				formatPattern = null;
+			}
 			CellStyle style = getStyle(
 				sheetRowIndex,
 				columnNumber,
 				rowValue.isSummaryRow(),
 				displayType,
-				null
+				formatPattern
 			);
 			sheetCell.setCellStyle(style);
 		});
@@ -355,7 +371,7 @@ public class XlsxExporter implements IReportEngineExporter {
 	}
 	
 	private CellStyle getStyle(int row, int col, boolean summaryRow, int displayType, String formatPattern) {
-		String key = "cell-" + col + "-" + displayType + "-" + summaryRow;
+		String key = "cell-" + col + "-" + displayType + "-" + summaryRow + "-" + (formatPattern != null ? formatPattern : "");
 		CellStyle cs = styles.get(key);
 		if (cs == null) {
 			boolean isHighlightNegativeNumbers = true;
@@ -457,15 +473,17 @@ public class XlsxExporter implements IReportEngineExporter {
 	}
 	
 	private String writeFile() {
+		File file = null;
 		try {
 			String prefix = Util.isEmpty(reportName) ? "Report_Engine" : reportName.replaceAll("[^a-zA-Z0-9_\\-]", "_");
 			String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new java.util.Date());
 			String tmpDir = System.getProperty("java.io.tmpdir");
-			File file = new File(tmpDir, prefix + "_" + timestamp + ".xlsx");
-			FileOutputStream out = new FileOutputStream(file .getAbsolutePath());
-			workBook.write(out);
-			out.close();
-			workBook.dispose();
+			file = new File(tmpDir, prefix + "_" + timestamp + ".xlsx");
+			try (FileOutputStream out = new FileOutputStream(file.getAbsolutePath())) {
+				workBook.write(out);
+			} finally {
+				workBook.dispose();
+			}
 			//	Push to S3
 			MClientInfo clientInfo = MClientInfo.get(Env.getCtx());
 			if(clientInfo.getFileHandler_ID() <= 0) {
@@ -492,9 +510,45 @@ public class XlsxExporter implements IReportEngineExporter {
 				.withContainerId("tmp")
 				.withName(file.getName())
 			;
-			return fileHandler.putResource(resourceMetadata, new FileInputStream(file));
+			return putResourceWithRetry(fileHandler, resourceMetadata, file);
+		} catch (AdempiereException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new AdempiereException(e);
+		} finally {
+			//	The file only lives here until it is pushed to the file handler: remove it so
+			//	every export does not leave an xlsx behind in the server temporary directory.
+			if(file != null && file.exists() && !file.delete()) {
+				log.warning("Could not delete temporary export file " + file.getAbsolutePath());
+			}
+		}
+	}
+
+	/**
+	 * Push the exported file to the file handler (S3). A failed upload is retried
+	 * {@link #UPLOAD_RETRIES} time(s), waiting {@link #UPLOAD_RETRY_WAIT_MILLIS} between attempts.
+	 * Each attempt opens a new stream because a failed one may have consumed it.
+	 * @return resource name returned by the file handler
+	 */
+	private String putResourceWithRetry(IS3 fileHandler, ResourceMetadata resourceMetadata, File file) throws Exception {
+		int attempt = 0;
+		while (true) {
+			attempt++;
+			try (FileInputStream input = new FileInputStream(file)) {
+				return fileHandler.putResource(resourceMetadata, input);
+			} catch (Exception e) {
+				if(attempt > UPLOAD_RETRIES) {
+					throw e;
+				}
+				log.warning("Upload of " + file.getName() + " failed (attempt " + attempt + "), retrying in "
+					+ (UPLOAD_RETRY_WAIT_MILLIS / 1000) + "s: " + e.getLocalizedMessage());
+				try {
+					Thread.sleep(UPLOAD_RETRY_WAIT_MILLIS);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw e;
+				}
+			}
 		}
 	}
 
